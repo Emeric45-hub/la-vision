@@ -1,0 +1,33 @@
+name: Tests de faisabilité
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer les dépendances
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund firebase-admin@12 playwright@1.47.2
+          npx playwright install --with-deps chromium
+
+      - name: Lancer les tests
+        working-directory: tests
+        env:
+          ICS_EMERIC: ${{ secrets.ICS_EMERIC }}
+          ICS_LEA: ${{ secrets.ICS_LEA }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: node faisabilite.mjs
