@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Test Vision">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>La Vision — test iPad</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 24px 24px 48px;
+    font-family: -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif; color: #1D1D1F;
+    background: #DCE1E7; position: relative; overflow-x: hidden;
+  }
+  #ciel { position: fixed; inset: 0; z-index: -1; overflow: hidden;
+    background: linear-gradient(#C3CCD6, #E9ECF0); }
+  .nuage { position: absolute; border-radius: 50%; background: #fff; opacity: .75; filter: blur(18px); }
+  h1 { font-size: 30px; margin: 0 0 4px; }
+  p.sous { margin: 0 0 20px; color: #3A3A3C; }
+  .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .carte {
+    background: rgba(255,255,255,.7); border: 1px solid rgba(255,255,255,.7);
+    -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
+    border-radius: 18px; padding: 16px 18px;
+  }
+  .carte h2 { font-size: 17px; margin: 0 0 8px; display: flex; justify-content: space-between; gap: 8px; }
+  .etat { font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .ok { color: #1E7B3C; } .ko { color: #B3261E; } .attente { color: #6E6E73; }
+  .detail { font-size: 14px; line-height: 1.45; color: #3A3A3C; }
+  label { display: block; font-size: 13px; color: #6E6E73; margin: 8px 0 4px; }
+  input { width: 100%; height: 44px; border-radius: 12px; border: 1px solid #C7C7CC; padding: 0 12px; font-size: 16px; background: #fff; }
+  button, a.bouton {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px;
+    border-radius: 22px; border: none; background: #1D1D1F; color: #fff; font-size: 15px; font-weight: 600;
+    margin-top: 10px; text-decoration: none; cursor: pointer;
+  }
+  button.secondaire { background: #fff; color: #1D1D1F; border: 1px solid #C7C7CC; }
+  #resume { margin: 18px 0 0; font-size: 14px; white-space: pre-wrap; background: rgba(255,255,255,.85); border-radius: 12px; padding: 12px; }
+</style>
+</head>
+<body>
+<div id="ciel"></div>
+
+<h1>La Vision · test iPad</h1>
+<p class="sous">Chaque carte teste une fonction. Fais-les dans l’ordre, puis envoie une capture de la page entière.</p>
+
+<div class="grille">
+
+  <section class="carte">
+    <h2>1. Appareil <span class="etat attente" id="e-appareil">…</span></h2>
+    <div class="detail" id="d-appareil"></div>
+  </section>
+
+  <section class="carte">
+    <h2>2. Connexion famille <span class="etat attente" id="e-connexion">à faire</span></h2>
+    <form id="f-connexion">
+      <label for="email">E-mail du compte famille</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="mdp">Mot de passe</label>
+      <input id="mdp" type="password" autocomplete="current-password" required>
+      <button type="submit">Se connecter</button>
+    </form>
+    <div class="detail" id="d-connexion"></div>
+  </section>
+
+  <section class="carte">
+    <h2>3. Données protégées <span class="etat attente" id="e-protege">après connexion</span></h2>
+    <div class="detail" id="d-protege">Écriture puis lecture d’une donnée réservée au compte famille.</div>
+  </section>
+
+  <section class="carte">
+    <h2>4. Chez Nounou <span class="etat attente" id="e-nounou">…</span></h2>
+    <div class="detail" id="d-nounou">Lecture des pointages existants (comptage seulement).</div>
+  </section>
+
+  <section class="carte">
+    <h2>5. Météo <span class="etat attente" id="e-meteo">…</span></h2>
+    <div class="detail" id="d-meteo"></div>
+  </section>
+
+  <section class="carte">
+    <h2>6. Fluidité de l’effet verre <span class="etat attente" id="e-fluide">à faire</span></h2>
+    <div class="detail" id="d-fluide">Mesure le nombre d’images par seconde pendant 4 s, avec le flou puis sans.</div>
+    <button type="button" id="b-fluide">Lancer la mesure</button>
+  </section>
+
+  <section class="carte">
+    <h2>7. Écran toujours allumé <span class="etat attente" id="e-eveil">à faire</span></h2>
+    <div class="detail" id="d-eveil"></div>
+    <button type="button" id="b-eveil">Essayer</button>
+  </section>
+
+  <section class="carte">
+    <h2>8. Boutons Raccourcis <span class="etat attente" id="e-raccourci">à faire</span></h2>
+    <label for="nom-raccourci">Nom exact du Raccourci qui ouvre Béaba</label>
+    <input id="nom-raccourci" type="text" placeholder="Béaba">
+    <button type="button" id="b-raccourci">Lancer ce Raccourci</button>
+    <div class="detail">Si l’app Béaba s’ouvre, reviens ici et touche « Ça a marché ».</div>
+    <button type="button" class="secondaire" id="b-raccourci-ok">Ça a marché</button>
+  </section>
+
+</div>
+
+<div id="resume"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC7sZDCVP-r34T33L6nEwWzibsrXnxletA",
+  authDomain: "diversif-bebe.firebaseapp.com",
+  projectId: "diversif-bebe",
+};
+const JOURNAL_ID = "journal-7rkwbmzT";
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const R = {};
+function etat(cle, ok, texte, detail) {
+  const e = document.getElementById("e-" + cle);
+  e.textContent = texte; e.className = "etat " + (ok === null ? "attente" : ok ? "ok" : "ko");
+  if (detail !== undefined) document.getElementById("d-" + cle).textContent = detail;
+  R[cle] = `${ok === null ? "…" : ok ? "OK" : "ÉCHEC"} ${texte}${detail ? " — " + detail : ""}`;
+  document.getElementById("resume").textContent = Object.entries(R).map(([k, v]) => `${k} : ${v}`).join("\n");
+}
+
+// 0. Ciel animé (pour tester le flou sur un fond qui bouge)
+const ciel = document.getElementById("ciel");
+const nuages = [];
+for (let i = 0; i < 7; i++) {
+  const n = document.createElement("div"); n.className = "nuage";
+  const w = 180 + Math.random() * 260;
+  n.style.width = w + "px"; n.style.height = (w / 3.2) + "px";
+  n.style.top = (Math.random() * 90) + "%";
+  ciel.appendChild(n); nuages.push({ el: n, x: Math.random() * innerWidth, v: 0.15 + Math.random() * 0.35 });
+}
+(function anime() {
+  for (const n of nuages) { n.x += n.v; if (n.x > innerWidth + 300) n.x = -400; n.el.style.transform = `translateX(${n.x}px)`; }
+  requestAnimationFrame(anime);
+})();
+
+// 1. Appareil
+const ua = navigator.userAgent;
+const v = (ua.match(/OS (\d+)_(\d+)/) || [])[0] || (ua.match(/Version\/([\d.]+)/) || [])[0] || "inconnue";
+const autonome = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+etat("appareil", true, autonome ? "écran d’accueil" : "dans Safari",
+  `Système : ${v.replace("OS ", "iPadOS ").replace("_", ".")} · ${autonome ? "ouverte depuis l’écran d’accueil" : "ouverte dans Safari (ajoute-la ensuite à l’écran d’accueil)"} · ${innerWidth}×${innerHeight}`);
+
+// 2 et 3. Connexion puis données protégées
+document.getElementById("f-connexion").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  etat("connexion", null, "en cours…");
+  try {
+    await signInWithEmailAndPassword(auth, document.getElementById("email").value.trim(), document.getElementById("mdp").value);
+  } catch (e) {
+    etat("connexion", false, "refusée", e.code || e.message);
+  }
+});
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  etat("connexion", true, "connecté", "La session est mémorisée : rouvre la page plus tard, elle devrait rester connectée.");
+  document.getElementById("f-connexion").style.display = "none";
+  try {
+    const t0 = performance.now();
+    const ref = doc(db, "vision_test", "ipad");
+    await setDoc(ref, { at: new Date().toISOString() });
+    const lu = await getDoc(ref);
+    etat("protege", lu.exists(), lu.exists() ? "OK" : "vide", `écriture puis lecture en ${Math.round(performance.now() - t0)} ms`);
+  } catch (e) {
+    etat("protege", false, "refusé", e.code === "permission-denied" ? "règle d’accès absente ou incorrecte (permission-denied)" : (e.code || e.message));
+  }
+});
+
+// 4. Chez Nounou
+(async () => {
+  try {
+    const t0 = performance.now();
+    const snap = await getDocs(collection(db, "nounou", JOURNAL_ID, "sessions"));
+    const dates = snap.docs.map(d => d.data().date).filter(Boolean).sort();
+    etat("nounou", snap.size > 0, `${snap.size} pointages`, `dernier pointage le ${dates[dates.length - 1] || "?"} · lu en ${Math.round(performance.now() - t0)} ms`);
+  } catch (e) {
+    etat("nounou", false, "refusé", e.code || e.message);
+  }
+})();
+
+// 5. Météo
+(async () => {
+  try {
+    const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=47.47&longitude=-0.55&hourly=temperature_2m,weather_code&forecast_days=2&timezone=Europe%2FParis");
+    const j = await r.json();
+    const i = j.hourly.time.findIndex(t => t.endsWith("T08:00"));
+    etat("meteo", r.ok, "reçue", `8h : ${j.hourly.temperature_2m[i]} °C (code ${j.hourly.weather_code[i]})`);
+  } catch (e) {
+    etat("meteo", false, "bloquée", e.message);
+  }
+})();
+
+// 6. Fluidité
+function mesure(ms) {
+  return new Promise(res => {
+    let n = 0; const t0 = performance.now();
+    (function f(t) { n++; if (t - t0 < ms) requestAnimationFrame(f); else res(Math.round(n * 1000 / (t - t0))); })(t0);
+  });
+}
+document.getElementById("b-fluide").addEventListener("click", async () => {
+  etat("fluide", null, "mesure…");
+  const avec = await mesure(4000);
+  document.querySelectorAll(".carte").forEach(c => { c.style.backdropFilter = "none"; c.style.webkitBackdropFilter = "none"; });
+  const sans = await mesure(4000);
+  document.querySelectorAll(".carte").forEach(c => { c.style.backdropFilter = ""; c.style.webkitBackdropFilter = ""; });
+  etat("fluide", avec >= 45, avec >= 45 ? "fluide" : avec >= 25 ? "acceptable" : "saccadé", `${avec} images/s avec le flou, ${sans} sans`);
+});
+
+// 7. Écran allumé
+document.getElementById("b-eveil").addEventListener("click", async () => {
+  if (!("wakeLock" in navigator)) return etat("eveil", false, "non disponible", "Le système ne propose pas cette fonction : on utilisera le réglage « Verrouillage automatique : Jamais ».");
+  try {
+    const verrou = await navigator.wakeLock.request("screen");
+    etat("eveil", true, "accordé", "Laisse l’iPad posé sans le toucher : s’il ne s’éteint pas au bout du délai habituel, ça marche.");
+    verrou.addEventListener("release", () => etat("eveil", false, "relâché", "Le système a relâché le maintien de l’écran."));
+  } catch (e) {
+    etat("eveil", false, "refusé", e.message);
+  }
+});
+
+// 8. Raccourcis
+document.getElementById("b-raccourci").addEventListener("click", () => {
+  const nom = document.getElementById("nom-raccourci").value.trim();
+  if (!nom) return etat("raccourci", false, "nom manquant", "Tape d’abord le nom exact du Raccourci.");
+  etat("raccourci", null, "lancé…");
+  location.href = "shortcuts://run-shortcut?name=" + encodeURIComponent(nom);
+});
+document.getElementById("b-raccourci-ok").addEventListener("click", () => etat("raccourci", true, "fonctionne", "Le Raccourci s’est lancé depuis la page."));
+</script>
+</body>
+</html>
