@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 
 const resultats = [];
+const extraits = [];
 function note(test, ok, detail) {
   resultats.push({ test, ok, detail });
   console.log(`${ok ? 'OK ' : 'ÉCHEC'} · ${test} · ${detail}`);
@@ -67,16 +68,18 @@ async function testClaude() {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-5-5',
-        max_tokens: 400,
+        max_tokens: 1500,
         system: 'Tu rédiges le briefing du matin d’une famille, en français, en 4 phrases maximum, sans liste. Tu cites ce qu’il faut emporter.',
         messages: [{ role: 'user', content: JSON.stringify(donnees) }]
       })
     });
     const j = await r.json();
     if (!r.ok) return note('API Claude', false, `HTTP ${r.status} ${j?.error?.type || ''}`);
-    const texte = j.content?.[0]?.text || '';
+    const texte = (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+    const types = (j.content || []).map(b => b.type).join(', ');
     note('API Claude', texte.length > 0,
-      `${j.usage.input_tokens} jetons en entrée, ${j.usage.output_tokens} en sortie, ${Date.now() - t0} ms`);
+      `${j.usage.input_tokens} jetons en entrée, ${j.usage.output_tokens} en sortie, ${Date.now() - t0} ms ; blocs reçus : ${types} ; fin : ${j.stop_reason}`);
+    extraits.push(['Briefing produit (journée fictive)', texte || '(vide)']);
     // Données fictives : on peut afficher le briefing produit
     console.log('--- Briefing produit (données fictives) ---\n' + texte);
     fs.writeFileSync('briefing-test.txt', texte);
@@ -143,7 +146,10 @@ async function testCantine() {
     const texte = (await page.innerText('main').catch(() => page.innerText('body'))).replace(/\s+\n/g, '\n');
     const jours = (texte.match(/lundi|mardi|jeudi|vendredi/gi) || []).length;
     console.log('--- Appels réseau du site ---\n' + [...new Set(appels)].slice(0, 30).join('\n'));
-    console.log('--- Extrait de la page après sélection ---\n' + texte.slice(0, 1500));
+    const debut = texte.search(/lundi/i);
+    const menu = (debut >= 0 ? texte.slice(debut) : texte).slice(0, 1800);
+    console.log('--- Extrait de la page après sélection ---\n' + menu);
+    extraits.push(['Menu de la cantine lu sur le site', menu]);
     note('Menu cantine', etapes.every(e => e[1]) && jours > 0,
       `sélections : ${etapes.map(e => `${e[0]} ${e[1] ? 'ok' : 'non trouvé'}`).join(', ')} ; ${jours} mentions de jours dans la page`);
   } catch (e) {
@@ -162,5 +168,6 @@ await testCantine();
 
 const resume = ['## Tests de faisabilité', '', '| Test | Résultat | Détail |', '|---|---|---|',
   ...resultats.map(r => `| ${r.test} | ${r.ok ? '✅' : '❌'} | ${r.detail} |`)].join('\n');
-if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, resume + '\n');
+const blocs = extraits.map(([t, x]) => `\n### ${t}\n\n\`\`\`\n${x}\n\`\`\`\n`).join('');
+if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, resume + '\n' + blocs);
 console.log('\n' + resume);
