@@ -104,6 +104,21 @@
     <button type="button" class="secondaire" id="b-raccourci-ok">Ça a marché</button>
   </section>
 
+  <section class="carte">
+    <h2>9. Données du Raccourci <span class="etat attente" id="e-recu">après connexion</span></h2>
+    <div class="detail" id="d-recu">Ce que le Raccourci « Vision – envoi » a déposé dans Firebase.</div>
+    <button type="button" id="b-recu">Relire</button>
+    <pre id="p-recu" style="white-space:pre-wrap;font-size:13px;max-height:320px;overflow:auto;margin:10px 0 0"></pre>
+  </section>
+
+  <section class="carte">
+    <h2>10. Faux ajout pour le retour <span class="etat attente" id="e-ajout">après connexion</span></h2>
+    <div class="detail" id="d-ajout">Dépose un faux ajout que le Raccourci « Vision – réception » devra transformer en rappel.</div>
+    <label for="liste-ajout">Liste Rappels visée (nom exact)</label>
+    <input id="liste-ajout" type="text" placeholder="Maison">
+    <button type="button" id="b-ajout">Déposer le faux ajout</button>
+  </section>
+
 </div>
 
 <div id="resume"></div>
@@ -236,10 +251,42 @@ if (F) {
       etat("connexion", false, "refusée", e.code || e.message);
     }
   });
+
+  // 9. Données déposées par le Raccourci (vision_test/raccourci : champs texte et at)
+  async function lireRecu() {
+    etat("recu", null, "lecture…");
+    try {
+      const lu = await F.getDocFromServer(F.doc(db, "vision_test", "raccourci"));
+      if (!lu.exists()) return etat("recu", false, "rien reçu", "Le Raccourci n’a encore rien déposé.");
+      const d = lu.data();
+      const texte = String(d.texte || "");
+      etat("recu", true, "reçu", `Dépôt du ${d.at || "?"} · ${texte.length} caractères`);
+      document.getElementById("p-recu").textContent = texte.slice(0, 4000);
+    } catch (e) {
+      etat("recu", false, "erreur", e.code || e.message);
+    }
+  }
+  document.getElementById("b-recu").addEventListener("click", lireRecu);
+
+  // 10. Faux ajout (vision_test/a_creer) pour tester le retour vers Rappels
+  document.getElementById("b-ajout").addEventListener("click", async () => {
+    if (!auth.currentUser) return etat("ajout", false, "non connecté", "Connecte-toi d’abord (carte 2).");
+    const liste = document.getElementById("liste-ajout").value.trim();
+    if (!liste) return etat("ajout", false, "liste manquante", "Tape le nom exact d’une liste Rappels.");
+    try {
+      const titre = "Test La Vision " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      await F.setDoc(F.doc(db, "vision_test", "a_creer"), { liste, titre, fait: "non", at: new Date().toISOString() });
+      etat("ajout", true, "déposé", `« ${titre} » pour la liste « ${liste} »`);
+    } catch (e) {
+      etat("ajout", false, "refusé", e.code || e.message);
+    }
+  });
+
   F.onAuthStateChanged(auth, async (user) => {
     if (!user) return;
     etat("connexion", true, "connecté", "La session est mémorisée : rouvre la page plus tard, elle devrait rester connectée.");
     document.getElementById("f-connexion").style.display = "none";
+    lireRecu();
     try {
       const t0 = performance.now();
       const ref = F.doc(db, "vision_test", "ipad");
