@@ -108,28 +108,26 @@
 
 <div id="resume"></div>
 
+<script>
+// Filet de sécurité : toute erreur JavaScript s'affiche en bas de la page.
+window.addEventListener("error", function (e) {
+  var r = document.getElementById("resume");
+  if (r) r.textContent += "\nERREUR : " + (e.message || e) + (e.filename ? " (" + e.filename.split("/").pop() + ":" + e.lineno + ")" : "");
+});
+window.addEventListener("unhandledrejection", function (e) {
+  var r = document.getElementById("resume");
+  if (r) r.textContent += "\nERREUR (promesse) : " + (e.reason && (e.reason.code || e.reason.message) || e.reason);
+});
+</script>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC7sZDCVP-r34T33L6nEwWzibsrXnxletA",
-  authDomain: "diversif-bebe.firebaseapp.com",
-  projectId: "diversif-bebe",
-};
-const JOURNAL_ID = "journal-7rkwbmzT";
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
 const R = {};
 function etat(cle, ok, texte, detail) {
   const e = document.getElementById("e-" + cle);
   e.textContent = texte; e.className = "etat " + (ok === null ? "attente" : ok ? "ok" : "ko");
   if (detail !== undefined) document.getElementById("d-" + cle).textContent = detail;
   R[cle] = `${ok === null ? "…" : ok ? "OK" : "ÉCHEC"} ${texte}${detail ? " — " + detail : ""}`;
-  document.getElementById("resume").textContent = Object.entries(R).map(([k, v]) => `${k} : ${v}`).join("\n");
+  const erreurs = (document.getElementById("resume").textContent.match(/\nERREUR.*/g) || []).join("");
+  document.getElementById("resume").textContent = Object.entries(R).map(([k, v]) => `${k} : ${v}`).join("\n") + erreurs;
 }
 
 // 0. Ciel animé (pour tester le flou sur un fond qui bouge)
@@ -147,49 +145,14 @@ for (let i = 0; i < 7; i++) {
   requestAnimationFrame(anime);
 })();
 
-// 1. Appareil
+// 1. Appareil (sur iPad, Safari se présente comme un Mac : la version de Safari = la version d'iPadOS)
 const ua = navigator.userAgent;
-const v = (ua.match(/OS (\d+)_(\d+)/) || [])[0] || (ua.match(/Version\/([\d.]+)/) || [])[0] || "inconnue";
+const vSafari = (ua.match(/Version\/([\d.]+)/) || [])[1];
+const vOS = (ua.match(/ OS (\d+)_(\d+)/) || []).slice(1).join(".");
+const version = vOS || vSafari || "inconnue";
 const autonome = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
 etat("appareil", true, autonome ? "écran d’accueil" : "dans Safari",
-  `Système : ${v.replace("OS ", "iPadOS ").replace("_", ".")} · ${autonome ? "ouverte depuis l’écran d’accueil" : "ouverte dans Safari (ajoute-la ensuite à l’écran d’accueil)"} · ${innerWidth}×${innerHeight}`);
-
-// 2 et 3. Connexion puis données protégées
-document.getElementById("f-connexion").addEventListener("submit", async (ev) => {
-  ev.preventDefault();
-  etat("connexion", null, "en cours…");
-  try {
-    await signInWithEmailAndPassword(auth, document.getElementById("email").value.trim(), document.getElementById("mdp").value);
-  } catch (e) {
-    etat("connexion", false, "refusée", e.code || e.message);
-  }
-});
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-  etat("connexion", true, "connecté", "La session est mémorisée : rouvre la page plus tard, elle devrait rester connectée.");
-  document.getElementById("f-connexion").style.display = "none";
-  try {
-    const t0 = performance.now();
-    const ref = doc(db, "vision_test", "ipad");
-    await setDoc(ref, { at: new Date().toISOString() });
-    const lu = await getDoc(ref);
-    etat("protege", lu.exists(), lu.exists() ? "OK" : "vide", `écriture puis lecture en ${Math.round(performance.now() - t0)} ms`);
-  } catch (e) {
-    etat("protege", false, "refusé", e.code === "permission-denied" ? "règle d’accès absente ou incorrecte (permission-denied)" : (e.code || e.message));
-  }
-});
-
-// 4. Chez Nounou
-(async () => {
-  try {
-    const t0 = performance.now();
-    const snap = await getDocs(collection(db, "nounou", JOURNAL_ID, "sessions"));
-    const dates = snap.docs.map(d => d.data().date).filter(Boolean).sort();
-    etat("nounou", snap.size > 0, `${snap.size} pointages`, `dernier pointage le ${dates[dates.length - 1] || "?"} · lu en ${Math.round(performance.now() - t0)} ms`);
-  } catch (e) {
-    etat("nounou", false, "refusé", e.code || e.message);
-  }
-})();
+  `iPadOS ${version} · ${autonome ? "ouverte depuis l’écran d’accueil" : "ouverte dans Safari (ajoute-la ensuite à l’écran d’accueil)"} · ${innerWidth}×${innerHeight}`);
 
 // 5. Météo
 (async () => {
@@ -239,6 +202,64 @@ document.getElementById("b-raccourci").addEventListener("click", () => {
   location.href = "shortcuts://run-shortcut?name=" + encodeURIComponent(nom);
 });
 document.getElementById("b-raccourci-ok").addEventListener("click", () => etat("raccourci", true, "fonctionne", "Le Raccourci s’est lancé depuis la page."));
+
+// 2, 3 et 4. Firebase, chargé à part : s'il échoue, le reste de la page fonctionne quand même.
+etat("nounou", null, "chargement…");
+let F;
+try {
+  const base = "https://www.gstatic.com/firebasejs/10.12.2/";
+  const [a, au, fs] = await Promise.all([
+    import(base + "firebase-app.js"), import(base + "firebase-auth.js"), import(base + "firebase-firestore.js")
+  ]);
+  F = { ...a, ...au, ...fs };
+} catch (e) {
+  const msg = "Firebase n’a pas pu se charger : " + (e.message || e);
+  etat("connexion", false, "impossible", msg); etat("nounou", false, "impossible", msg);
+}
+
+if (F) {
+  const app = F.initializeApp({
+    apiKey: "AIzaSyC7sZDCVP-r34T33L6nEwWzibsrXnxletA",
+    authDomain: "diversif-bebe.firebaseapp.com",
+    projectId: "diversif-bebe",
+  });
+  const auth = F.getAuth(app);
+  const db = F.getFirestore(app);
+  const JOURNAL_ID = "journal-7rkwbmzT";
+
+  document.getElementById("f-connexion").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    etat("connexion", null, "en cours…");
+    try {
+      await F.signInWithEmailAndPassword(auth, document.getElementById("email").value.trim(), document.getElementById("mdp").value);
+    } catch (e) {
+      etat("connexion", false, "refusée", e.code || e.message);
+    }
+  });
+  F.onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    etat("connexion", true, "connecté", "La session est mémorisée : rouvre la page plus tard, elle devrait rester connectée.");
+    document.getElementById("f-connexion").style.display = "none";
+    try {
+      const t0 = performance.now();
+      const ref = F.doc(db, "vision_test", "ipad");
+      await F.setDoc(ref, { at: new Date().toISOString() });
+      const lu = await F.getDoc(ref);
+      etat("protege", lu.exists(), lu.exists() ? "OK" : "vide", `écriture puis lecture en ${Math.round(performance.now() - t0)} ms`);
+    } catch (e) {
+      etat("protege", false, "refusé", e.code === "permission-denied" ? "règle d’accès absente ou incorrecte (permission-denied)" : (e.code || e.message));
+    }
+  });
+
+  try {
+    const t0 = performance.now();
+    const snap = await F.getDocs(F.collection(db, "nounou", JOURNAL_ID, "sessions"));
+    const dates = snap.docs.map(d => d.data().date).filter(Boolean).sort();
+    etat("nounou", snap.size > 0, `${snap.size} pointages`, `dernier pointage le ${dates[dates.length - 1] || "?"} · lu en ${Math.round(performance.now() - t0)} ms`);
+  } catch (e) {
+    etat("nounou", false, "refusé", e.code || e.message);
+  }
+}
 </script>
 </body>
 </html>
