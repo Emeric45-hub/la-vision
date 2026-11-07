@@ -15,8 +15,8 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 | 1b | Connexion au compte famille dans Chez Nounou et Diversif (règles encore ouvertes) | ✅ |
 | 1c | Règles Firestore limitées à l'UID du compte famille (Chez Nounou, Diversif, La Vision, tests) | ✅ |
 | 2 | Schéma Firestore de La Vision : configuration familiale, planning (couches calculé / corrigé), saisies du parent B | ✅ |
-| 3 | Coquille de la PWA (connexion, navigation) et import du semainier depuis l'iPhone | 🟡 |
-| 4 | Tâche planifiée : lecture des agendas, calendrier scolaire, jours fériés → Firestore | ⬜ |
+| 3 | Coquille de la PWA (connexion, navigation) et import du semainier depuis l'iPhone | ✅ |
+| 4 | Tâche planifiée (dépôt privé `la-vision-tache`) : lecture des agendas, calendrier scolaire, jours fériés → Firestore | 🟡 |
 | 5 | Moteur de règles générique, testé sur données fictives | ⬜ |
 | 6 | Écran Planning du mois : grille, détail du jour modifiable, points à vérifier | ⬜ |
 | 7 | Module assistante maternelle : jour en cours, confirmation du soir, pointage en direct, total de la semaine, lien Chez Nounou | ⬜ |
@@ -31,4 +31,4 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 
 ## Nettoyage final
 
-Documents `vision_test/*`, page `test-ipad/`, Raccourcis et automatisations de test.
+Documents `vision_test/*`, page `test-ipad/`, Raccourcis et automatisations de test, secrets de ce dépôt (passés dans `la-vision-tache`), ancienne clé du compte de service.

@@ -20,7 +20,7 @@ Avant chaque commit, vérifier le diff sous cet angle.
 |---|---|
 | PWA (GitHub Pages) | Lecture et écriture directes dans Firestore, connexion par Firebase Auth (e-mail / mot de passe, un compte unique). Météo lue directement (Open-Meteo, sans clé). |
 | Firestore (projet partagé avec Chez Nounou et Diversif) | Stockage de tout : configuration, planning, pointages, données publiées par la tâche. |
-| Tâche GitHub Actions (toutes les 30 min) | Lit les agendas (iCal), applique les règles, écrit le planning calculé dans Firestore (compte de service, secret `FIREBASE_SA`), appelle l'API Claude pour les briefings. Ne dépend d'aucun téléphone. |
+| Tâches GitHub Actions, déclenchées depuis le dépôt privé `la-vision-tache` (code dans `tache/`) | Lit les agendas (iCal), applique les règles, écrit le planning calculé dans Firestore (compte de service, secret `FIREBASE_SA`), appelle l'API Claude pour les briefings. Ne dépend d'aucun téléphone. |
 | Raccourcis iOS | Seulement pour les données qui n'existent que chez Apple (Rappels, calendrier local, anniversaires). Écriture par l'API REST Firestore avec un jeton Firebase Auth. |
 
 Principe : **tout ce qui est déterministe est calculé par le code** (planning, conflits, heures). Claude ne rédige que le briefing. L'app fonctionne sans l'IA.

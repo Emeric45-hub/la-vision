@@ -30,7 +30,7 @@ Chaque décision est datée. Une décision remplacée reste listée, barrée, av
 
 - **2026-11-07** — Les heures de l'enfant scolarisé chez l'assistante maternelle se déduisent de celles de l'autre enfant et des horaires de l'école ; elles ne sont pas saisies.
 - **2026-11-07** — Les horaires de travail du parent B ne sont pas lus d'un agenda : ils sont saisis dans l'app, jour par jour, sans valeur par défaut (« à saisir »).
-- **2026-11-07** — Lecteur du semainier Excel repris d'AgendaPro sans changement de logique ; les constantes propres à la personne (initiales, horaires, libellés, lieux, ancre) sont passées en paramètres lus dans la configuration. Équivalence vérifiée sur 400 classeurs aléatoires (0 différence). Import depuis le téléphone dans La Vision ; seuls les jours modifiés sont réécrits ; les jours passés et les jours absents du nouveau fichier ne sont pas touchés. Les retouches manuelles faites dans AgendaPro (stockées sur l'appareil) ne sont pas reprises.
+- **2026-11-07** — Lecteur du semainier Excel repris d'AgendaPro sans changement de logique ; les constantes propres à la personne (initiales, horaires, libellés, lieux, ancre) sont passées en paramètres lus dans la configuration. Équivalence vérifiée sur 400 classeurs aléatoires (0 différence). Import depuis le téléphone dans La Vision ; seuls les jours modifiés sont réécrits ; les jours passés et les jours absents du nouveau fichier ne sont pas touchés. Les retouches manuelles faites dans AgendaPro (stockées sur l'appareil) ne sont pas reprises. Elles sont rares : on corrige dans La Vision.
 - **2026-11-07** — Pas d'heures contractuelles dans l'app : seulement les heures prévues (planning) et réelles (pointages).
 - **2026-11-07** — Chaque proposition du moteur porte sa justification en clair et, le cas échéant, un point à vérifier. Un créneau peut rester « à confirmer » plutôt que recevoir une heure fausse.
 
@@ -56,6 +56,10 @@ Couches d'un jour de planning :
 
 ### Tâche planifiée
 
+- **2026-11-07** — Les tâches planifiées tournent dans un dépôt **privé** dédié, `la-vision-tache`, qui ne contient que les déclencheurs et les secrets ; il exécute le code du dossier `tache/` de ce dépôt (branche `main`). Raisons : la désactivation automatique après 60 jours sans activité est décrite pour les dépôts publics ; les journaux deviennent privés. Pas de commit automatique pour maintenir un dépôt « actif ».
+- **2026-11-07** — Quota : 2 000 minutes par mois pour les dépôts privés d'un compte gratuit, chaque job arrondi à la minute supérieure, blocage (sans facturation) au-delà. Fréquence des agendas : toutes les 30 min de 4 h à 21 h UTC, toutes les 2 h la nuit (39 passages par jour, ≈ 1 200 min par mois si chaque passage reste sous la minute). Si un passage dépasse la minute : passer à un passage par heure en journée.
+- **2026-11-07** — Pour tenir sous la minute : écriture Firestore par l'API REST (compte de service signé localement), une seule dépendance (ical.js), mise en cache.
+- **2026-11-07** — Agendas : séries, exceptions et fuseaux lus avec ical.js ; jours fériés calculés (pas de source externe) ; adresse du calendrier scolaire dans la configuration Firestore (`sources.vacances`). Une empreinte par jour, stockée dans `vision/agenda`, évite de relire tous les jours à chaque passage. Si une source est illisible, rien n'est écrit et l'erreur est notée dans `vision/etat.agendas.erreur` ; la dernière lecture réussie (`agendas.lu`) est conservée.
 - **2026-11-07** — N'écrit que les documents dont le contenu a changé ; ne recalcule pas les jours passés ; fenêtre de calcul limitée (J-7 à J+60). Le quota gratuit Firestore est partagé avec Chez Nounou et Diversif.
 
 ## Module assistante maternelle
@@ -63,7 +67,7 @@ Couches d'un jour de planning :
 - **2026-11-07** — La Vision lit et écrit les pointages au format exact de Chez Nounou ; un créneau saisi dans l'une apparaît dans l'autre.
 - **2026-11-07** — Geste principal : confirmation le soir, préremplie à partir du planning. Pointage en direct possible.
 - **2026-11-07** — Confirmation du soir : avant d'écrire, lire les sessions déjà présentes pour ce jour et cet enfant. S'il y en a, les montrer au lieu d'en créer (pas de doublons).
-- **2026-11-07** — `schooldays` : écrits aujourd'hui par Chez Nounou, à la main, à trois endroits (case du jour, formulaire d'ajout de créneau, fiche d'un jour), avec `true` comme `false`. Un jour marqué `true` déclenche dans Chez Nounou la découpe des créneaux autour des heures d'école et, le jour même, un décompte automatique du soir à partir de la sortie d'école tant qu'aucun créneau du soir n'existe. La Vision n'écrit un `schooldays` que s'il est absent et n'écrase jamais une valeur existante.
+- **2026-11-07** — `schooldays` : écrits aujourd'hui par Chez Nounou, à la main, à trois endroits (case du jour, formulaire d'ajout de créneau, fiche d'un jour), avec `true` comme `false`. Un jour marqué `true` déclenche dans Chez Nounou la découpe des créneaux autour des heures d'école et, le jour même, un décompte automatique du soir à partir de la sortie d'école tant qu'aucun créneau du soir n'existe. La Vision n'écrit un `schooldays` que s'il est absent, n'écrase jamais une valeur existante, et n'écrit `true` que les jours où le planning prévoit l'école **et** l'assistante maternelle après l'école.
 - **2026-11-07** — Grille mensuelle exportée en image ou en PDF, aux couleurs de l'app.
 
 ## Technique

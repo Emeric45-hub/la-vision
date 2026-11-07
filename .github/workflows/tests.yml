@@ -19,3 +19,10 @@ jobs:
           node-version: 22
       - name: Lecteur du semainier (données fictives)
         run: node tests/semainier.test.mjs
+      - name: Dépendances de la tâche
+        working-directory: tache
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Lecture des agendas (données fictives)
+        env:
+          TZ: UTC
+        run: node tests/agendas.test.mjs
