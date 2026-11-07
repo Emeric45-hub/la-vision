@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="La Vision">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F2F2F7">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="css/app.css">
+<title>La Vision</title>
+<!-- Lecture des classeurs Excel (même version que l'app d'origine du lecteur) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+</head>
+<body>
+<header class="entete">
+  <h1>La Vision</h1>
+  <p class="etat-sync" id="etat-sync" role="status">Démarrage…</p>
+</header>
+
+<nav class="onglets" aria-label="Sections">
+  <button type="button" class="onglet" data-vue="planning" aria-pressed="false">Planning</button>
+  <button type="button" class="onglet" data-vue="nounou" aria-pressed="false">Nounou</button>
+  <button type="button" class="onglet" data-vue="reglages" aria-pressed="true">Réglages</button>
+</nav>
+
+<main>
+  <section class="vue" id="vue-planning" hidden>
+    <div class="carte"><h2>Planning du mois</h2><p class="discret">En construction.</p></div>
+  </section>
+
+  <section class="vue" id="vue-nounou" hidden>
+    <div class="carte"><h2>Nounou</h2><p class="discret">En construction.</p></div>
+  </section>
+
+  <section class="vue" id="vue-reglages">
+    <div class="carte">
+      <h2>Semainier</h2>
+      <p class="discret" id="sem-etat">Chargement…</p>
+      <label class="bouton" for="sem-fichier">Choisir le fichier Excel</label>
+      <input type="file" id="sem-fichier" accept=".xlsx,.xls" class="masque">
+      <div id="sem-apercu" hidden>
+        <dl class="chiffres" id="sem-chiffres"></dl>
+        <button type="button" class="bouton" id="sem-enregistrer">Enregistrer dans La Vision</button>
+      </div>
+      <p class="message" id="sem-message" role="alert"></p>
+    </div>
+
+    <div class="carte">
+      <h2>Configuration familiale</h2>
+      <p class="discret" id="cfg-etat">Chargement…</p>
+      <details>
+        <summary>Modifier (texte JSON)</summary>
+        <label for="cfg-texte" class="petit">Le contenu complet du document de configuration.</label>
+        <textarea id="cfg-texte" rows="18" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+        <button type="button" class="bouton" id="cfg-enregistrer">Enregistrer la configuration</button>
+      </details>
+      <p class="message" id="cfg-message" role="alert"></p>
+    </div>
+
+    <div class="carte">
+      <h2>Compte</h2>
+      <p class="discret" id="compte-etat"></p>
+      <button type="button" class="bouton secondaire" id="deconnexion">Se déconnecter de cet appareil</button>
+    </div>
+  </section>
+</main>
+
+<div id="connexion" class="connexion" role="dialog" aria-modal="true" aria-labelledby="cx-titre" hidden>
+  <form id="cx-form" novalidate>
+    <h2 id="cx-titre">Connexion</h2>
+    <p class="discret">Compte famille, une seule fois sur cet appareil.</p>
+    <label>E-mail<input type="email" id="cx-email" autocomplete="username" autocapitalize="off" required></label>
+    <label>Mot de passe<input type="password" id="cx-mdp" autocomplete="current-password" required></label>
+    <button type="submit" class="bouton" id="cx-ok">Se connecter</button>
+    <p class="message" id="cx-erreur" role="alert"></p>
+  </form>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

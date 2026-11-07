@@ -1,0 +1,83 @@
+{
+  "semainier": {
+    "initiales": "AB",
+    "horaires": {
+      "permanence": [
+        "08:00",
+        "18:00"
+      ],
+      "visite": [
+        "08:00",
+        "10:00"
+      ],
+      "blocJournee": [
+        "08:30",
+        "15:45"
+      ],
+      "blocMatin": [
+        "08:30",
+        "12:15"
+      ],
+      "blocAprem": [
+        "12:15",
+        "15:45"
+      ],
+      "blocRobot": [
+        "08:30",
+        "16:30"
+      ],
+      "orthoTot": [
+        "08:30",
+        "10:00"
+      ],
+      "orthoTard": [
+        "10:00",
+        "12:00"
+      ],
+      "csMatin": [
+        "08:40",
+        "12:20"
+      ],
+      "csAprem": [
+        "14:00",
+        "17:00"
+      ],
+      "repos": [
+        "08:00",
+        "17:00"
+      ],
+      "staff": [
+        "16:30",
+        "18:00"
+      ],
+      "garde": [
+        "18:00",
+        "23:59"
+      ],
+      "siteCsMatin": [
+        "09:00",
+        "12:00"
+      ],
+      "siteCsAprem": [
+        "14:00",
+        "17:00"
+      ],
+      "siteBloc": [
+        "13:30",
+        "17:00"
+      ]
+    },
+    "staffs": {
+      "4": "Staff du jeudi"
+    },
+    "salles": "^(S\\s*\\d+)$",
+    "autres": {
+      "ADMIN": "Administratif"
+    },
+    "ancre": "2030-01-07",
+    "site": {
+      "motif": "SITE2",
+      "lieu": "Site secondaire"
+    }
+  }
+}
