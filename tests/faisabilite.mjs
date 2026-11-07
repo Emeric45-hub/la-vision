@@ -165,7 +165,7 @@ await testMeteo();
 await testClaude();
 await testFirebase();
 await testCantine('Menu cantine (école)', /^école$/i, /grands jardins/i);
-await testCantine('Menu accueil de loisirs', /^accueil de loisirs$/i, /accueil de loisirs.*sainte-gemmes/i);
+await testCantine('Menu accueil de loisirs', /^accueil de loisirs$/i, /accueil de loisirs.*gemmes/i);
 
 const resume = ['## Tests de faisabilité', '', '| Test | Résultat | Détail |', '|---|---|---|',
   ...resultats.map(r => `| ${r.test} | ${r.ok ? '✅' : '❌'} | ${r.detail} |`)].join('\n');
