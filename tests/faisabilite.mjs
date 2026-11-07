@@ -29,10 +29,10 @@ async function testAgenda(nom, url) {
   }
 }
 
-// 2. Météo Open-Meteo (Angers)
+// 2. Météo Open-Meteo (coordonnées génériques : Paris)
 async function testMeteo() {
   try {
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude=47.47&longitude=-0.55'
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35'
       + '&hourly=temperature_2m,precipitation_probability,weather_code&forecast_days=2&timezone=Europe%2FParis';
     const r = await fetch(url);
     const j = await r.json();
@@ -49,11 +49,11 @@ async function testClaude() {
   if (!process.env.ANTHROPIC_API_KEY) return note('API Claude', false, 'secret absent');
   const donnees = {
     date: 'mardi 1er décembre',
-    emeric: 'Sablé 9h40–17h puis garde 18h → 8h',
-    lea: 'cabinet 8h30–18h',
-    rose: 'nounou 8h35–18h', lou: 'école, nounou 16h30–18h',
-    depot: 'Emeric 8h35', recuperation: 'Léa 18h',
-    evenements: [{ heure: '17h', titre: 'Dentiste Lou', notes: 'apporter carnet de santé' }],
+    parentA: 'travail 9h–17h puis astreinte de nuit',
+    parentB: 'travail 8h30–18h',
+    enfant1: 'assistante maternelle 8h30–18h', enfant2: 'école, assistante maternelle 16h30–18h',
+    depot: 'parent A 8h30', recuperation: 'parent B 18h',
+    evenements: [{ heure: '17h', titre: 'Dentiste enfant 2', notes: 'apporter carnet de santé' }],
     meteo: '8h : 3 °C, sec ; 16h30 : 9 °C',
     diner: 'curry de chou-fleur'
   };
@@ -106,8 +106,14 @@ async function testFirebase() {
   }
 }
 
-// 5. Menu de la cantine (Papillote et Cie) avec un navigateur sans écran
-async function testCantine(nom, reType, reEtab) {
+// 5. Menu de la cantine (Papillote et Cie) avec un navigateur sans écran.
+// Commune et établissements viennent de secrets (CANTINE_COMMUNE, CANTINE_ECOLE,
+// CANTINE_LOISIRS) : aucun nom de lieu dans le dépôt ni dans les journaux.
+async function testCantine(nom, reType, etab) {
+  const commune = process.env.CANTINE_COMMUNE;
+  if (!commune || !etab) return note(nom, false, 'ignoré : secrets CANTINE_* absents');
+  const re = s => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  const reCommune = re(commune), reEtab = re(etab);
   let browser;
   try {
     const { chromium } = await import('playwright');
@@ -125,9 +131,9 @@ async function testCantine(nom, reType, reEtab) {
       name: s.name || s.id, options: Array.from(s.options).slice(0, 60).map(o => o.textContent.trim())
     })));
     console.log('--- Listes du formulaire ---');
-    for (const s of selects) console.log(`${s.name} : ${s.options.length} options, dont Sainte-Gemmes : ${s.options.some(o => /sainte-gemmes/i.test(o))}`);
+    for (const s of selects) console.log(`${s.name} : ${s.options.length} options, commune trouvée : ${s.options.some(o => reCommune.test(o))}`);
 
-    // Tentative de sélection pas à pas (libellés vus sur la capture d'Emeric)
+    // Sélection pas à pas
     const choisir = async (re) => {
       for (const s of await page.$$('select')) {
         const opts = await s.$$eval('option', os => os.map(o => ({ v: o.value, t: o.textContent.trim() })));
@@ -137,7 +143,7 @@ async function testCantine(nom, reType, reEtab) {
       return false;
     };
     const etapes = [
-      ['commune', await choisir(/sainte-gemmes/i)],
+      ['commune', await choisir(reCommune)],
       ['type', await choisir(reType)],
       ['établissement', await choisir(reEtab)],
       ['convives', await choisir(/maternelle/i)]
@@ -145,11 +151,8 @@ async function testCantine(nom, reType, reEtab) {
     await page.waitForTimeout(4000);
     const texte = (await page.innerText('main').catch(() => page.innerText('body'))).replace(/\s+\n/g, '\n');
     const jours = (texte.match(/lundi|mardi|mercredi|jeudi|vendredi/gi) || []).length;
-    console.log('--- Appels réseau du site ---\n' + [...new Set(appels)].slice(0, 30).join('\n'));
-    const debut = texte.search(/lundi|mardi|mercredi|jeudi|vendredi/i);
-    const menu = (debut >= 0 ? texte.slice(debut) : texte).slice(0, 1800);
-    console.log('--- Extrait de la page après sélection ---\n' + menu);
-    extraits.push([`${nom} : menu lu sur le site`, menu]);
+    // Journaux publics : des comptes seulement, jamais le contenu du menu
+    console.log(`${new Set(appels).size} appels réseau distincts du site`);
     note(nom, etapes.every(e => e[1]) && jours > 0,
       `sélections : ${etapes.map(e => `${e[0]} ${e[1] ? 'ok' : 'non trouvé'}`).join(', ')} ; ${jours} mentions de jours dans la page`);
   } catch (e) {
@@ -159,13 +162,13 @@ async function testCantine(nom, reType, reEtab) {
   }
 }
 
-await testAgenda('Emeric', process.env.ICS_EMERIC);
-await testAgenda('Léa', process.env.ICS_LEA);
+await testAgenda('A', process.env.ICS_EMERIC);
+await testAgenda('B', process.env.ICS_LEA);
 await testMeteo();
 await testClaude();
 await testFirebase();
-await testCantine('Menu cantine (école)', /^école$/i, /grands jardins/i);
-await testCantine('Menu accueil de loisirs', /^accueil de loisirs$/i, /accueil de loisirs.*gemmes/i);
+await testCantine('Menu cantine (école)', /^école$/i, process.env.CANTINE_ECOLE);
+await testCantine('Menu accueil de loisirs', /^accueil de loisirs$/i, process.env.CANTINE_LOISIRS);
 
 const resume = ['## Tests de faisabilité', '', '| Test | Résultat | Détail |', '|---|---|---|',
   ...resultats.map(r => `| ${r.test} | ${r.ok ? '✅' : '❌'} | ${r.detail} |`)].join('\n');
