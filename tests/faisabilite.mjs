@@ -107,7 +107,7 @@ async function testFirebase() {
 }
 
 // 5. Menu de la cantine (Papillote et Cie) avec un navigateur sans écran
-async function testCantine() {
+async function testCantine(nom, reType, reEtab) {
   let browser;
   try {
     const { chromium } = await import('playwright');
@@ -138,22 +138,22 @@ async function testCantine() {
     };
     const etapes = [
       ['commune', await choisir(/sainte-gemmes/i)],
-      ['type', await choisir(/^école$/i)],
-      ['établissement', await choisir(/grands jardins/i)],
+      ['type', await choisir(reType)],
+      ['établissement', await choisir(reEtab)],
       ['convives', await choisir(/maternelle/i)]
     ];
     await page.waitForTimeout(4000);
     const texte = (await page.innerText('main').catch(() => page.innerText('body'))).replace(/\s+\n/g, '\n');
-    const jours = (texte.match(/lundi|mardi|jeudi|vendredi/gi) || []).length;
+    const jours = (texte.match(/lundi|mardi|mercredi|jeudi|vendredi/gi) || []).length;
     console.log('--- Appels réseau du site ---\n' + [...new Set(appels)].slice(0, 30).join('\n'));
-    const debut = texte.search(/lundi/i);
+    const debut = texte.search(/lundi|mardi|mercredi|jeudi|vendredi/i);
     const menu = (debut >= 0 ? texte.slice(debut) : texte).slice(0, 1800);
     console.log('--- Extrait de la page après sélection ---\n' + menu);
-    extraits.push(['Menu de la cantine lu sur le site', menu]);
-    note('Menu cantine', etapes.every(e => e[1]) && jours > 0,
+    extraits.push([`${nom} : menu lu sur le site`, menu]);
+    note(nom, etapes.every(e => e[1]) && jours > 0,
       `sélections : ${etapes.map(e => `${e[0]} ${e[1] ? 'ok' : 'non trouvé'}`).join(', ')} ; ${jours} mentions de jours dans la page`);
   } catch (e) {
-    note('Menu cantine', false, `erreur (${e.name}: ${String(e.message).slice(0, 120)})`);
+    note(nom, false, `erreur (${e.name}: ${String(e.message).slice(0, 120)})`);
   } finally {
     if (browser) await browser.close();
   }
@@ -164,7 +164,8 @@ await testAgenda('Léa', process.env.ICS_LEA);
 await testMeteo();
 await testClaude();
 await testFirebase();
-await testCantine();
+await testCantine('Menu cantine (école)', /^école$/i, /grands jardins/i);
+await testCantine('Menu accueil de loisirs', /^accueil de loisirs$/i, /accueil de loisirs.*sainte-gemmes/i);
 
 const resume = ['## Tests de faisabilité', '', '| Test | Résultat | Détail |', '|---|---|---|',
   ...resultats.map(r => `| ${r.test} | ${r.ok ? '✅' : '❌'} | ${r.detail} |`)].join('\n');
