@@ -10,12 +10,12 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 
 | # | Étape | État |
 |---|---|---|
-| 0 | Socle du dépôt : `CLAUDE.md`, `docs/`, anonymisation des tests, workflows Node 22 / actions v5 | 🟡 |
-| 1a | Changer le mot de passe du compte famille ; désactiver les inscriptions | ⬜ |
-| 1b | Connexion au compte famille dans Chez Nounou et Diversif (règles encore ouvertes) | ⬜ |
-| 1c | Règles Firestore limitées à l'UID du compte famille (Chez Nounou, Diversif, La Vision, tests) | ⬜ |
-| 2 | Schéma Firestore de La Vision : configuration familiale, planning (couches calculé / corrigé), saisies du parent B | ⬜ |
-| 3 | Coquille de la PWA (connexion, navigation) et import du semainier depuis l'iPhone | ⬜ |
+| 0 | Socle du dépôt : `CLAUDE.md`, `docs/`, anonymisation des tests, workflows Node 22 / actions v5 | ✅ |
+| 1a | Changer le mot de passe du compte famille ; désactiver les inscriptions | ✅ |
+| 1b | Connexion au compte famille dans Chez Nounou et Diversif (règles encore ouvertes) | ✅ |
+| 1c | Règles Firestore limitées à l'UID du compte famille (Chez Nounou, Diversif, La Vision, tests) | ✅ |
+| 2 | Schéma Firestore de La Vision : configuration familiale, planning (couches calculé / corrigé), saisies du parent B | ✅ |
+| 3 | Coquille de la PWA (connexion, navigation) et import du semainier depuis l'iPhone | 🟡 |
 | 4 | Tâche planifiée : lecture des agendas, calendrier scolaire, jours fériés → Firestore | ⬜ |
 | 5 | Moteur de règles générique, testé sur données fictives | ⬜ |
 | 6 | Écran Planning du mois : grille, détail du jour modifiable, points à vérifier | ⬜ |

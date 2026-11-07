@@ -4,7 +4,7 @@
 
 ## Où on en est
 
-Faisabilité terminée. Lot 1, étape 0 (socle du dépôt) en cours. Prochaine étape : 1a (mot de passe, inscriptions désactivées).
+Lot 1 : étapes 0 à 2 faites (socle, sécurité Firestore, schéma). Étape 3 en cours : coquille de l'app et import du semainier. Prochaine étape : 4 (tâche planifiée, lecture des agendas).
 
 ## Contenu du dépôt
 
@@ -13,6 +13,9 @@ Faisabilité terminée. Lot 1, étape 0 (socle du dépôt) en cours. Prochaine �
 | `CLAUDE.md` | Consignes pour Claude (à lire en premier) |
 | `docs/` | Décisions, plan, reprise |
 | `tests/faisabilite.mjs` + `.github/workflows/faisabilite.yml` | Tests de faisabilité (lancement manuel) |
+| `index.html`, `css/`, `js/`, `icons/`, `manifest.webmanifest` | L'app (publiée à la racine du site) |
+| `js/semainier.js` | Lecteur du semainier, paramétré par la configuration |
+| `tests/semainier.test.mjs`, `tests/config-fictive.json` | Tests du lecteur sur données fictives (`node tests/semainier.test.mjs`) |
 | `test-ipad/` | Page de test de l'iPad, à supprimer au nettoyage |
 
 ## Secrets GitHub
