@@ -172,7 +172,7 @@ etat("appareil", true, autonome ? "écran d’accueil" : "dans Safari",
 // 5. Météo
 (async () => {
   try {
-    const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=47.47&longitude=-0.55&hourly=temperature_2m,weather_code&forecast_days=2&timezone=Europe%2FParis");
+    const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35&hourly=temperature_2m,weather_code&forecast_days=2&timezone=Europe%2FParis");
     const j = await r.json();
     const i = j.hourly.time.findIndex(t => t.endsWith("T08:00"));
     etat("meteo", r.ok, "reçue", `8h : ${j.hourly.temperature_2m[i]} °C (code ${j.hourly.weather_code[i]})`);
