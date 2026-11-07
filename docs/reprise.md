@@ -4,7 +4,7 @@
 
 ## Où on en est
 
-Lot 1 : étapes 0 à 2 faites (socle, sécurité Firestore, schéma). Étape 3 en cours : coquille de l'app et import du semainier. Prochaine étape : 4 (tâche planifiée, lecture des agendas).
+Lot 1 : étapes 0 à 3 faites (socle, sécurité Firestore, schéma, coquille et semainier). Étape 4 en cours : tâche des agendas dans le dépôt privé `la-vision-tache`. Prochaine étape : 5 (moteur de règles).
 
 ## Contenu du dépôt
 
@@ -15,10 +15,16 @@ Lot 1 : étapes 0 à 2 faites (socle, sécurité Firestore, schéma). Étape 3 e
 | `tests/faisabilite.mjs` + `.github/workflows/faisabilite.yml` | Tests de faisabilité (lancement manuel) |
 | `index.html`, `css/`, `js/`, `icons/`, `manifest.webmanifest` | L'app (publiée à la racine du site) |
 | `js/semainier.js` | Lecteur du semainier, paramétré par la configuration |
+| `tache/` | Code des tâches planifiées (exécuté depuis le dépôt privé `la-vision-tache`) |
+| `tests/agendas.test.mjs` | Lecture des agendas sur données fictives |
 | `tests/semainier.test.mjs`, `tests/config-fictive.json` | Tests du lecteur sur données fictives (`node tests/semainier.test.mjs`) |
 | `test-ipad/` | Page de test de l'iPad, à supprimer au nettoyage |
 
 ## Secrets GitHub
+
+Dans `la-vision-tache` (privé) : `ICS_A`, `ICS_B`, `FIREBASE_SA` ; plus tard `ANTHROPIC_API_KEY`.
+
+Dans ce dépôt (à supprimer au nettoyage) :
 
 | Secret | Usage |
 |---|---|
