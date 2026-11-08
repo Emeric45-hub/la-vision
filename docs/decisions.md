@@ -62,6 +62,21 @@ Couches d'un jour de planning :
 - **2026-11-07** — Agendas : séries, exceptions et fuseaux lus avec ical.js ; jours fériés calculés (pas de source externe) ; adresse du calendrier scolaire dans la configuration Firestore (`sources.vacances`). Une empreinte par jour, stockée dans `vision/agenda`, évite de relire tous les jours à chaque passage. Si une source est illisible, rien n'est écrit et l'erreur est notée dans `vision/etat.agendas.erreur` ; la dernière lecture réussie (`agendas.lu`) est conservée.
 - **2026-11-07** — N'écrit que les documents dont le contenu a changé ; ne recalcule pas les jours passés ; fenêtre de calcul limitée (J-7 à J+60). Le quota gratuit Firestore est partagé avec Chez Nounou et Diversif.
 
+### Moteur de règles (2026-11-08)
+
+Code : `tache/moteur.mjs` (fonction pure), appelé par `tache/planning.mjs` à la suite de la lecture des agendas. Paramètres dans `vision/config.famille` ; tests sur une famille fictive (`tests/moteur.test.mjs`).
+
+- Jours de semaine seulement, fenêtre aujourd'hui → J+60, jours passés jamais recalculés.
+- Statut du parent A : semainier (journée au lieu principal, site secondaire, congé, jour non travaillé, repos après garde, formation) ; gardes lues dans son agenda (l'agenda fait foi ; un écart avec le semainier est un point à vérifier).
+- Statut du parent B : garde et lendemain de garde lus dans son agenda (garde = événement dont le titre correspond au motif, commençant ce jour) ; sinon saisie dans l'app (travail début–fin, repos, congé), sinon « à saisir ».
+- Dépôt, par ordre de priorité : A au site secondaire (sauf lendemain de sa garde) ; lendemain de garde de B → A tôt (ou à l'heure de congé s'il est à la maison) ; garde de B → B à l'heure fixée ; A en congé → A ; sinon B, une heure avant son début (`avantDebut`), arrondi au quart d'heure inférieur, au plus tard à l'entrée de l'école les jours d'école.
+- Récupération : lendemain de garde de B → B à la sortie ; garde de B → A à son heure de retour ; lendemain de garde de A → A ; A en congé → A ; A au site secondaire → A, sauf si B rentre avant ; sinon B, une heure après sa fin (`apresFin`), arrondi au quart d'heure supérieur ; au-delà de la fermeture de l'assistante maternelle, A s'il rentre avant, sinon point à vérifier. Un jour d'école, une récupération avant la sortie se fait à l'école, à la sortie.
+- Enfant scolarisé un jour d'école : chez l'assistante maternelle du dépôt à l'entrée, puis de la sortie à la récupération ; jamais de périscolaire. B en repos : école sans créneau, horaires du petit « à saisir ».
+- Mercredi en période scolaire : le parent à la maison (A s'il ne travaille pas, sinon B) ; petit 9h–13h, aîné à l'accueil de loisirs. Mercredi de vacances : jour ordinaire.
+- Vacances : lieu de l'aîné lu dans l'agenda de B (mots configurés, « congés de l'assistante maternelle » testé en premier), sinon choix fait dans l'app (`corrige.e2`), sinon point à vérifier. Pas de plafond d'entrée d'école. Fermeture anticipée par date (`ecole.exceptions`).
+- Jours sans assistante maternelle : week-end, férié, congés de l'assistante maternelle (motif dans l'un des deux agendas), B en congé. Si les deux parents travaillent, point à vérifier.
+- Économie Firestore : une clé résume les entrées (empreintes des agendas, import du semainier, configuration, `vision/planning.majLe`) ; clé inchangée = ni lecture ni écriture. L'app doit mettre à jour `vision/planning.majLe` à chaque saisie ou correction. Un calcul complet lit environ 140 documents et n'écrit que les jours modifiés (champ `calcule` seul).
+
 ## Module assistante maternelle
 
 - **2026-11-07** — La Vision lit et écrit les pointages au format exact de Chez Nounou ; un créneau saisi dans l'une apparaît dans l'autre.

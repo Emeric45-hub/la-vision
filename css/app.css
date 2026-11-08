@@ -66,3 +66,13 @@ textarea {
 .connexion label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #3A3A3C; }
 .connexion input { font: inherit; font-size: 17px; padding: 12px 14px; border: 1px solid var(--trait); border-radius: 12px; background: #fff; color: var(--encre); }
 .connexion .bouton { width: 100%; min-height: 48px; font-size: 17px; }
+
+.jours { display: flex; flex-direction: column; gap: 10px; }
+.jour { background: var(--carte); border-radius: 14px; padding: 12px 16px; }
+.jour h3 { margin: 0 0 6px; font-size: 16px; }
+.jour .ligne { margin: 2px 0; font-size: 15px; font-weight: 600; }
+.jour .e1 { color: var(--couleur-e1, #555); }
+.jour .e2 { color: var(--couleur-e2, #555); }
+.jour .sous { margin: 2px 0; font-size: 13px; color: var(--discret); }
+.jour .point { margin: 4px 0 0; font-size: 13px; color: #9A5B00; }
+.jour .point::before { content: "⚠︎ "; }

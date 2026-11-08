@@ -1,10 +1,10 @@
 # Reprise
 
-*Mis à jour le 2026-11-07.*
+*Mis à jour le 2026-11-08.*
 
 ## Où on en est
 
-Lot 1 : étapes 0 à 3 faites (socle, sécurité Firestore, schéma, coquille et semainier). Étape 4 en cours : tâche des agendas dans le dépôt privé `la-vision-tache`. Prochaine étape : 5 (moteur de règles).
+Lot 1 : étapes 0 à 4 faites (socle, sécurité Firestore, schéma, coquille et semainier, tâche des agendas). Étape 5 en cours : moteur de règles. Prochaine étape : 6 (écran Planning du mois, avec la saisie des horaires du parent B).
 
 ## Contenu du dépôt
 
@@ -17,6 +17,8 @@ Lot 1 : étapes 0 à 3 faites (socle, sécurité Firestore, schéma, coquille et
 | `js/semainier.js` | Lecteur du semainier, paramétré par la configuration |
 | `tache/` | Code des tâches planifiées (exécuté depuis le dépôt privé `la-vision-tache`) |
 | `tests/agendas.test.mjs` | Lecture des agendas sur données fictives |
+| `tache/moteur.mjs`, `tache/planning.mjs` | Moteur de règles et calcul du planning |
+| `tests/moteur.test.mjs` | Moteur sur une famille fictive |
 | `tests/semainier.test.mjs`, `tests/config-fictive.json` | Tests du lecteur sur données fictives (`node tests/semainier.test.mjs`) |
 | `test-ipad/` | Page de test de l'iPad, à supprimer au nettoyage |
 

@@ -79,5 +79,119 @@
       "motif": "SITE2",
       "lieu": "Site secondaire"
     }
+  },
+  "famille": {
+    "A": {
+      "prenom": "Alex",
+      "initiale": "A",
+      "garde": "^Astreinte",
+      "depotTot": "06:45",
+      "chm": {
+        "retour": "19:00"
+      },
+      "site": {
+        "lieu": "Site secondaire",
+        "depot": "08:30",
+        "retour": "18:00"
+      },
+      "lendemainGarde": {
+        "recup": "18:00"
+      },
+      "conge": {
+        "depot": "08:30",
+        "recup": "18:00"
+      },
+      "semainier": {
+        "off": [
+          "Non travaillé (90 %)"
+        ],
+        "conge": [
+          "Congés",
+          "Congé de naissance",
+          "Arrêt de travail"
+        ],
+        "repos": [
+          "Repos de sécurité"
+        ]
+      }
+    },
+    "B": {
+      "prenom": "Bea",
+      "initiale": "B",
+      "garde": "^Astreinte\\b",
+      "avantDebut": 60,
+      "apresFin": 60,
+      "jourGarde": {
+        "depot": "07:30"
+      },
+      "lendemainGarde": {
+        "recup": "16:30"
+      }
+    },
+    "enfants": {
+      "e1": {
+        "prenom": "Petit",
+        "cle": "petit",
+        "couleur": "#AA0000"
+      },
+      "e2": {
+        "prenom": "Grand",
+        "cle": "grand",
+        "couleur": "#0000AA"
+      }
+    },
+    "ecole": {
+      "jours": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "entree": "08:30",
+      "sortie": "16:30",
+      "mercredi": {
+        "jour": 3,
+        "e1": [
+          "09:00",
+          "13:00"
+        ],
+        "alae": [
+          "09:00",
+          "13:15"
+        ]
+      },
+      "vacances": {
+        "alae": [
+          "07:30",
+          "18:30"
+        ],
+        "centre": [
+          "07:30",
+          "18:30"
+        ]
+      },
+      "exceptions": {
+        "12-24": {
+          "fin": "17:00"
+        }
+      }
+    },
+    "nounou": {
+      "jours": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "ouverture": "06:45",
+      "fermeture": "19:15",
+      "conges": "cong[ée]s assistante"
+    },
+    "motsVacances": {
+      "alae": "\\balae\\b",
+      "centre": "centre a[ée]r[ée]",
+      "nounou": "assistante"
+    }
   }
 }
