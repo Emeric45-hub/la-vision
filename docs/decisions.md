@@ -84,6 +84,8 @@ Corrections du 2026-11-08, après relecture de novembre et décembre :
 - Jour à fermeture anticipée (`ecole.exceptions`, ex. 24/12) : les parents finissent plus tôt, récupération avancée à la fermeture pour les deux enfants.
 - Jour férié : aucun point à vérifier.
 - Congé de B lu dans son agenda (`B.conge`, titre exact, ex. « Vacances » seul ; « Vacances scolaires » ne compte pas). Une saisie dans l'app prime.
+- Repos de B lu de même dans son agenda (`B.repos`, ex. « Off … »).
+- « Centre aéré » et « accueil de loisirs » désignent la même structure : les deux mots sont configurés vers le même lieu.
 - Les exceptions ponctuelles (rendez-vous, arrangement avec l'assistante maternelle) relèvent des corrections manuelles de l'étape 6.
 
 ## Module assistante maternelle

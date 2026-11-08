@@ -127,7 +127,8 @@
       "lendemainGarde": {
         "recup": "16:30"
       },
-      "conge": "^(vacances|cong[ée]s?)$"
+      "conge": "^(vacances|cong[ée]s?)$",
+      "repos": "^off\\b"
     },
     "enfants": {
       "e1": {

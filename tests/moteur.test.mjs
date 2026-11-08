@@ -146,4 +146,8 @@ assert.equal(jour('2030-12-25', { semA: null, ferie: 'Noël' }).points.length, 0
 assert.equal(jour('2030-02-11', { vacances: 'Vacances', B: [gJ('Vacances', '2030-02-11')] }).e1, null);
 assert.notEqual(jour('2030-02-11', { vacances: 'Vacances', B: [gJ('Vacances scolaires', '2030-02-11'), alae], saisie: travail('09:00', '17:00') }).e1, null);
 
+// 26. Repos de B lu dans son agenda (« Off … ») : petit à saisir, aîné à l'école sans périscolaire
+const off = jour('2030-01-08', { B: [gJ('Off B', '2030-01-08')] });
+assert.deepEqual([off.B.statut, off.e1.aConfirmer, off.e2.creneaux.length], ['repos', true, 0]);
+
 console.log('moteur : tous les scénarios passent');

@@ -56,9 +56,9 @@ export function statutA(date, sem, agendaA, agendaVeilleA, cfg, points) {
 export function statutB(date, agendaB, agendaVeilleB, saisie, cfg) {
   const garde = estGarde(agendaB, cfg.B.garde, date);
   const lendemain = estGarde(agendaVeilleB, cfg.B.garde, veille(date));
-  // Congé noté dans l'agenda (ex. « Vacances » seul), sauf si une saisie dit autre chose
-  const congeAgenda = cfg.B.conge ? agendaB.some(e => new RegExp(cfg.B.conge, 'i').test(e.titre.trim())) : false;
-  const s = saisie || (congeAgenda ? { type: 'conge' } : {});
+  // Congé ou repos notés dans l'agenda (titres configurés), sauf si une saisie dit autre chose
+  const noteAgenda = motif => motif ? agendaB.some(e => new RegExp(motif, 'i').test(e.titre.trim())) : false;
+  const s = saisie || (noteAgenda(cfg.B.conge) ? { type: 'conge' } : noteAgenda(cfg.B.repos) ? { type: 'repos' } : {});
   const type = garde ? 'garde' : lendemain ? 'lendemain'
     : s.type === 'travail' && s.debut && s.fin ? 'travail'
     : s.type === 'repos' ? 'repos' : s.type === 'conge' ? 'conge' : 'a_saisir';
