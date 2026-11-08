@@ -19,6 +19,8 @@ jobs:
           node-version: 22
       - name: Lecteur du semainier (données fictives)
         run: node tests/semainier.test.mjs
+      - name: Moteur de règles (famille fictive)
+        run: node tests/moteur.test.mjs
       - name: Dépendances de la tâche
         working-directory: tache
         run: npm install --no-audit --no-fund --ignore-scripts

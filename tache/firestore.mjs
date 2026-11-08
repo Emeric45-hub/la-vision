@@ -64,6 +64,19 @@ export async function connecter(sa) {
       const d = await appel(`${racine}/${chemin}`);
       return d ? depuisFirestore({ mapValue: { fields: d.fields || {} } }) : null;
     },
+    // Lit plusieurs documents en un appel par centaine ; renvoie { chemin: données | null }.
+    async lireLot(chemins) {
+      const res = {};
+      for (let i = 0; i < chemins.length; i += 100) {
+        const lot = chemins.slice(i, i + 100);
+        const r = await appel(`${racine}:batchGet`, { method: 'POST', body: JSON.stringify({ documents: lot.map(c => `${racine}/${c}`) }) });
+        for (const x of r || []) {
+          const nom = (x.found ? x.found.name : x.missing).slice(racine.length + 1);
+          res[nom] = x.found ? depuisFirestore({ mapValue: { fields: x.found.fields || {} } }) : null;
+        }
+      }
+      return res;
+    },
     // Applique des écritures par lots de 400 (limite Firestore : 500).
     // ecritures = [{ chemin, donnees, champsModifies? }] ; champsModifies limite l'écriture à ces champs.
     async ecrire(ecritures) {

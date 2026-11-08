@@ -7,18 +7,16 @@
 //
 // Entrées : variables d'environnement ICS_A, ICS_B (adresses iCal), FIREBASE_SA (compte de service).
 // L'adresse du calendrier scolaire est lue dans vision/config.sources.vacances.
-import crypto from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { connecter } from './firestore.mjs';
 import { lireAgenda, enParis, joursEntre, decaler } from './calendrier.mjs';
 import { feries } from './feries.mjs';
+import { empreinte } from './outils.mjs';
+import { executerPlanning } from './planning.mjs';
 
 export const AVANT = 7, APRES = 60;
 
-const canon = v => Array.isArray(v) ? '[' + v.map(canon).join(',') + ']'
-  : (v && typeof v === 'object') ? '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}'
-  : JSON.stringify(v ?? null);
-export const empreinte = v => crypto.createHash('sha1').update(canon(v)).digest('base64').slice(0, 16);
+export { empreinte };
 
 // Construit le contenu de chaque jour de la fenêtre à partir des textes iCal.
 export function construireJours(ICAL, { texteA, texteB, texteVacances }, du, au) {
@@ -93,7 +91,16 @@ export async function principal() {
     // On garde la dernière lecture réussie (agendas.lu) et on note seulement l'échec.
     const message = String(e.message || e.name).slice(0, 200);
     await fs.ecrire([{ chemin: 'vision/etat', donnees: { agendas: { erreur: { quand: maintenant, message } } }, champsModifies: ['agendas.erreur'] }]);
-    console.log('Échec : ' + message);
+    console.log('Échec des agendas : ' + message);
+    process.exitCode = 1;
+  }
+  // Le planning se calcule même si la lecture des agendas a échoué (avec les derniers agendas connus).
+  try {
+    await executerPlanning(fs, enParis(new Date()).jour);
+  } catch (e) {
+    const message = String(e.message || e.name).slice(0, 200);
+    await fs.ecrire([{ chemin: 'vision/etat', donnees: { planning: { erreur: { quand: maintenant, message } } }, champsModifies: ['planning.erreur'] }]);
+    console.log('Échec du planning : ' + message);
     process.exitCode = 1;
   }
 }
