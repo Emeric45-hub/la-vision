@@ -113,6 +113,9 @@ textarea {
 .seg-btn { min-height: 40px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 14px; color: var(--encre); cursor: pointer; }
 .seg-btn.actif { background: var(--carte); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .ligne-ctrl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+span.heure { display: inline-flex; align-items: center; gap: 2px; }
+span.heure select { font: inherit; font-size: 16px; min-height: 40px; padding: 4px 6px; border: 1px solid var(--trait); border-radius: 10px; background: #fff; color: var(--encre); }
+.heure-sep { font-weight: 600; }
 input.heure, input.note { font: inherit; font-size: 16px; min-height: 40px; padding: 4px 8px; border: 1px solid var(--trait); border-radius: 10px; background: #fff; color: var(--encre); }
 input.note { width: 100%; }
 .hor-liste { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; max-width: 900px; }

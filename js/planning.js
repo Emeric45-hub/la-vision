@@ -199,11 +199,28 @@ function segment(options, actif, surChoix) {
   }
   return g;
 }
+// Choix d'une heure par listes (heures, minutes par pas de 5) : le sélecteur
+// natif <input type="time"> ignore le pas sur Chrome et Safari.
 function heureInput(val, surChange, libelle) {
-  const i = el("input", "heure"); i.type = "time"; i.step = 900; i.value = val || "";
-  i.setAttribute("aria-label", libelle);
-  i.onchange = () => i.value && surChange(i.value);
-  return i;
+  const box = el("span", "heure");
+  box.setAttribute("role", "group"); box.setAttribute("aria-label", libelle);
+  const [h0, m0] = (val || "").split(":");
+  const liste = (valeurs, actuel, lib) => {
+    const s = document.createElement("select"); s.setAttribute("aria-label", `${libelle} (${lib})`);
+    s.append(new Option("––", ""));
+    const vs = actuel && !valeurs.includes(actuel) ? [...valeurs, actuel].sort() : valeurs;
+    for (const v of vs) s.append(new Option(v, v));
+    s.value = actuel || "";
+    return s;
+  };
+  const deux = n => String(n).padStart(2, "0");
+  const sh = liste(Array.from({ length: 24 }, (_, i) => deux(i)), h0, "heures");
+  const sm = liste(Array.from({ length: 12 }, (_, i) => deux(i * 5)), m0, "minutes");
+  Object.defineProperty(box, "value", { get: () => (sh.value && sm.value ? `${sh.value}:${sm.value}` : "") });
+  sh.onchange = () => { if (sh.value && !sm.value) sm.value = "00"; if (box.value) surChange(box.value); };
+  sm.onchange = () => { if (box.value) surChange(box.value); };
+  box.append(sh, el("span", "heure-sep", ":"), sm);
+  return box;
 }
 
 function rendrePanneau() {
