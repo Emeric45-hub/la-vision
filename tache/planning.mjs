@@ -21,11 +21,12 @@ export async function executerPlanning(fs, aujourdhui) {
   const index = base['vision/planning'] || {};
   if (!config.famille) { console.log('Planning : configuration familiale absente, rien calculé'); return { ignore: true }; }
 
-  const jours = joursEntre(aujourdhui, decaler(aujourdhui, HORIZON)).filter(d => ![0, 6].includes(jourSemaine(d)));
+  const tousJours = joursEntre(decaler(aujourdhui, -1), decaler(aujourdhui, HORIZON));   // la veille sert aux lendemains de garde
+  const jours = tousJours.slice(1).filter(d => ![0, 6].includes(jourSemaine(d)));
   const empreintesAgenda = (base['vision/agenda'] || {}).empreintes || {};
   const cle = empreinte({
     du: aujourdhui,
-    agenda: jours.concat([decaler(aujourdhui, -1)]).map(d => empreintesAgenda[d] || null),
+    agenda: tousJours.map(d => empreintesAgenda[d] || null),
     semainier: etat.semainier ? etat.semainier.importe : null,
     config: config.majLe || null,
     saisies: index.majLe || null
@@ -33,7 +34,8 @@ export async function executerPlanning(fs, aujourdhui) {
   if (index.cle === cle) { console.log(`Planning : entrées inchangées, aucun calcul (${Date.now() - t0} ms)`); return { inchange: true }; }
 
   const chemins = [];
-  for (const d of jours) chemins.push(`vision/semainier/jours/${d}`, `vision/agenda/jours/${d}`, `vision/planning/jours/${d}`);
+  for (const d of tousJours) chemins.push(`vision/agenda/jours/${d}`);
+  for (const d of jours) chemins.push(`vision/semainier/jours/${d}`, `vision/planning/jours/${d}`);
   const docs = await fs.lireLot(chemins);
 
   const ecritures = [];
@@ -44,6 +46,7 @@ export async function executerPlanning(fs, aujourdhui) {
       date: d,
       sem: docs[`vision/semainier/jours/${d}`],
       agenda: docs[`vision/agenda/jours/${d}`] || undefined,
+      agendaVeille: docs[`vision/agenda/jours/${decaler(d, -1)}`] || undefined,
       saisieB: ancien.saisies ? ancien.saisies.B : null,
       corrige: ancien.corrige || null
     }, config.famille);

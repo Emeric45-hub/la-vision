@@ -77,6 +77,15 @@ Code : `tache/moteur.mjs` (fonction pure), appelé par `tache/planning.mjs` à l
 - Jours sans assistante maternelle : week-end, férié, congés de l'assistante maternelle (motif dans l'un des deux agendas), B en congé. Si les deux parents travaillent, point à vérifier.
 - Économie Firestore : une clé résume les entrées (empreintes des agendas, import du semainier, configuration, `vision/planning.majLe`) ; clé inchangée = ni lecture ni écriture. L'app doit mettre à jour `vision/planning.majLe` à chaque saisie ou correction. Un calcul complet lit environ 140 documents et n'écrit que les jours modifiés (champ `calcule` seul).
 
+Corrections du 2026-11-08, après relecture de novembre et décembre :
+- Les gardes peuvent être notées sur la journée entière : une garde est un événement qui **commence** ce jour ; le lendemain de garde se lit dans l'agenda de la veille (le calcul lit aussi la veille de chaque jour et les week-ends).
+- A en congé prime sur la garde de B : A dépose et récupère.
+- Accueil de loisirs ou centre aéré fermé avant la récupération : l'assistante maternelle va chercher l'aîné (créneau de la fermeture à la récupération), sans point à vérifier.
+- Jour à fermeture anticipée (`ecole.exceptions`, ex. 24/12) : les parents finissent plus tôt, récupération avancée à la fermeture pour les deux enfants.
+- Jour férié : aucun point à vérifier.
+- Congé de B lu dans son agenda (`B.conge`, titre exact, ex. « Vacances » seul ; « Vacances scolaires » ne compte pas). Une saisie dans l'app prime.
+- Les exceptions ponctuelles (rendez-vous, arrangement avec l'assistante maternelle) relèvent des corrections manuelles de l'étape 6.
+
 ## Module assistante maternelle
 
 - **2026-11-07** — La Vision lit et écrit les pointages au format exact de Chez Nounou ; un créneau saisi dans l'une apparaît dans l'autre.
