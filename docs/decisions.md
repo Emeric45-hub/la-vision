@@ -115,3 +115,12 @@ Corrections du 2026-11-08, après relecture de novembre et décembre :
 ## 2026-11-08 — Saisie des heures par listes
 
 Le sélecteur natif `<input type="time">` ignore l'attribut `step` dans son menu (Chrome affiche toutes les minutes). Les heures se saisissent donc par deux listes : heures, puis minutes par pas de 5. Choisir l'heure seule met les minutes à 00. Une heure déjà enregistrée hors du pas reste affichée telle quelle.
+
+## 2026-11-08 — Module assistante maternelle (étape 7)
+
+- Créneaux lus et écrits dans `nounou/{journal}/sessions` au format de l'app de pointage ; le journal vient de `famille.nounou.journal` (configuration Firestore). Clés des enfants : `famille.enfants.e1.cle` / `e2.cle`.
+- Écoute en temps réel de la semaine en cours (`onSnapshot`, métadonnées incluses) : tant que la lecture n'est pas confirmée par le serveur, les totaux affichent « — » et les boutons sont désactivés.
+- Totaux calculés exactement comme l'app de pointage (créneau en cours compté jusqu'à maintenant ; le jour même, soir d'école compté dès la sortie tant qu'aucun créneau du soir n'existe, si le jour est coché « école »).
+- Pointage : même logique que l'app de pointage (heure arrondie à 5 min ; « Départ » de l'enfant scolarisé après la sortie = créneau sortie → maintenant ; coupe du créneau du matin à l'heure d'entrée de `famille.ecole.entree`).
+- Confirmation : un créneau prévu n'est proposé que si aucun créneau pointé ne le recouvre (aucun doublon). Le soir, à partir de l'heure de récupération prévue (18h à défaut) ; les jours passés de la semaine restés sans pointage sont proposés à part.
+- `schooldays` : coché par l'app et par la tâche planifiée (aujourd'hui seulement), uniquement si le document est absent (transaction côté app, précondition `exists: false` côté tâche), et seulement quand `ecoleAvecNounou` est vrai.

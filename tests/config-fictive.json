@@ -188,7 +188,8 @@
       ],
       "ouverture": "06:45",
       "fermeture": "19:15",
-      "conges": "cong[ée]s assistante"
+      "conges": "cong[ée]s assistante",
+      "journal": "journal-fictif"
     },
     "motsVacances": {
       "alae": "\\balae\\b",

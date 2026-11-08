@@ -351,3 +351,12 @@ export const partieValidee = calc => calc ? {
   e1: calc.e1 ? { creneaux: calc.e1.creneaux } : null,
   e2: calc.e2 ? { mode: calc.e2.mode, creneaux: calc.e2.creneaux } : null
 } : null;
+
+// Jour d'école avec l'assistante maternelle après la sortie : seul cas où l'app de pointage
+// doit savoir que c'est un jour d'école (coupe du matin à l'entrée, temps compté dès la sortie).
+export function ecoleAvecNounou(calc, aff, cfg) {
+  if (!calc || !aff || calc.vacances || calc.ferie) return false;
+  const E = cfg.ecole;
+  if (!E.jours.includes(calc.jour) || aff.e2 !== 'ecole') return false;
+  return (aff.creneauxE2 || []).some(c => c.debut === E.sortie);
+}

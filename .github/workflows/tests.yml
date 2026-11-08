@@ -21,6 +21,8 @@ jobs:
         run: node tests/semainier.test.mjs
       - name: Moteur de règles (famille fictive)
         run: node tests/moteur.test.mjs
+      - name: Module assistante maternelle (créneaux fictifs)
+        run: node tests/nounou.test.mjs
       - name: Dépendances de la tâche
         working-directory: tache
         run: npm install --no-audit --no-fund --ignore-scripts

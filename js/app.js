@@ -2,6 +2,7 @@
 // Firebase est chargé à part : si son chargement échoue, la page reste utilisable et le dit.
 import { lireClasseur } from "./semainier.js";
 import { initPlanning, afficherPlanning } from "./planning.js";
+import { initNounou, afficherNounou } from "./nounou.js";
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 const FIREBASE = {
@@ -19,6 +20,7 @@ document.querySelectorAll(".onglet").forEach(b => b.addEventListener("click", ()
   document.querySelectorAll(".vue").forEach(v => { v.hidden = v.id !== "vue-" + b.dataset.vue; });
   document.body.classList.toggle("large", b.dataset.vue === "planning");
   if (b.dataset.vue === "planning" && etat.db) afficherPlanning();
+  if (b.dataset.vue === "nounou" && etat.db) afficherNounou();
 }));
 
 function sync(texte, classe) {
@@ -100,6 +102,9 @@ async function chargerTout() {
     afficherSemainier(et.exists() ? et.data().semainier : null);
     initPlanning({ F: etat.F, db: etat.db, fam: etat.config && etat.config.famille });
     if (!$("vue-planning").hidden) afficherPlanning();
+    const ctx = { F: etat.F, db: etat.db, fam: etat.config && etat.config.famille };
+    initNounou(ctx);
+    if (!$("vue-nounou").hidden) afficherNounou();
     sync("À jour · " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), "ok");
   } catch (e) {
     sync("Serveur injoignable (" + (e.code || e.name) + ") : rien n'est affiché plutôt qu'un faux vide.", "ko");
