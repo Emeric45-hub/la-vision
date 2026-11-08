@@ -124,3 +124,9 @@ Le sélecteur natif `<input type="time">` ignore l'attribut `step` dans son menu
 - Pointage : même logique que l'app de pointage (heure arrondie à 5 min ; « Départ » de l'enfant scolarisé après la sortie = créneau sortie → maintenant ; coupe du créneau du matin à l'heure d'entrée de `famille.ecole.entree`).
 - Confirmation : un créneau prévu n'est proposé que si aucun créneau pointé ne le recouvre (aucun doublon). Le soir, à partir de l'heure de récupération prévue (18h à défaut) ; les jours passés de la semaine restés sans pointage sont proposés à part.
 - `schooldays` : coché par l'app et par la tâche planifiée (aujourd'hui seulement), uniquement si le document est absent (transaction côté app, précondition `exists: false` côté tâche), et seulement quand `ecoleAvecNounou` est vrai.
+
+## 2026-11-08 — Grille mensuelle pour l'assistante maternelle (étape 8)
+
+- Image PNG A4 paysage (2400 × 1697), dessinée sur un canvas sans bibliothèque. Disposition reprise du document utilisé jusqu'ici : titre du mois en rouge, année dessous, bandeau rouge des jours (lundi → vendredi), numéro du jour puis deux lignes centrées en bleu nuit : enfant non scolarisé « dépôt (initiale) - récupération (initiale) », créneaux de l'enfant scolarisé chez la nounou « a - b / c - d ». « - » sans accueil ; note du jour en italique. Une seule taille de texte pour toute la grille. Pas de petits calendriers, pas de total.
+- Envoi par le menu Partager (iPad, iPhone) ou téléchargement (Mac). Pas de PDF : la grille part en photo.
+- À chaque envoi, le texte de chaque jour est mémorisé dans `vision/planning/mois/{YYYY-MM}.envoi` ; l'écran Planning signale ensuite « grille envoyée le … · n jours modifiés depuis » et marque les jours concernés. `valideLe` et `envoi` s'écrivent en `mergeFields` pour ne pas s'effacer l'un l'autre.

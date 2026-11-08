@@ -2,7 +2,8 @@
 // Le moteur tourne aussi ici, dans le navigateur, pour que chaque saisie ou correction
 // s'affiche immédiatement (la tâche planifiée recalcule de son côté pour les autres usages).
 import { couchesAffichage, partieValidee, affiche, jourSemaine } from "../tache/moteur.js";
-import { pad, decaler, aujourdhui, propre, el, lirePlage as lire, jourAffiche, heureInput } from "./outils.js";
+import { pad, decaler, aujourdhui, propre, canon, el, lirePlage as lire, jourAffiche, heureInput } from "./outils.js";
+import { lignesJour, dessiner } from "./grille.js";
 
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
@@ -27,7 +28,9 @@ async function chargerMois() {
     C.F.getDocFromServer(C.F.doc(C.db, "vision", "planning", "mois", S.mois))
   ]);
   S.source = { agenda, sem, plan };
-  S.valide = moisDoc.exists() ? moisDoc.data() : null;
+  const md = moisDoc.exists() ? moisDoc.data() : {};
+  S.valide = md.valideLe ? md : null;
+  S.envoi = md.envoi || null;
   S.jours = {};
   for (let j = 1; j <= nb; j++) {
     const d = isoJour(a, m, j);
@@ -117,7 +120,15 @@ function rendre() {
     bV.onclick = () => S.confirmer ? valider() : (S.confirmer = true, rendre());
     actions.append(bV);
   }
-  tete.append(nav, etatMois, pts, actions);
+  const modifs = joursModifiesDepuisEnvoi();
+  const envoi = S.envoi ? el("span", "pastille" + (modifs.length ? " alerte" : ""),
+    `Grille envoyée le ${dateCourte(S.envoi.le)}` + (modifs.length ? ` · ${modifs.length} jour${modifs.length > 1 ? "s" : ""} modifié${modifs.length > 1 ? "s" : ""} depuis` : "")) : null;
+  if (S.mode === "grille") {
+    const bG = el("button", "bouton secondaire", "Grille pour la nounou");
+    bG.onclick = () => ouvrirGrille(nbPoints);
+    actions.prepend(bG);
+  }
+  tete.append(nav, etatMois, pts, ...(envoi ? [envoi] : []), actions);
 
   const corps = el("div", "pl-corps");
   if (S.mode === "horaires") corps.append(rendreHoraires());
@@ -155,6 +166,7 @@ function rendreGrille(a, m) {
       const n = c.points.length + (j.ecart ? 1 : 0);
       if (n && !j.passe) b.append(el("span", "pl-flag", `${n} à vérifier`));
       if (aff.corrige && j.p.corrige && j.p.corrige.apresValidation) b.append(el("span", "pl-flag bleu", "modifié depuis la validation"));
+      if (S.envoi && texteGrille(d) !== (S.envoi.lignes || {})[d]) b.append(el("span", "pl-flag", "modifié depuis l'envoi"));
     }
     b.setAttribute("aria-label", `${JOURS[jourSemaine(d)]} ${Number(d.slice(8))}`);
     grille.append(b);
@@ -261,7 +273,7 @@ async function valider() {
     const affiche = { depot: j.aff.depot, recup: j.aff.recup, e1: j.aff.e1, e2: j.aff.e2, note: j.aff.note };
     lot.set(doc(C.db, "vision", "planning", "jours", j.d), { valide: { affiche: propre(affiche), calculeAlors: propre(partieValidee(j.calc)), le: serverTimestamp() } }, { mergeFields: ["valide"] });
   }
-  lot.set(doc(C.db, "vision", "planning", "mois", S.mois), { valideLe: serverTimestamp() });
+  lot.set(doc(C.db, "vision", "planning", "mois", S.mois), { valideLe: serverTimestamp() }, { mergeFields: ["valideLe"] });
   lot.set(doc(C.db, "vision", "planning"), { majLe: serverTimestamp() }, { merge: true });
   try { await lot.commit(); S.confirmer = false; await afficherPlanning(); }
   catch (e) { signaler("Validation impossible (" + (e.code || e.name) + ")."); }
@@ -312,4 +324,66 @@ function rendreHoraires() {
     liste.append(ligne);
   }
   return liste;
+}
+
+/* ---------- Grille pour la nounou ---------- */
+const texteGrille = d => canon(lignesJour(S.jours[d], C.fam));
+const dateCourte = ts => {
+  const x = ts && ts.toDate ? ts.toDate() : ts ? new Date(ts) : null;
+  return x ? x.toLocaleDateString("fr-FR", { day: "numeric", month: "numeric" }) + " à " + x.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "?";
+};
+function joursModifiesDepuisEnvoi() {
+  if (!S.envoi) return [];
+  const l = S.envoi.lignes || {};
+  return Object.keys(S.jours).filter(d => texteGrille(d) !== l[d]);
+}
+
+function ouvrirGrille(nbPoints) {
+  const [, m] = S.mois.split("-").map(Number);
+  const canvas = dessiner(document.createElement("canvas"), S.mois, S.jours, C.fam);
+  const nom = `Planning nounou ${MOIS[m - 1]} ${S.mois.slice(0, 4)}.png`;
+  const fond = el("div", "gr-fond");
+  const boite = el("div", "gr-boite");
+  const img = el("img", "gr-image"); img.alt = "Grille du mois"; img.src = canvas.toDataURL("image/png");
+  const avert = [];
+  if (!S.valide) avert.push("mois non validé");
+  if (nbPoints) avert.push(`${nbPoints} point${nbPoints > 1 ? "s" : ""} à vérifier`);
+  const info = el("p", "gr-info", avert.length ? "Attention : " + avert.join(", ") + "." : "");
+  const msg = el("p", "message", "");
+  const actions = el("div", "gr-actions");
+  const fermer = el("button", "bouton secondaire", "Fermer");
+  const partager = el("button", "bouton", "Partager");
+  const telecharger = el("button", "bouton secondaire", "Télécharger");
+  fermer.onclick = () => fond.remove();
+  let fichier = null;
+  canvas.toBlob(b => { fichier = new File([b], nom, { type: "image/png" }); }, "image/png");
+  const peutPartager = () => fichier && navigator.canShare && navigator.canShare({ files: [fichier] });
+  partager.onclick = async () => {
+    if (!fichier) return;
+    if (!peutPartager()) { msg.textContent = "Partage indisponible sur cet appareil : utilise « Télécharger »."; msg.className = "message ko"; return; }
+    try { await navigator.share({ files: [fichier] }); await noterEnvoi(msg); }
+    catch (e) { if (e.name !== "AbortError") { msg.textContent = "Partage impossible (" + e.name + ")."; msg.className = "message ko"; } }
+  };
+  telecharger.onclick = async () => {
+    const a = document.createElement("a"); a.href = img.src; a.download = nom; a.click();
+    await noterEnvoi(msg);
+  };
+  actions.append(fermer, telecharger, partager);
+  boite.append(img, info, actions, msg);
+  fond.append(boite);
+  fond.onclick = e => { if (e.target === fond) fond.remove(); };
+  document.body.append(fond);
+}
+
+// Mémorise le texte de chaque jour envoyé, pour signaler ensuite les jours modifiés.
+async function noterEnvoi(msg) {
+  const { doc, setDoc, serverTimestamp } = C.F;
+  const lignes = {};
+  for (const d of Object.keys(S.jours)) lignes[d] = texteGrille(d);
+  try {
+    await setDoc(doc(C.db, "vision", "planning", "mois", S.mois), { envoi: { le: serverTimestamp(), lignes } }, { mergeFields: ["envoi"] });
+    S.envoi = { le: new Date(), lignes };
+    msg.textContent = "Envoi noté : les jours modifiés ensuite seront signalés."; msg.className = "message ok";
+    rendre();
+  } catch (e) { msg.textContent = "Envoi non noté (" + (e.code || e.name) + ")."; msg.className = "message ko"; }
 }
