@@ -30,7 +30,6 @@ Principe : **tout ce qui est déterministe est calculé par le code** (planning,
 - Chez Nounou : `nounou/{journal}/sessions` = `{child, date: 'YYYY-MM-DD', start: 'HH:MM', end: 'HH:MM'|null}` ; `nounou/{journal}/schooldays/{date}` = `{school: bool}`. La Vision lit et écrit **au même format** pour que les deux apps restent synchronisées.
 - Diversif : `journals/{journal}`.
 - La Vision : sous `vision/…` (schéma dans `docs/decisions.md` dès qu'il est figé). Le planning d'un jour a deux couches : **calculé** (réécrit à chaque passage de la tâche) et **corrigé** (saisi à la main, jamais écrasé).
-- `vision_test/*` : documents des tests de faisabilité, à supprimer après la construction.
 
 Règles de sécurité : accès réservé à l'identifiant (UID) du compte famille ; inscriptions désactivées. Tout nouveau bloc de règles se colle à l'intérieur de `match /databases/{database}/documents { … }`.
 
