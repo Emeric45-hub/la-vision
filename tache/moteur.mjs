@@ -72,9 +72,7 @@ function modeVacances(agendaB, cfg, corrige) {
   for (const e of agendaB) {
     const t = e.titre;
     if (reConges.test(t)) continue;                       // « congés de l'assistante maternelle » ≠ « chez l'assistante maternelle »
-    if (new RegExp(m.alae, 'i').test(t)) return 'alae';
-    if (new RegExp(m.centre, 'i').test(t)) return 'centre';
-    if (new RegExp(m.nounou, 'i').test(t)) return 'nounou';
+    for (const mode of ['alae', 'centre', 'nounou']) if (m[mode] && new RegExp(m[mode], 'i').test(t)) return mode;   // motif absent = ignoré
   }
   return corrige && corrige.e2 ? corrige.e2 : null;
 }

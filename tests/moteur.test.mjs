@@ -150,4 +150,9 @@ assert.notEqual(jour('2030-02-11', { vacances: 'Vacances', B: [gJ('Vacances scol
 const off = jour('2030-01-08', { B: [gJ('Off B', '2030-01-08')] });
 assert.deepEqual([off.B.statut, off.e1.aConfirmer, off.e2.creneaux.length], ['repos', true, 0]);
 
+// 27. Motif absent dans la configuration : ignoré (et non « tout correspond »)
+const sansCentre = { ...cfg, motsVacances: { alae: cfg.motsVacances.alae, nounou: cfg.motsVacances.nounou } };
+const r27 = calculerJour({ date: '2030-02-11', sem: chm, agenda: { A: [], B: [gJ('Rendez-vous', '2030-02-11')], vacances: 'Vacances', ferie: null }, saisieB: travail('09:00', '17:00') }, sansCentre);
+assert.equal(r27.e2.mode, null);
+
 console.log('moteur : tous les scénarios passent');
