@@ -165,3 +165,5 @@ input.note { width: 100%; }
 .gr-info:empty { display: none; }
 .gr-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .gr-actions .bouton { margin-top: 0; }
+
+.version { max-width: 760px; margin: 24px auto 0; text-align: center; font-size: 12px; color: var(--discret); }

@@ -3,6 +3,7 @@
 import { lireClasseur } from "./semainier.js";
 import { initPlanning, afficherPlanning } from "./planning.js";
 import { initNounou, afficherNounou } from "./nounou.js";
+import { initVersion } from "./version.js";
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 const FIREBASE = {
@@ -198,4 +199,5 @@ $("sem-enregistrer").addEventListener("click", async () => {
   }
 });
 
+initVersion($("version"));
 demarrer();
