@@ -64,7 +64,7 @@ Couches d'un jour de planning :
 
 ### Moteur de règles (2026-11-08)
 
-Code : `tache/moteur.mjs` (fonction pure), appelé par `tache/planning.mjs` à la suite de la lecture des agendas. Paramètres dans `vision/config.famille` ; tests sur une famille fictive (`tests/moteur.test.mjs`).
+Code : `tache/moteur.js` (fonction pure, chargée aussi par l'app), appelé par `tache/planning.mjs` à la suite de la lecture des agendas. Paramètres dans `vision/config.famille` ; tests sur une famille fictive (`tests/moteur.test.mjs`).
 
 - Jours de semaine seulement, fenêtre aujourd'hui → J+60, jours passés jamais recalculés.
 - Statut du parent A : semainier (journée au lieu principal, site secondaire, congé, jour non travaillé, repos après garde, formation) ; gardes lues dans son agenda (l'agenda fait foi ; un écart avec le semainier est un point à vérifier).
@@ -88,6 +88,16 @@ Corrections du 2026-11-08, après relecture de novembre et décembre :
 - « Centre aéré » et « accueil de loisirs » désignent la même structure : les deux mots sont configurés vers le même lieu.
 - Les exceptions ponctuelles (rendez-vous, arrangement avec l'assistante maternelle) relèvent des corrections manuelles de l'étape 6.
 - Rendez-vous et absences : le moteur ne les interprète pas, il les signale. (1) Un événement dont le titre contient le prénom d'un enfant, un jour où cet enfant est confié : point à vérifier avec le titre et l'horaire ; le titre est gardé dans `calcule.notes` pour la grille. (2) Un événement horaire de 12 h ou plus d'un parent, qui n'est ni une garde ni un congé, ni un autre motif reconnu : point « absent ? ». Pas de configuration supplémentaire.
+
+### Écran Planning du mois (2026-11-08)
+
+- Pensé pour l'iPad en paysage et l'ordinateur : grille du lundi au vendredi et panneau du jour ; sous 900 px, le panneau passe sous la grille.
+- **Le moteur tourne aussi dans l'app** (`js/planning.js` importe `tache/moteur.js`) : une saisie ou une correction s'affiche immédiatement, sans attendre la tâche. Les jours passés affichent ce qui a été enregistré, sans recalcul. Lecture par mois : agendas (mois + veille), semainier, planning, état du mois (`vision/planning/mois/{AAAA-MM}`).
+- Fusion pour l'affichage (`fusionner`) : champ par champ `corrige`, sinon `valide.affiche`, sinon calcul ; champs `depot {qui, heure}`, `recup {qui, heure}`, `e1` (confié ou non), `e2` (lieu), `note`. Créneaux recalculés à partir des heures et lieux affichés quand une couche surcharge le calcul.
+- Corrections dans le panneau du jour : enfant 1 confié ou non ; dépôt et récupération (qui et heure, pas de 15 min) ; lieu de l'enfant 2 (école, accueil de loisirs, assistante maternelle, avec nous) ; note (80 caractères). « Annuler les modifications » supprime `corrige`.
+- Écran des horaires du parent B : un jour par ligne ; début et fin, « Off », « Vacances » ou « Effacer » ; enregistrement à chaque changement (`saisies.B`) ; gardes et lendemains affichés sans saisie ; repos et congé lus dans son agenda présentés comme tels.
+- Validation : enregistre pour chaque jour non passé `valide = { affiche, calculeAlors, le }` et `vision/planning/mois/{AAAA-MM}.valideLe`. Ensuite, l'affichage suit `valide` ; un écart entre le calcul et `calculeAlors` devient un point, avec « Appliquer le nouveau calcul » ; une correction après validation est marquée « modifié depuis la validation » (`corrige.apresValidation`).
+- Chaque écriture met à jour `vision/planning.majLe` pour que la tâche recalcule.
 
 ## Module assistante maternelle
 

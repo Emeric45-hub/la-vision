@@ -288,3 +288,66 @@ export function calculerJour(entree, cfg) {
   if (!res || res.ferie) return res;
   return alertes(res, entree, cfg);
 }
+
+// ---------- Affichage : fusion des couches et créneaux dérivés ----------
+// Couches d'un jour : calcule (moteur), valide.affiche (figé à la validation), corrige (à la main).
+// Priorité champ par champ : corrige, sinon valide.affiche, sinon calcule.
+// Champs : depot {qui, heure}, recup {qui, heure}, e1 (booléen : confié ou non), e2 (lieu), note.
+export function couchesAffichage(calc) {
+  if (!calc) return null;
+  return {
+    depot: calc.depot ? { qui: calc.depot.qui, heure: calc.depot.heure } : null,
+    recup: calc.recup ? { qui: calc.recup.qui, heure: calc.recup.heure } : null,
+    e1: !!calc.e1,
+    e2: calc.e2 ? calc.e2.mode : null,
+    note: (calc.notes || []).join(' · ')
+  };
+}
+
+export function fusionner(calc, corrige, valide, cfg) {
+  if (!calc) return null;
+  const c = corrige || {}, v = (valide && valide.affiche) || {}, base = couchesAffichage(calc);
+  const champ = k => c[k] !== undefined ? c[k] : v[k] !== undefined ? v[k] : base[k];
+  const res = { depot: champ('depot'), recup: champ('recup'), e1: champ('e1'), e2: champ('e2'), note: champ('note') || '' };
+  const surcharge = ['depot', 'recup', 'e1', 'e2'].some(k => c[k] !== undefined || v[k] !== undefined);
+  if (!surcharge) {
+    res.creneauxE1 = calc.e1 ? calc.e1.creneaux : [];
+    res.creneauxE2 = calc.e2 ? calc.e2.creneaux : [];
+    res.aConfirmer = !!((calc.depot && calc.depot.aConfirmer) || (calc.recup && calc.recup.aConfirmer) || (calc.e1 && calc.e1.aConfirmer));
+  } else {
+    Object.assign(res, deriverCreneaux(calc, res, cfg));
+  }
+  res.corrige = Object.keys(c).some(k => ['depot', 'recup', 'e1', 'e2', 'note'].includes(k));
+  return res;
+}
+
+// Créneaux des deux enfants à partir des heures et lieux affichés (après correction).
+export function deriverCreneaux(calc, aff, cfg) {
+  const E = cfg.ecole, js = calc.jour;
+  const ecole = !calc.vacances && !calc.ferie && E.jours.includes(js);
+  const mercredi = !calc.vacances && js === E.mercredi.jour;
+  const d = aff.depot && aff.depot.heure, r = aff.recup && aff.recup.heure;
+  const e1 = aff.e1 && d && r ? [{ debut: d, fin: r }] : [];
+  let e2 = [];
+  if (aff.e2 === 'ecole' && ecole) {
+    if (d && avant(d, E.entree)) e2.push({ debut: d, fin: E.entree });
+    if (r && avant(E.sortie, r)) e2.push({ debut: E.sortie, fin: r });
+  } else if (aff.e2 === 'nounou') {
+    e2 = d && r ? [{ debut: d, fin: r }] : [];
+  } else if ((aff.e2 === 'alae' || aff.e2 === 'centre') && !mercredi) {
+    const plage = E.vacances[aff.e2] || E.vacances.alae;
+    const exc = (E.exceptions || {})[calc.date.slice(5)] || {};
+    const fin = exc.fin || plage[1];
+    if (d && avant(d, plage[0])) e2.push({ debut: d, fin: plage[0] });
+    if (r && avant(fin, r)) e2.push({ debut: fin, fin: r });
+  }
+  return { creneauxE1: e1, creneauxE2: e2, aConfirmer: !!(aff.e1 && (!d || !r)) };
+}
+
+// Partie du calcul comparée à la validation (même découpage que la tâche planifiée)
+export const partieValidee = calc => calc ? {
+  depot: calc.depot ? { qui: calc.depot.qui, heure: calc.depot.heure } : null,
+  recup: calc.recup ? { qui: calc.recup.qui, heure: calc.recup.heure } : null,
+  e1: calc.e1 ? { creneaux: calc.e1.creneaux } : null,
+  e2: calc.e2 ? { mode: calc.e2.mode, creneaux: calc.e2.creneaux } : null
+} : null;

@@ -4,7 +4,7 @@
 // Économie de lectures (quota Firestore partagé) : une clé résume toutes les entrées ; si elle
 // n'a pas changé depuis le dernier calcul, rien n'est relu ni écrit. L'app doit mettre à jour
 // vision/planning.majLe à chaque saisie ou correction pour que la clé change.
-import { calculerJour, jourSemaine } from './moteur.mjs';
+import { calculerJour, jourSemaine } from './moteur.js';
 import { empreinte } from './outils.mjs';
 import { joursEntre, decaler } from './calendrier.mjs';
 
@@ -50,7 +50,7 @@ export async function executerPlanning(fs, aujourdhui) {
       saisieB: ancien.saisies ? ancien.saisies.B : null,
       corrige: ancien.corrige || null
     }, config.famille);
-    if (ancien.valide && cleValidee(ancien.valide) !== cleValidee(calc)) {
+    if (ancien.valide && ancien.valide.calculeAlors && cleValidee(ancien.valide.calculeAlors) !== cleValidee(calc)) {
       calc.ecartValide = true;
       calc.points.push('Différent du planning validé : une source a changé depuis la validation');
     }
