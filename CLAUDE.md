@@ -48,6 +48,7 @@ Règles de sécurité : accès réservé à l'identifiant (UID) du compte famill
 - **Une étape à la fois**, puis attendre la validation du propriétaire du dépôt. Dire exactement où cliquer. Prévenir avant une attente longue.
 - Circuit : branche → PR → le propriétaire clique « Merge pull request » puis « Confirm merge » → GitHub Pages publie.
 - **Ne jamais pousser sur une branche dont la PR est déjà fusionnée** : nouvelle branche, nouvelle PR.
+- **À chaque PR qui touche l'app, incrémenter `version.json`** (`AAAA-MM-JJ.n`) : c'est ce qui déclenche le rechargement automatique sur les appareils, et le numéro affiché en bas de l'écran permet de vérifier la version.
 - Commits : `git -c user.name="Claude" -c user.email="noreply@anthropic.com" commit …`.
 - Création de PR : `gh api repos/Emeric45-hub/la-vision/pulls -X POST …` (GraphQL indisponible dans la session).
 - Lancer un workflow sur une branche : `gh api -X POST repos/Emeric45-hub/la-vision/actions/workflows/<fichier>.yml/dispatches -f ref=<branche>`.
