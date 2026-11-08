@@ -4,7 +4,7 @@
 
 ## Où on en est
 
-Lot 1 : étapes 0 à 6 faites (socle, sécurité Firestore, schéma, coquille et semainier, tâche des agendas, moteur de règles, écran Planning). Étape 7 en cours : module assistante maternelle. Prochaine étape : 8 (export de la grille).
+Lot 1 : étapes 0 à 6 faites (socle, sécurité Firestore, schéma, coquille et semainier, tâche des agendas, moteur de règles, écran Planning). Étape 7 en test réel (module assistante maternelle) ; étape 8 en cours (grille mensuelle). Prochaine étape : 9 (recette sur un mois réel).
 
 ## Contenu du dépôt
 
@@ -23,6 +23,7 @@ Lot 1 : étapes 0 à 6 faites (socle, sécurité Firestore, schéma, coquille et
 | `js/nounou.js`, `js/nounou-calcul.js` | Module assistante maternelle (écran ; calculs testés) |
 | `tache/nounou.mjs` | Coche le jour d'école dans l'app de pointage |
 | `tests/nounou.test.mjs` | Calculs du module sur créneaux fictifs |
+| `js/grille.js`, `tests/grille.test.mjs` | Grille mensuelle (image) et ses tests |
 | `tests/moteur.test.mjs` | Moteur sur une famille fictive |
 | `tests/semainier.test.mjs`, `tests/config-fictive.json` | Tests du lecteur sur données fictives (`node tests/semainier.test.mjs`) |
 | `test-ipad/` | Page de test de l'iPad, à supprimer au nettoyage |
