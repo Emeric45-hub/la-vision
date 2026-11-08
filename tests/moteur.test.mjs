@@ -11,8 +11,8 @@ const chm = { evenements: [{ titre: 'Bloc opératoire', cls: 'bloc', note: null 
 const site = { evenements: [{ titre: 'Consultations', cls: 'cs', note: 'Site secondaire' }] };
 const sem = titre => ({ evenements: [{ titre, cls: 'off', note: null }] });
 const garde = (debut, fin) => ({ titre: 'Astreinte', debut, fin, journee: false });
-const jour = (date, { semA = chm, A = [], B = [], vacances = null, ferie = null, saisie = null, corrige = null } = {}) =>
-  calculerJour({ date, sem: semA, agenda: { A, B, vacances, ferie }, saisieB: saisie, corrige }, cfg);
+const jour = (date, { semA = chm, A = [], B = [], VA = [], VB = [], vacances = null, ferie = null, saisie = null, corrige = null } = {}) =>
+  calculerJour({ date, sem: semA, agenda: { A, B, vacances, ferie }, agendaVeille: { A: VA, B: VB }, saisieB: saisie, corrige }, cfg);
 const travail = (debut, fin) => ({ type: 'travail', debut, fin });
 const creneaux = c => c.creneaux.map(x => x.debut + '-' + x.fin);
 const resume = r => ({
@@ -51,14 +51,14 @@ assert.deepEqual(resume(jour('2030-01-10', { B: [garde('2030-01-10T08:30', '2030
   depot: ['B', '07:30'], recup: ['A', '19:00', false], e1: ['07:30-19:00'], e2: ['ecole', '07:30-08:30', '16:30-19:00'], points: 0 });
 
 // 6. Lendemain de garde de B : A dépose à 6h45, B récupère les deux à l'école à 16h30
-assert.deepEqual(resume(jour('2030-01-11', { B: [garde('2030-01-10T08:30', '2030-01-11T08:30')] })), {
+assert.deepEqual(resume(jour('2030-01-11', { VB: [garde('2030-01-10T08:30', '2030-01-11T08:30')], B: [garde('2030-01-10T08:30', '2030-01-11T08:30')] })), {
   depot: ['A', '06:45'], recup: ['B', '16:30', true], e1: ['06:45-16:30'], e2: ['ecole', '06:45-08:30'], points: 0 });
 
 // 7. Soir de garde de A : B fait tout ; lendemain de garde de A : B dépose, A récupère à 18h
 const gA = { titre: 'Astreinte A', debut: '2030-01-10T18:00', fin: '2030-01-11T08:00', journee: false };
 assert.deepEqual(resume(jour('2030-01-10', { A: [gA], semA: { evenements: [...chm.evenements, { titre: 'Garde', cls: 'garde' }] }, saisie: travail('09:00', '19:00') })), {
   depot: ['B', '08:00'], recup: ['B', '20:00', false], e1: ['08:00-20:00'], e2: ['ecole', '08:00-08:30', '16:30-20:00'], points: 1 }); // après la fermeture, A indisponible
-assert.deepEqual(resume(jour('2030-01-11', { A: [gA], semA: sem('Repos de sécurité'), saisie: travail('09:00', '17:00') })), {
+assert.deepEqual(resume(jour('2030-01-11', { VA: [gA], A: [gA], semA: chm, saisie: travail('09:00', '17:00') })), {
   depot: ['B', '08:00'], recup: ['A', '18:00', false], e1: ['08:00-18:00'], e2: ['ecole', '08:00-08:30', '16:30-18:00'], points: 0 });
 
 // 8. B finit après la fermeture : A récupère en rentrant
@@ -106,7 +106,7 @@ assert.deepEqual(resume(jour('2030-02-13', { vacances: 'Vacances', B: [alae], sa
 
 // 16. 24 décembre : l'accueil de loisirs ferme à 17h
 const veilleNoel = jour('2030-12-24', { vacances: 'Noël', B: [{ ...alae, debut: '2030-12-24', fin: '2030-12-24' }], saisie: travail('09:00', '17:00') });
-assert.equal(veilleNoel.points.length, 1);
+assert.deepEqual([veilleNoel.recup.heure, veilleNoel.points.length], ['17:00', 0]);   // récupération avancée, plus de point
 
 // 17. Écart entre semainier et agenda pour la garde de A
 assert.equal(jour('2030-01-07', { semA: { evenements: [...chm.evenements, { titre: 'Garde', cls: 'garde' }] }, saisie: travail('09:00', '17:00') }).points.length, 1);
@@ -116,5 +116,43 @@ assert.equal(jour('2030-01-07', { semA: null, saisie: travail('09:00', '17:00') 
 
 // 19. Justification toujours présente pour un jour calculé
 assert.ok(jour('2030-01-07', { saisie: travail('08:50', '17:25') }).justification.length >= 2);
+
+// 20. Gardes notées sur la journée entière (soir de garde et lendemain lu la veille)
+const gJ = (titre, d) => ({ titre, debut: d, fin: d, journee: true });
+const semGarde = { evenements: [...chm.evenements, { titre: 'Garde', cls: 'garde' }] };
+const soir = jour('2030-01-10', { A: [gJ('Astreinte A', '2030-01-10')], semA: semGarde, saisie: travail('09:00', '17:00') });
+assert.deepEqual([soir.recup.qui, soir.points.length], ['B', 0]);
+assert.deepEqual(resume(jour('2030-01-11', { VA: [gJ('Astreinte A', '2030-01-10')], saisie: travail('09:00', '17:00') })).recup, ['A', '18:00', false]);
+assert.deepEqual(resume(jour('2030-01-11', { VB: [gJ('Astreinte', '2030-01-10')] })).depot, ['A', '06:45']);
+// Garde du dimanche : le lundi est un lendemain
+assert.deepEqual(resume(jour('2030-01-07', { VA: [gJ('Astreinte A', '2030-01-06')], saisie: travail('09:00', '17:00') })).recup, ['A', '18:00', false]);
+
+// 21. A en congé le jour de garde de B : A dépose et récupère
+assert.deepEqual(resume(jour('2030-01-10', { semA: sem('Congé de naissance'), B: [gJ('Astreinte', '2030-01-10')] })), {
+  depot: ['A', '08:30'], recup: ['A', '18:00', false], e1: ['08:30-18:00'], e2: ['ecole', '16:30-18:00'], points: 0 });
+
+// 22. Accueil de loisirs fermé avant la récupération : l'assistante maternelle prend le relais
+const relais = jour('2030-02-11', { vacances: 'Vacances', B: [{ titre: 'Centre aéré 7h30-18h30', debut: '2030-02-11', fin: '2030-02-11', journee: true }, gJ('Astreinte', '2030-02-11')] });
+assert.deepEqual(resume(relais), { depot: ['B', '07:30'], recup: ['A', '19:00', false], e1: ['07:30-19:00'], e2: ['centre', '18:30-19:00'], points: 0 });
+
+// 23. Fermeture anticipée (24/12) : récupération avancée pour les deux enfants
+assert.deepEqual(resume(jour('2030-12-24', { vacances: 'Noël', semA: sem('Congés'), B: [{ ...alae, debut: '2030-12-24', fin: '2030-12-24' }] })), {
+  depot: ['A', '08:30'], recup: ['A', '17:00', false], e1: ['08:30-17:00'], e2: ['alae'], points: 0 });
+
+// 24. Férié : aucun point, même sans semainier
+assert.equal(jour('2030-12-25', { semA: null, ferie: 'Noël' }).points.length, 0);
+
+// 25. Congé de B lu dans son agenda (« Vacances » seul), mais pas « Vacances scolaires »
+assert.equal(jour('2030-02-11', { vacances: 'Vacances', B: [gJ('Vacances', '2030-02-11')] }).e1, null);
+assert.notEqual(jour('2030-02-11', { vacances: 'Vacances', B: [gJ('Vacances scolaires', '2030-02-11'), alae], saisie: travail('09:00', '17:00') }).e1, null);
+
+// 26. Repos de B lu dans son agenda (« Off … ») : petit à saisir, aîné à l'école sans périscolaire
+const off = jour('2030-01-08', { B: [gJ('Off B', '2030-01-08')] });
+assert.deepEqual([off.B.statut, off.e1.aConfirmer, off.e2.creneaux.length], ['repos', true, 0]);
+
+// 27. Motif absent dans la configuration : ignoré (et non « tout correspond »)
+const sansCentre = { ...cfg, motsVacances: { alae: cfg.motsVacances.alae, nounou: cfg.motsVacances.nounou } };
+const r27 = calculerJour({ date: '2030-02-11', sem: chm, agenda: { A: [], B: [gJ('Rendez-vous', '2030-02-11')], vacances: 'Vacances', ferie: null }, saisieB: travail('09:00', '17:00') }, sansCentre);
+assert.equal(r27.e2.mode, null);
 
 console.log('moteur : tous les scénarios passent');

@@ -22,11 +22,13 @@ export const jourSemaine = d => new Date(d + 'T12:00:00Z').getUTCDay();   // 0 =
 // ---------- Statut du parent A ----------
 // Bases possibles : chm (journée au lieu de travail principal), site (lieu secondaire), fmc,
 // conge, off (jour non travaillé), repos (repos après garde), inconnu. Plus deux drapeaux : gardeSoir et lendemain.
-export function statutA(date, sem, agendaA, cfg, points) {
-  const reGarde = new RegExp(cfg.A.garde, 'i');
-  const gardes = agendaA.filter(e => reGarde.test(e.titre));
-  const gardeSoir = gardes.some(e => e.debut.slice(0, 10) === date && !e.journee);
-  let lendemain = gardes.some(e => e.debut.slice(0, 10) === veille(date));
+// Une garde est un événement dont le titre correspond au motif et qui commence ce jour
+// (événement horaire ou sur la journée entière). Le lendemain se lit dans l'agenda de la veille.
+const estGarde = (evs, motif, jour) => { const re = new RegExp(motif, 'i'); return (evs || []).some(e => re.test(e.titre) && e.debut.slice(0, 10) === jour); };
+
+export function statutA(date, sem, agendaA, agendaVeilleA, cfg, points) {
+  const gardeSoir = estGarde(agendaA, cfg.A.garde, date);
+  let lendemain = estGarde(agendaVeilleA, cfg.A.garde, veille(date));
 
   let base = 'inconnu';
   const evs = sem ? sem.evenements : [];
@@ -51,12 +53,12 @@ export function statutA(date, sem, agendaA, cfg, points) {
 }
 
 // ---------- Statut du parent B ----------
-export function statutB(date, agendaB, saisie, cfg) {
-  const reGarde = new RegExp(cfg.B.garde, 'i');
-  const gardes = agendaB.filter(e => reGarde.test(e.titre));
-  const garde = gardes.some(e => e.debut.slice(0, 10) === date);
-  const lendemain = gardes.some(e => e.debut.slice(0, 10) === veille(date));
-  const s = saisie || {};
+export function statutB(date, agendaB, agendaVeilleB, saisie, cfg) {
+  const garde = estGarde(agendaB, cfg.B.garde, date);
+  const lendemain = estGarde(agendaVeilleB, cfg.B.garde, veille(date));
+  // Congé ou repos notés dans l'agenda (titres configurés), sauf si une saisie dit autre chose
+  const noteAgenda = motif => motif ? agendaB.some(e => new RegExp(motif, 'i').test(e.titre.trim())) : false;
+  const s = saisie || (noteAgenda(cfg.B.conge) ? { type: 'conge' } : noteAgenda(cfg.B.repos) ? { type: 'repos' } : {});
   const type = garde ? 'garde' : lendemain ? 'lendemain'
     : s.type === 'travail' && s.debut && s.fin ? 'travail'
     : s.type === 'repos' ? 'repos' : s.type === 'conge' ? 'conge' : 'a_saisir';
@@ -70,9 +72,7 @@ function modeVacances(agendaB, cfg, corrige) {
   for (const e of agendaB) {
     const t = e.titre;
     if (reConges.test(t)) continue;                       // « congés de l'assistante maternelle » ≠ « chez l'assistante maternelle »
-    if (new RegExp(m.alae, 'i').test(t)) return 'alae';
-    if (new RegExp(m.centre, 'i').test(t)) return 'centre';
-    if (new RegExp(m.nounou, 'i').test(t)) return 'nounou';
+    for (const mode of ['alae', 'centre', 'nounou']) if (m[mode] && new RegExp(m[mode], 'i').test(t)) return mode;   // motif absent = ignoré
   }
   return corrige && corrige.e2 ? corrige.e2 : null;
 }
@@ -83,14 +83,15 @@ function modeVacances(agendaB, cfg, corrige) {
 export function calculerJour(entree, cfg) {
   const { date, sem, saisieB, corrige } = entree;
   const ag = entree.agenda || { A: [], B: [], vacances: null, ferie: null };
+  const agV = entree.agendaVeille || { A: [], B: [] };
   const A = ag.A || [], B = ag.B || [];
   const js = jourSemaine(date);
   if (js === 0 || js === 6) return null;
 
   const pA = cfg.A.prenom, pB = cfg.B.prenom, n1 = cfg.enfants.e1.prenom, n2 = cfg.enfants.e2.prenom;
   const points = [], pourquoi = [];
-  const sA = statutA(date, sem, A, cfg, points);
-  const sB = statutB(date, B, saisieB, cfg);
+  const sA = statutA(date, sem, A, agV.A || [], cfg, points);
+  const sB = statutB(date, B, agV.B || [], saisieB, cfg);
   const E = cfg.ecole;
   const vacances = ag.vacances || null, ferie = ag.ferie || null;
   const reConges = new RegExp(cfg.nounou.conges, 'i');
@@ -108,7 +109,7 @@ export function calculerJour(entree, cfg) {
   if (sA.gardeSoir && sB.type === 'garde') points.push(`${pA} et ${pB} de garde le même jour`);
 
   // Jour férié, congés de l'assistante maternelle
-  if (ferie) { pourquoi.push(`Férié : ${ferie}`); res.e2 = { mode: 'maison', creneaux: [] }; return res; }
+  if (ferie) { points.length = 0; pourquoi.push(`Férié : ${ferie}`); res.e2 = { mode: 'maison', creneaux: [] }; return res; }
   const ecole = !vacances && E.jours.includes(js);
   const mercrediScolaire = !vacances && js === E.mercredi.jour;
   if (!nounouOuverte) {
@@ -150,10 +151,10 @@ export function calculerJour(entree, cfg) {
     if (sA.lendemain) { depot = { qui: null, heure: null }; points.push(`Lendemain de garde pour ${pA} et ${pB} : qui dépose ?`); }
     else if (sA.aLaMaison) { depot = { qui: 'A', heure: cfg.A.conge.depot }; pourquoi.push(`Lendemain de garde de ${pB}, ${pA} à la maison : il dépose à ${affiche(depot.heure)}`); }
     else { depot = { qui: 'A', heure: cfg.A.depotTot }; pourquoi.push(`Lendemain de garde de ${pB} : ${pA} dépose les deux enfants à ${affiche(depot.heure)} en partant`); }
-  } else if (sB.type === 'garde') {
-    depot = { qui: 'B', heure: cfg.B.jourGarde.depot }; pourquoi.push(`${pB} de garde : elle dépose à ${affiche(depot.heure)}`);
   } else if (sA.aLaMaison && !sA.lendemain) {
     depot = { qui: 'A', heure: cfg.A.conge.depot }; pourquoi.push(`${pA} en congé : il dépose à ${affiche(depot.heure)}`);
+  } else if (sB.type === 'garde') {
+    depot = { qui: 'B', heure: cfg.B.jourGarde.depot }; pourquoi.push(`${pB} de garde : elle dépose à ${affiche(depot.heure)}`);
   } else if (sB.type === 'travail') {
     let h = debutB;
     if (ecole && avant(E.entree, h)) h = E.entree;
@@ -177,7 +178,7 @@ export function calculerJour(entree, cfg) {
   if (sB.type === 'lendemain') {
     recup = { qui: 'B', heure: cfg.B.lendemainGarde.recup }; pourquoi.push(`Lendemain de garde de ${pB} : elle récupère à ${affiche(recup.heure)}`);
   } else if (sB.type === 'garde') {
-    if (retourA) { recup = { qui: 'A', heure: retourA }; pourquoi.push(`${pB} de garde : ${pA} récupère en rentrant, ${affiche(retourA)}`); }
+    if (retourA) { recup = { qui: 'A', heure: retourA }; pourquoi.push(sA.aLaMaison ? `${pA} en congé : il récupère à ${affiche(retourA)}` : `${pB} de garde : ${pA} récupère en rentrant, ${affiche(retourA)}`); }
     else { recup = { qui: null, heure: null }; points.push(`${pB} de garde et ${pA} indisponible le soir : qui récupère ?`); }
   } else if (sB.type === 'repos') {
     recup = { qui: 'B', heure: null };
@@ -196,6 +197,10 @@ export function calculerJour(entree, cfg) {
   } else {
     recup = { qui: 'B', heure: null };
     if (sB.type === 'a_saisir' && !points.includes(`Horaires de ${pB} à saisir`)) points.push(`Horaires de ${pB} à saisir`);
+  }
+  // Jour à fermeture anticipée (ex. 24 décembre) : les parents finissent plus tôt.
+  if (exception.fin && recup.heure && avant(exception.fin, recup.heure)) {
+    recup.heure = exception.fin; pourquoi.push(`Fermeture à ${affiche(exception.fin)} : récupération avancée`);
   }
   // Jour d'école : une récupération avant la sortie se fait à l'école, à la sortie.
   recup.ecole = false;
@@ -228,8 +233,11 @@ export function calculerJour(entree, cfg) {
       const plage = E.vacances[mode];
       if (plage) {
         const fin = fermeture || plage[1];
-        if (recup.heure && avant(fin, recup.heure)) points.push(`${mode === 'alae' ? "L'accueil de loisirs" : 'Le centre aéré'} ferme à ${affiche(fin)} : récupération de ${n2} ?`);
         if (depot.heure && avant(depot.heure, plage[0])) res.e2.creneaux.push({ debut: depot.heure, fin: plage[0] });
+        if (recup.heure && avant(fin, recup.heure)) {
+          res.e2.creneaux.push({ debut: fin, fin: recup.heure });
+          pourquoi.push(`${mode === 'alae' ? "L'accueil de loisirs" : 'Le centre aéré'} ferme à ${affiche(fin)} : l'assistante maternelle va chercher ${n2}`);
+        }
       }
     }
   }
