@@ -111,3 +111,7 @@ Corrections du 2026-11-08, après relecture de novembre et décembre :
 
 - **2026-11-06** — API Claude : `claude-sonnet-5-5`, concaténer tous les blocs `text`.
 - **2026-11-07** — Workflows sur Node 22, `actions/checkout@v5` et `actions/setup-node@v5` (les v4 tournent sur Node 20, déprécié).
+
+## 2026-11-08 — Saisie des heures par listes
+
+Le sélecteur natif `<input type="time">` ignore l'attribut `step` dans son menu (Chrome affiche toutes les minutes). Les heures se saisissent donc par deux listes : heures, puis minutes par pas de 5. Choisir l'heure seule met les minutes à 00. Une heure déjà enregistrée hors du pas reste affichée telle quelle.
