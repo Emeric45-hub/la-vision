@@ -155,4 +155,17 @@ const sansCentre = { ...cfg, motsVacances: { alae: cfg.motsVacances.alae, nounou
 const r27 = calculerJour({ date: '2030-02-11', sem: chm, agenda: { A: [], B: [gJ('Rendez-vous', '2030-02-11')], vacances: 'Vacances', ferie: null }, saisieB: travail('09:00', '17:00') }, sansCentre);
 assert.equal(r27.e2.mode, null);
 
+// 28. Rendez-vous d'un enfant : signalé (point + note pour la grille), heures non modifiées
+const rdv = { titre: 'Rdv Petit - pédiatre 9h', debut: '2030-01-07T09:00', fin: '2030-01-07T10:00', journee: false };
+const r28 = jour('2030-01-07', { B: [rdv], saisie: travail('08:50', '17:25') });
+assert.deepEqual([r28.depot.heure, r28.notes, r28.points], ['07:45', ['Rdv Petit - pédiatre 9h'], ['Rdv Petit - pédiatre 9h (9h–10h) : horaires de Petit ?']]);
+// Prénom inclus dans un autre mot : ignoré ; enfant non confié (férié) : ignoré
+assert.equal(jour('2030-01-07', { B: [{ ...rdv, titre: 'Petitdéjeuner' }], saisie: travail('08:50', '17:25') }).points.length, 0);
+assert.equal(jour('2030-01-07', { ferie: 'Fête', B: [rdv] }).points.length, 0);
+
+// 29. Événement de plusieurs jours d'un parent (congrès) : point ; garde de 24 h : rien
+const congres = { titre: 'Congrès fictif', debut: '2030-01-07T11:00', fin: '2030-01-09T12:00', journee: false };
+assert.deepEqual(jour('2030-01-08', { B: [congres], saisie: travail('09:00', '17:00') }).points, ['Congrès fictif : Bea absente ?']);
+assert.equal(jour('2030-01-08', { B: [garde('2030-01-08T08:30', '2030-01-09T08:30')] }).points.length, 0);
+
 console.log('moteur : tous les scénarios passent');

@@ -87,6 +87,7 @@ Corrections du 2026-11-08, après relecture de novembre et décembre :
 - Repos de B lu de même dans son agenda (`B.repos`, ex. « Off … »).
 - « Centre aéré » et « accueil de loisirs » désignent la même structure : les deux mots sont configurés vers le même lieu.
 - Les exceptions ponctuelles (rendez-vous, arrangement avec l'assistante maternelle) relèvent des corrections manuelles de l'étape 6.
+- Rendez-vous et absences : le moteur ne les interprète pas, il les signale. (1) Un événement dont le titre contient le prénom d'un enfant, un jour où cet enfant est confié : point à vérifier avec le titre et l'horaire ; le titre est gardé dans `calcule.notes` pour la grille. (2) Un événement horaire de 12 h ou plus d'un parent, qui n'est ni une garde ni un congé, ni un autre motif reconnu : point « absent ? ». Pas de configuration supplémentaire.
 
 ## Module assistante maternelle
 

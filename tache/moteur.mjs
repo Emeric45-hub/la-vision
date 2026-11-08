@@ -80,7 +80,7 @@ function modeVacances(agendaB, cfg, corrige) {
 // ---------- Calcul d'un jour ----------
 // entree = { date, sem, agenda: {A, B, vacances, ferie}, saisieB, corrige }
 // Renvoie null pour un samedi ou un dimanche.
-export function calculerJour(entree, cfg) {
+function calculerBase(entree, cfg) {
   const { date, sem, saisieB, corrige } = entree;
   const ag = entree.agenda || { A: [], B: [], vacances: null, ferie: null };
   const agV = entree.agendaVeille || { A: [], B: [] };
@@ -243,4 +243,48 @@ export function calculerJour(entree, cfg) {
   }
   if (sB.type === 'repos') { res.e1.aConfirmer = true; res.e1.creneaux = []; }
   return res;
+}
+
+// ---------- Alertes tirées des agendas ----------
+// Le moteur n'interprète pas les rendez-vous (leur effet sur les horaires n'est pas déductible) :
+// il les signale. Deux cas :
+//  - un événement dont le titre contient le prénom d'un enfant, un jour où cet enfant est confié ;
+//  - un événement horaire d'un parent de 12 h ou plus (congrès, formation…) qui n'est pas une garde.
+const minutes = s => Date.parse(s.length === 10 ? s + 'T00:00Z' : s + 'Z') / 60000;
+const echapper = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+function alertes(res, entree, cfg) {
+  const ag = entree.agenda || {};
+  const reconnus = [cfg.A.garde, cfg.B.garde, cfg.B.conge, cfg.B.repos, cfg.nounou.conges,
+    ...Object.values(cfg.motsVacances || {})].filter(Boolean).map(m => new RegExp(m, 'i'));
+  const connu = t => reconnus.some(re => re.test(t.trim()));
+  const notes = [];
+  const enfants = [['e1', cfg.enfants.e1.prenom], ['e2', cfg.enfants.e2.prenom]];
+  for (const [cle, prenom] of enfants) {
+    const confie = cle === 'e1' ? !!res.e1 : !!(res.e2 && res.e2.mode && res.e2.mode !== 'maison');
+    if (!confie) continue;
+    const re = new RegExp('(^|[^\\p{L}])' + echapper(prenom) + '($|[^\\p{L}])', 'iu');
+    for (const e of (ag.A || []).concat(ag.B || [])) {
+      if (!re.test(e.titre) || connu(e.titre) || notes.includes(e.titre)) continue;
+      notes.push(e.titre);
+      const plage = e.journee ? '' : ` (${affiche(e.debut.slice(11))}–${affiche(e.fin.slice(11))})`;
+      res.points.push(`${e.titre}${plage} : horaires de ${prenom} ?`);
+    }
+  }
+  for (const [qui, evs] of [['A', ag.A || []], ['B', ag.B || []]]) {
+    for (const e of evs) {
+      if (e.journee || connu(e.titre)) continue;
+      if (minutes(e.fin) - minutes(e.debut) < 12 * 60) continue;
+      const msg = `${e.titre} : ${cfg[qui].prenom} absent${qui === 'B' ? 'e' : ''} ?`;
+      if (!res.points.includes(msg)) res.points.push(msg);
+    }
+  }
+  if (notes.length) res.notes = notes;
+  return res;
+}
+
+export function calculerJour(entree, cfg) {
+  const res = calculerBase(entree, cfg);
+  if (!res || res.ferie) return res;
+  return alertes(res, entree, cfg);
 }
