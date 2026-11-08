@@ -1,6 +1,7 @@
 // La Vision — coquille de l'app : connexion, onglets, configuration, import du semainier.
 // Firebase est chargé à part : si son chargement échoue, la page reste utilisable et le dit.
 import { lireClasseur } from "./semainier.js";
+import { initPlanning, afficherPlanning } from "./planning.js";
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 const FIREBASE = {
@@ -16,6 +17,8 @@ const etat = { config: null, F: null, db: null, auth: null };
 document.querySelectorAll(".onglet").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll(".onglet").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
   document.querySelectorAll(".vue").forEach(v => { v.hidden = v.id !== "vue-" + b.dataset.vue; });
+  document.body.classList.toggle("large", b.dataset.vue === "planning");
+  if (b.dataset.vue === "planning" && etat.db) afficherPlanning();
 }));
 
 function sync(texte, classe) {
@@ -95,50 +98,11 @@ async function chargerTout() {
     etat.config = cfg.exists() ? cfg.data() : null;
     afficherConfig();
     afficherSemainier(et.exists() ? et.data().semainier : null);
-    await afficherPlanning(et.exists() ? et.data().planning : null);
+    initPlanning({ F: etat.F, db: etat.db, fam: etat.config && etat.config.famille });
+    if (!$("vue-planning").hidden) afficherPlanning();
     sync("À jour · " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), "ok");
   } catch (e) {
     sync("Serveur injoignable (" + (e.code || e.name) + ") : rien n'est affiché plutôt qu'un faux vide.", "ko");
-  }
-}
-
-/* ---------- Aperçu du planning calculé (provisoire, remplacé à l'étape 6) ---------- */
-const h = x => x ? x.replace(/^0/, "").replace(":00", "h").replace(":", "h") : "?";
-async function afficherPlanning(bilan) {
-  const zone = $("pl-jours");
-  zone.innerHTML = "";
-  const fam = etat.config && etat.config.famille;
-  if (!fam) { $("pl-etat").textContent = "Configuration familiale absente."; return; }
-  const { collection, getDocsFromServer } = etat.F;
-  const aujourdhui = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
-  const docs = [];
-  (await getDocsFromServer(collection(etat.db, "vision", "planning", "jours"))).forEach(d => {
-    if (d.id >= aujourdhui && d.data().calcule) docs.push([d.id, d.data().calcule]);
-  });
-  docs.sort((a, b) => a[0].localeCompare(b[0]));
-  $("pl-etat").textContent = bilan && bilan.calcule
-    ? `Calculé le ${quand(bilan.calcule)} : ${bilan.jours} jours, ${bilan.points} points à vérifier.`
-    : "Pas encore calculé.";
-  document.documentElement.style.setProperty("--couleur-e1", fam.enfants.e1.couleur);
-  document.documentElement.style.setProperty("--couleur-e2", fam.enfants.e2.couleur);
-  const ini = q => q === "A" ? fam.A.initiale : q === "B" ? fam.B.initiale : "?";
-  const p = (cls, txt) => { const e = document.createElement("p"); e.className = cls; e.textContent = txt; return e; };
-  for (const [date, c] of docs) {
-    const carte = document.createElement("article");
-    carte.className = "jour";
-    const titre = document.createElement("h3");
-    titre.textContent = dateFr(date) + (c.ferie ? " · " + c.ferie : "") + (c.vacances ? " · vacances" : "");
-    carte.append(titre);
-    if (c.e1 && c.depot && c.recup) {
-      carte.append(p("ligne e1", `${fam.enfants.e1.prenom} : ${h(c.depot.heure)} (${ini(c.depot.qui)}) – ${h(c.recup.heure)}${c.recup.ecole ? " école" : ""} (${ini(c.recup.qui)})`));
-    } else carte.append(p("ligne e1", `${fam.enfants.e1.prenom} : –`));
-    const e2 = c.e2 || { creneaux: [] };
-    const cr = (e2.creneaux || []).map(x => `${h(x.debut)}–${h(x.fin)}`).join(" / ");
-    const lieu = { ecole: "école", alae: "accueil de loisirs", centre: "centre aéré", nounou: "assistante maternelle", maison: "maison" }[e2.mode] || "?";
-    carte.append(p("ligne e2", `${fam.enfants.e2.prenom} : ${cr || "—"} (${lieu})`));
-    (c.justification || []).forEach(j => carte.append(p("sous", j)));
-    (c.points || []).forEach(j => carte.append(p("point", j)));
-    zone.append(carte);
   }
 }
 

@@ -2,7 +2,7 @@
 // Semaine de référence : lundi 7 → vendredi 11 janvier 2030.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { calculerJour, arrondiBas, arrondiHaut } from '../tache/moteur.mjs';
+import { calculerJour, arrondiBas, arrondiHaut } from '../tache/moteur.js';
 
 const cfg = JSON.parse(fs.readFileSync(new URL('./config-fictive.json', import.meta.url))).famille;
 
