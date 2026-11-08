@@ -13,6 +13,7 @@ import { lireAgenda, enParis, joursEntre, decaler } from './calendrier.mjs';
 import { feries } from './feries.mjs';
 import { empreinte } from './outils.mjs';
 import { executerPlanning } from './planning.mjs';
+import { cocherEcole } from './nounou.mjs';
 
 export const AVANT = 7, APRES = 60;
 
@@ -102,6 +103,12 @@ export async function principal() {
     await fs.ecrire([{ chemin: 'vision/etat', donnees: { planning: { erreur: { quand: maintenant, message } } }, champsModifies: ['planning.erreur'] }]);
     console.log('Échec du planning : ' + message);
     process.exitCode = 1;
+  }
+  // Jour d'école pour l'app de pointage (seulement si la case est vide).
+  try {
+    await cocherEcole(fs, enParis(new Date()).jour);
+  } catch (e) {
+    console.log('Jour d\'école non coché : ' + String(e.message || e.name).slice(0, 200));
   }
 }
 

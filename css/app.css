@@ -125,3 +125,34 @@ input.note { width: 100%; }
 .hor-info { color: var(--discret); }
 .hor-etat { font-size: 13px; color: var(--discret); }
 .hor-etat.ok { color: var(--ok); } .hor-etat.ko { color: var(--erreur); }
+
+/* ---------- Module assistante maternelle (compact : repris sur l'accueil) ---------- */
+.nn { display: flex; flex-direction: column; gap: 10px; }
+.nn-tete { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.nn-tete h2 { margin: 0; }
+.nn-date { color: var(--discret); font-size: 14px; }
+.nn-lien { margin-left: auto; font-size: 14px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.nn-hors { margin: 0; font-size: 13px; color: var(--alerte); }
+.nn-ligne { display: grid; grid-template-columns: minmax(0, 1fr) auto 128px; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--trait); }
+.nn-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.nn-prenom { font-weight: 700; font-size: 16px; }
+.e1 .nn-prenom, .nn-semaine.e1 { color: var(--e1); }
+.e2 .nn-prenom, .nn-semaine.e2 { color: var(--e2); }
+.nn-prevu { font-size: 13.5px; }
+.nn-pointe { font-size: 12.5px; color: var(--discret); }
+.nn-total { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.nn-action { display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
+.nn-bouton { min-height: 44px; border: 0; border-radius: 12px; background: var(--encre); color: #fff; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.nn-bouton.sortie { background: var(--ok); }
+.nn-bouton:disabled { background: #E3E3E8; color: var(--discret); cursor: default; }
+.nn-sous { font-size: 12px; color: var(--discret); text-align: center; }
+.nn-confirmer { background: var(--alerte-fond); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.nn-confirmer h3 { margin: 0; font-size: 14px; color: var(--alerte); }
+.nn-conf-ligne { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nn-creneaux { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.nn-creneau { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nn-conf-ligne .bouton { margin-top: 0; }
+.nn-passes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nn-passes .seg-btn { background: #E3E3E8; text-transform: capitalize; }
+.nn-pied { display: flex; gap: 16px; flex-wrap: wrap; align-items: baseline; padding-top: 8px; border-top: 1px solid var(--trait); font-size: 14px; color: var(--discret); }
+.nn-semaine { font-weight: 700; font-variant-numeric: tabular-nums; }

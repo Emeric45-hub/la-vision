@@ -78,12 +78,14 @@ export async function connecter(sa) {
       return res;
     },
     // Applique des écritures par lots de 400 (limite Firestore : 500).
-    // ecritures = [{ chemin, donnees, champsModifies? }] ; champsModifies limite l'écriture à ces champs.
+    // ecritures = [{ chemin, donnees, champsModifies?, siAbsent? }] ; champsModifies limite l'écriture à ces champs ;
+    // siAbsent fait échouer le lot si le document existe déjà.
     async ecrire(ecritures) {
       for (let i = 0; i < ecritures.length; i += 400) {
         const writes = ecritures.slice(i, i + 400).map(e => ({
           update: { name: `${racine}/${e.chemin}`, fields: champs(e.donnees) },
-          ...(e.champsModifies ? { updateMask: { fieldPaths: e.champsModifies } } : {})
+          ...(e.champsModifies ? { updateMask: { fieldPaths: e.champsModifies } } : {}),
+          ...(e.siAbsent ? { currentDocument: { exists: false } } : {})
         }));
         await appel(`${racine}:commit`, { method: 'POST', body: JSON.stringify({ writes }) });
       }

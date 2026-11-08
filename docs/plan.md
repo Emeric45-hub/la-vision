@@ -18,8 +18,8 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 | 3 | Coquille de la PWA (connexion, navigation) et import du semainier depuis l'iPhone | ✅ |
 | 4 | Tâche planifiée (dépôt privé `la-vision-tache`) : lecture des agendas, calendrier scolaire, jours fériés → Firestore | ✅ |
 | 5 | Moteur de règles générique, testé sur données fictives | ✅ |
-| 6 | Écran Planning du mois : grille, détail du jour modifiable, horaires du parent B, validation | 🟡 |
-| 7 | Module assistante maternelle : jour en cours, confirmation du soir, pointage en direct, total de la semaine, lien Chez Nounou | ⬜ |
+| 6 | Écran Planning du mois : grille, détail du jour modifiable, horaires du parent B, validation | ✅ |
+| 7 | Module assistante maternelle : jour en cours, confirmation du soir, pointage en direct, total de la semaine, lien Chez Nounou | 🟡 |
 | 8 | Export de la grille mensuelle (image / PDF) | ⬜ |
 | 9 | Recette sur un mois réel, en parallèle de l'ancien document | ⬜ |
 
