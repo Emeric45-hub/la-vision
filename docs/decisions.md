@@ -134,3 +134,7 @@ Le sélecteur natif `<input type="time">` ignore l'attribut `step` dans son menu
 ## 2026-11-08 — Mise à jour forcée de l'app
 
 GitHub Pages autorise les navigateurs à garder les fichiers 10 minutes, et l'app posée sur l'écran d'accueil de l'iPad peut rester ouverte des heures. Un service worker (`sw.js`) redemande chaque fichier de l'app au serveur (revalidation, 304 si inchangé) et ne sert la dernière copie que hors connexion ; les autres domaines ne passent pas par lui. `version.json` (incrémenté à chaque PR) est relu sans cache au retour sur l'app et toutes les 30 minutes (dans ce cas seulement après 2 minutes sans interaction) : s'il a changé, la page se recharge. Le numéro est affiché en bas de l'écran.
+
+## 2026-11-08 — Nettoyage de fin de lot 1
+
+Retirés : `tests/faisabilite.mjs`, son workflow, la page `test-ipad/`. Ce dépôt ne porte plus aucun secret ; toutes les tâches tournent depuis `la-vision-tache`. Les documents `vision_test/*` et leur règle Firestore sont supprimés. Les noms des anciens secrets (avec prénoms) restent visibles dans l'historique Git : résidu accepté.

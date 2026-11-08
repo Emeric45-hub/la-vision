@@ -19,9 +19,9 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 | 4 | Tâche planifiée (dépôt privé `la-vision-tache`) : lecture des agendas, calendrier scolaire, jours fériés → Firestore | ✅ |
 | 5 | Moteur de règles générique, testé sur données fictives | ✅ |
 | 6 | Écran Planning du mois : grille, détail du jour modifiable, horaires du parent B, validation | ✅ |
-| 7 | Module assistante maternelle : jour en cours, confirmation du soir, pointage en direct, total de la semaine, lien Chez Nounou | 🟡 (test réel en cours) |
-| 8 | Export de la grille mensuelle (image) | 🟡 |
-| 9 | Recette sur un mois réel, en parallèle de l'ancien document | ⬜ |
+| 7 | Module assistante maternelle : jour en cours, confirmation du soir, pointage en direct, total de la semaine, lien Chez Nounou | ✅ (validation en usage) |
+| 8 | Export de la grille mensuelle (image) | ✅ |
+| 9 | Recette sur le premier mois réel saisi dans l'app (sans ancien document en parallèle) | 🟡 |
 
 ## Lots suivants
 
@@ -31,4 +31,4 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 
 ## Nettoyage final
 
-Documents `vision_test/*`, page `test-ipad/`, Raccourcis et automatisations de test, secrets de ce dépôt (passés dans `la-vision-tache`), ancienne clé du compte de service.
+2026-11-08 : tests de faisabilité, page de test et workflow retirés du dépôt ; secrets de ce dépôt, ancienne clé du compte de service, documents `vision_test/*` et règle associée supprimés à la main. Les Raccourcis iOS de test sont gardés comme modèle jusqu'au Raccourci définitif (lot 2).

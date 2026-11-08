@@ -4,7 +4,7 @@
 
 ## Où on en est
 
-Lot 1 : étapes 0 à 6 faites (socle, sécurité Firestore, schéma, coquille et semainier, tâche des agendas, moteur de règles, écran Planning). Étape 7 en test réel (module assistante maternelle) ; étape 8 en cours (grille mensuelle). Prochaine étape : 9 (recette sur un mois réel).
+Lot 1 : étapes 0 à 8 faites, mise à jour automatique de l'app en place, nettoyage fait le 2026-11-08. Le module assistante maternelle se valide en usage quotidien ; la recette (étape 9) se fait sur le premier mois réel saisi dans l'app. Prochain : lot 2 (accueil).
 
 ## Contenu du dépôt
 
@@ -12,7 +12,6 @@ Lot 1 : étapes 0 à 6 faites (socle, sécurité Firestore, schéma, coquille et
 |---|---|
 | `CLAUDE.md` | Consignes pour Claude (à lire en premier) |
 | `docs/` | Décisions, plan, reprise |
-| `tests/faisabilite.mjs` + `.github/workflows/faisabilite.yml` | Tests de faisabilité (lancement manuel) |
 | `index.html`, `css/`, `js/`, `icons/`, `manifest.webmanifest` | L'app (publiée à la racine du site) |
 | `js/semainier.js` | Lecteur du semainier, paramétré par la configuration |
 | `tache/` | Code des tâches planifiées (exécuté depuis le dépôt privé `la-vision-tache`) |
@@ -26,22 +25,11 @@ Lot 1 : étapes 0 à 6 faites (socle, sécurité Firestore, schéma, coquille et
 | `js/grille.js`, `tests/grille.test.mjs` | Grille mensuelle (image) et ses tests |
 | `tests/moteur.test.mjs` | Moteur sur une famille fictive |
 | `tests/semainier.test.mjs`, `tests/config-fictive.json` | Tests du lecteur sur données fictives (`node tests/semainier.test.mjs`) |
-| `test-ipad/` | Page de test de l'iPad, à supprimer au nettoyage |
 
 ## Secrets GitHub
 
-Dans `la-vision-tache` (privé) : `ICS_A`, `ICS_B`, `FIREBASE_SA` ; plus tard `ANTHROPIC_API_KEY`.
-
-Dans ce dépôt (à supprimer au nettoyage) :
-
-| Secret | Usage |
-|---|---|
-| `ICS_*` (deux secrets) | Adresses iCal secrètes des deux agendas |
-| `ANTHROPIC_API_KEY` | API Claude |
-| `FIREBASE_SA` | Compte de service Firebase (JSON) |
-| `CANTINE_COMMUNE`, `CANTINE_ECOLE`, `CANTINE_LOISIRS` | Libellés pour le test de cantine (facultatifs : le test est ignoré s'ils manquent) |
+Uniquement dans `la-vision-tache` (privé) : `ICS_A`, `ICS_B`, `FIREBASE_SA`, `ANTHROPIC_API_KEY`. Ce dépôt n'en a plus aucun (nettoyage du 2026-11-08).
 
 ## Points ouverts
 
 - Les messages et fichiers antérieurs au 2026-11-07 dans l'historique Git contiennent encore des données familiales (tests de faisabilité). Les retirer de l'historique demande une réécriture forcée de `main`, à décider.
-- Les noms des secrets `ICS_*` contiennent des prénoms. Les renommer demande de recréer les secrets à la main.
