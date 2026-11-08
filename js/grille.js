@@ -2,7 +2,7 @@
 // pour un rendu identique sur tous les appareils. Disposition reprise du document qu'elle
 // recevait jusqu'ici : titre du mois, bandeau des jours, puis pour chaque jour une ligne pour
 // l'enfant non scolarisé (dépôt – récupération, initiale du parent) et une ligne pour les
-// créneaux de l'enfant scolarisé chez la nounou.
+// créneaux de l'enfant scolarisé chez la nounou, chacune à la couleur de l'enfant (celle de l'app de pointage).
 import { affiche } from "../tache/moteur.js";
 
 const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -73,7 +73,7 @@ export function dessiner(canvas, mois, jours, fam) {
   const max = larg - 30;
   let taille = 42;
   const textes = sems.flat().filter(j => j.dansMois).flatMap(j => { const t = lignesJour(jours[j.d], fam); return [t.l1, t.l2]; }).filter(Boolean);
-  const tient = t => { g.font = `500 ${t}px ${POLICE}`; return textes.every(x => g.measureText(x).width <= max); };
+  const tient = t => { g.font = `600 ${t}px ${POLICE}`; return textes.every(x => g.measureText(x).width <= max); };
   while (taille > 20 && !tient(taille)) taille -= 1;
   const ajuster = (txt, t, poids) => {
     do { g.font = `${poids} ${t}px ${POLICE}`; t -= 1; } while (g.measureText(txt).width > max && t > 16);
@@ -87,7 +87,8 @@ export function dessiner(canvas, mois, jours, fam) {
       g.fillText(String(jr.num), cx, y + hNum / 2 + 2);
       if (!jr.dansMois) return;
       const t = lignesJour(jours[jr.d], fam);
-      const lignes = [[t.l1, taille, "500", ENCRE], [t.l2, taille, "500", ENCRE], [t.note, Math.round(taille * 0.78), "italic 400", "#555"]].filter(l => l[0]);
+      const c1 = fam.enfants.e1.couleur || ENCRE, c2 = fam.enfants.e2.couleur || ENCRE;
+      const lignes = [[t.l1, taille, "600", t.l1 === "-" ? ENCRE : c1], [t.l2, taille, "600", c2], [t.note, Math.round(taille * 0.78), "italic 400", "#555"]].filter(l => l[0]);
       const pas = Math.round(taille * 1.2), centre = y + hNum + hContenu / 2;
       lignes.forEach(([txt, tl, poids, coul], k) => {
         ajuster(txt, tl, poids);
