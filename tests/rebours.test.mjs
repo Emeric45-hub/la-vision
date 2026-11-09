@@ -20,4 +20,7 @@ assert.equal(prochaineAnnuelle('12-25', '2030-12-26'), '2031-12-25');
 assert.equal(prochaineAnnuelle('12-25', '2030-12-25'), '2030-12-25');
 assert.equal(joursAvant('2030-12-25', '2030-11-01'), 54);
 assert.equal(joursAvant('2031-04-01', '2031-03-01'), 31);   // passage à l'heure d'été sans effet
+// Congé commencé avant aujourd'hui (lu depuis le passé) : pas compté comme commençant aujourd'hui
+const enCours = { '2030-01-08': [ev('Congé de naissance')], '2030-01-09': [ev('Congé de naissance')], '2030-01-10': [ev('Congé de naissance')], '2030-03-01': [ev('Vacances')] };
+assert.deepEqual(debutsDePeriodes(enCours, e => estVacancesPosees(e.titre, fam), '2030-01-09').map(x => x.date), ['2030-03-01']);
 console.log('compte à rebours : tous les scénarios passent');
