@@ -122,13 +122,15 @@ export async function principal() {
     };
     // Compte à rebours : débuts de vacances posées et de vacances scolaires sur 400 jours.
     try {
-      const loin = decaler(aujourdhui, 400), veille = decaler(aujourdhui, -1);
-      const A4 = lireAgenda(ICAL, texteA, aujourdhui, loin), B4 = lireAgenda(ICAL, texteB, aujourdhui, loin);
+      // Lecture depuis 120 jours en arrière : une période déjà commencée garde son vrai premier jour
+      // (passé), elle n'est donc pas prise pour une période qui commence aujourd'hui.
+      const loin = decaler(aujourdhui, 400), veille = decaler(aujourdhui, -1), recul = decaler(aujourdhui, -120);
+      const A4 = lireAgenda(ICAL, texteA, recul, loin), B4 = lireAgenda(ICAL, texteB, recul, loin);
       const parents = {};
       for (const src of [A4, B4]) for (const [j, l] of Object.entries(src)) (parents[j] = parents[j] || []).push(...l);
       const calcules = {
         posees: debutsDePeriodes(parents, e => estVacancesPosees(e.titre, config.famille), veille),
-        scolaires: texteVacances ? debutsDePeriodes(lireAgenda(ICAL, texteVacances, aujourdhui, loin), () => true, veille) : []
+        scolaires: texteVacances ? debutsDePeriodes(lireAgenda(ICAL, texteVacances, recul, loin), () => true, veille) : []
       };
       const emp = empreinte(calcules), ancien = (await fs.lire('vision/rebours')) || {};
       if (ancien.empreinte !== emp) ecritures.push({ chemin: 'vision/rebours', donnees: { calcules, empreinte: emp, majLe: maintenant }, champsModifies: ['calcules', 'empreinte', 'majLe'] });
