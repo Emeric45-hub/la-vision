@@ -1,7 +1,7 @@
 // Tests des calculs du module assistante maternelle, sur des créneaux fictifs.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { totalJour, totalSemaine, nonCouverts, etatBouton, aCouper, lundiDe, arrondi5, duree } from '../js/nounou-calcul.js';
+import { totalJour, totalSemaine, nonCouverts, verifierCreneau, lundiDe, duree } from '../js/nounou-calcul.js';
 import { calculerJour, fusionner, ecoleAvecNounou } from '../tache/moteur.js';
 
 const cfg = JSON.parse(fs.readFileSync(new URL('./config-fictive.json', import.meta.url))).famille;
@@ -11,9 +11,6 @@ const S = (child, date, start, end = null) => ({ child, date, start, end });
 assert.equal(lundiDe('2030-01-10'), '2030-01-07');
 assert.equal(lundiDe('2030-01-07'), '2030-01-07');
 assert.equal(lundiDe('2030-01-13'), '2030-01-07');
-assert.equal(arrondi5('07:32'), '07:30');
-assert.equal(arrondi5('07:33'), '07:35');
-assert.equal(arrondi5('23:58'), '23:55');
 assert.equal(duree(605), '10h05');
 assert.equal(duree(45), '45 min');
 
@@ -41,21 +38,15 @@ assert.deepEqual(nonCouverts(prevus, [S('grand', 'x', '07:35', '08:30'), S('gran
 assert.deepEqual(nonCouverts(prevus, [S('grand', 'x', '18:00')]), [prevus[0]]);   // en cours
 assert.deepEqual(nonCouverts([{ debut: null, fin: '18:00' }], []), []);
 
-// Bouton de pointage
-const b = (o) => etatBouton({ sessions: [], jour: '2030-01-10', cle: 'grand', scolarise: true, ecole: true, entree: '08:35', sortie: '16:30', ...o });
-assert.equal(b({ heure: '07:20' }).action, 'arrivee');
-assert.equal(b({ heure: '10:00' }).action, null);
-assert.equal(b({ heure: '17:10' }).action, 'recuperee');
-assert.equal(b({ heure: '17:10', sessions: [S('grand', '2030-01-10', '16:30', '17:00')] }).action, 'arrivee');
-assert.equal(b({ heure: '17:10', ecole: false }).action, 'arrivee');
-assert.equal(b({ heure: '10:00', sessions: [S('grand', '2030-01-10', '07:30')] }).action, 'depart');
-assert.equal(b({ heure: '10:00', scolarise: false }).action, 'arrivee');
-
-// Coupe du matin à l'entrée
-const run = S('grand', '2030-01-10', '07:30');
-assert.equal(aCouper({ sessions: [run], jour: '2030-01-10', heure: '08:40', cle: 'grand', ecole: true, entree: '08:35' }), run);
-assert.equal(aCouper({ sessions: [run], jour: '2030-01-10', heure: '08:20', cle: 'grand', ecole: true, entree: '08:35' }), null);
-assert.equal(aCouper({ sessions: [run], jour: '2030-01-10', heure: '08:40', cle: 'grand', ecole: false, entree: '08:35' }), null);
+// Créneau saisi à la main
+const deja = [{ id: 'a', ...S('grand', '2030-01-10', '07:30', '08:35') }, { id: 'b', ...S('grand', '2030-01-10', '16:30') }];
+assert.equal(verifierCreneau(deja, { child: 'grand', date: '2030-01-10', start: '09:00', end: '12:00' }), null);
+assert.match(verifierCreneau(deja, { child: 'grand', date: '2030-01-10', start: '08:00', end: '09:00' }), /Recouvre/);
+assert.match(verifierCreneau(deja, { child: 'grand', date: '2030-01-10', start: '17:00', end: '18:00' }), /Recouvre/);   // créneau en cours
+assert.equal(verifierCreneau(deja, { id: 'a', child: 'grand', date: '2030-01-10', start: '07:45', end: '08:35' }), null); // lui-même
+assert.equal(verifierCreneau(deja, { child: 'petit', date: '2030-01-10', start: '08:00', end: '09:00' }), null);
+assert.match(verifierCreneau(deja, { child: 'grand', date: '2030-01-11', start: '09:00', end: '08:00' }), /suivre/);
+assert.match(verifierCreneau(deja, { child: 'grand', date: '2030-01-11', start: '', end: '08:00' }), /manquante/);
 
 // Jour d'école avec nounou après l'école (règle d'écriture de « schooldays »)
 const chm = { evenements: [{ titre: 'Bloc opératoire', cls: 'bloc', note: null }] };

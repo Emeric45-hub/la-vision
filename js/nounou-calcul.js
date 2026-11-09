@@ -5,7 +5,6 @@
 
 export const enMin = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 export const enHeure = m => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
-export const arrondi5 = t => enHeure(Math.min(24 * 60 - 5, Math.round(enMin(t) / 5) * 5));
 
 export function lundiDe(d) {
   const x = new Date(d + "T12:00:00Z");
@@ -49,23 +48,12 @@ export function nonCouverts(prevus, pointes) {
     enMin(s.start) < enMin(p.fin) && (s.end ? enMin(s.end) : 24 * 60) > enMin(p.debut)));
 }
 
-// État du bouton de pointage, comme dans l'app de pointage.
-// ecole : jour d'école ; entree / sortie : heures de l'école ; scolarise : l'enfant va à l'école.
-export function etatBouton({ sessions, jour, heure, cle, scolarise, ecole, entree, sortie }) {
-  const run = enCours(sessions, jour, cle);
-  if (run) return { action: "depart", libelle: "Départ", sous: `chez la nounou depuis ${run.start}`, run };
-  if (!scolarise || !ecole) return { action: "arrivee", libelle: "Arrivée", sous: "" };
-  const m = enMin(heure);
-  if (m < enMin(entree)) return { action: "arrivee", libelle: "Arrivée", sous: "avant l'école" };
-  if (m < enMin(sortie)) return { action: null, libelle: "À l'école", sous: `sortie à ${sortie.replace(":", "h")}` };
-  const soirFait = duJour(sessions, jour, cle).some(s => enMin(s.start) >= enMin(sortie));
-  if (soirFait) return { action: "arrivee", libelle: "Arrivée", sous: "" };
-  return { action: "recuperee", libelle: "Départ", sous: `chez la nounou depuis ${sortie} (école)` };
-}
-
-// Créneau du matin à couper à l'entrée de l'école (l'app de pointage fait de même).
-export function aCouper({ sessions, jour, heure, cle, ecole, entree }) {
-  if (!ecole) return null;
-  const run = enCours(sessions, jour, cle);
-  return run && enMin(run.start) < enMin(entree) && enMin(heure) >= enMin(entree) ? run : null;
+// Vérifie un créneau saisi à la main : heures dans l'ordre, sans recouvrir un autre créneau
+// du même enfant le même jour (sauf lui-même). Renvoie un message d'erreur ou null.
+export function verifierCreneau(sessions, { id, child, date, start, end }) {
+  if (!start) return "Heure d'arrivée manquante.";
+  if (end && enMin(end) <= enMin(start)) return "Le départ doit suivre l'arrivée.";
+  const autre = sessions.find(s => s.id !== id && s.child === child && s.date === date &&
+    enMin(s.start) < (end ? enMin(end) : 24 * 60) && (s.end ? enMin(s.end) : 24 * 60) > enMin(start));
+  return autre ? `Recouvre le créneau ${autre.start}–${autre.end || "…"} déjà saisi.` : null;
 }
