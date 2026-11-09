@@ -122,7 +122,9 @@ export async function principal() {
     ecritures.push({ chemin: 'vision/etat', donnees: { agendas: bilan }, champsModifies: ['agendas'] });
     await fs.ecrire(ecritures);
     console.log(`Agendas : ${bilan.ecrits} jours écrits, ${bilan.inchanges} inchangés ; ` +
-      `${bilan.sources.A.evenements} + ${bilan.sources.B.evenements} occurrences ; ${Date.now() - t0} ms`);
+      `${bilan.sources.A.evenements} + ${bilan.sources.B.evenements} occurrences ; ` +
+      `calendrier commun : ${bilan.sources.C.erreur ? 'échec' : bilan.sources.C.lu ? bilan.sources.C.evenements + ' occurrences (avec abonnements)' : 'non configuré'} ; ` +
+      `abonnements : ${JSON.stringify(bilan.sources.abonnements)} ; ${Date.now() - t0} ms`);
   } catch (e) {
     // On garde la dernière lecture réussie (agendas.lu) et on note seulement l'échec.
     const message = String(e.message || e.name).slice(0, 200);

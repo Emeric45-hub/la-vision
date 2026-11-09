@@ -70,12 +70,17 @@ export function personnes(calc, fam) {
 // Fil de la journée : événements datés des agendas (parents, calendrier commun, abonnements) et
 // dépôt / récupération du planning, triés par heure. Les événements « journée » des parents qui
 // décrivent déjà leur situation (garde, repos, congé) sont omis.
-export function filDuJour(agendaJour, j, fam) {
+export function filDuJour(agendaJour, j, fam, date) {
   const items = [];
   if (!agendaJour) agendaJour = {};
-  const motifs = [fam.A.garde, fam.B.garde, fam.B.repos, fam.B.conge].filter(Boolean).map(m => new RegExp(m, "i"));
+  // Situation déjà affichée sur la ligne du parent : garde, repos, off, congé, vacances.
+  const motifs = [fam.A.garde, fam.B.garde, fam.B.repos, fam.B.conge, "cong[ée]", "vacances", "\\brepos\\b"]
+    .filter(Boolean).map(m => new RegExp(m, "i"));
   const ajouter = (e, qui, source) => {
-    if (e.journee && qui && motifs.some(m => m.test(e.titre.trim()))) return;
+    // Un événement à heures qui couvre toute la journée (commencé avant, ou de 0h à minuit) compte comme « journée ».
+    const journee = e.journee || (date && (e.debut.slice(0, 10) < date || (e.debut.slice(11, 16) === "00:00" && (e.fin.slice(0, 10) > date || e.fin.slice(11, 16) >= "23:59"))));
+    if (journee && qui && motifs.some(m => m.test(e.titre.trim()))) return;
+    e = { ...e, journee };
     const heure = e.journee ? null : e.debut.slice(11, 16);
     items.push({ heure, fin: e.journee ? null : e.fin.slice(11, 16), titre: e.titre, notes: e.notes || null, lieu: e.lieu || null,
       qui, source: source || null });
