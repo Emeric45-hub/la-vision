@@ -21,12 +21,15 @@
 </header>
 
 <nav class="onglets" aria-label="Sections">
+  <button type="button" class="onglet" data-vue="accueil" aria-pressed="false">Accueil</button>
   <button type="button" class="onglet" data-vue="planning" aria-pressed="false">Planning</button>
   <button type="button" class="onglet" data-vue="nounou" aria-pressed="false">Nounou</button>
   <button type="button" class="onglet" data-vue="reglages" aria-pressed="true">Réglages</button>
 </nav>
 
 <main>
+  <section class="vue" id="vue-accueil" hidden></section>
+
   <section class="vue" id="vue-planning" hidden></section>
 
   <section class="vue" id="vue-nounou" hidden></section>
@@ -83,7 +86,7 @@
 // après une mise à jour. Tout nouveau module doit être ajouté à cette liste.
 (function () {
   var MODULES = ["js/app.js", "js/planning.js", "js/nounou.js", "js/nounou-calcul.js", "js/outils.js",
-    "js/grille.js", "js/semainier.js", "js/version.js", "tache/moteur.js"];
+    "js/grille.js", "js/semainier.js", "js/version.js", "js/accueil.js", "js/fraicheur.js", "tache/moteur.js"];
   function lancer(v) {
     var q = "?v=" + encodeURIComponent(v), base = new URL(".", location.href), imports = {};
     MODULES.forEach(function (m) { imports[new URL(m, base).href] = new URL(m + q, base).href; });
