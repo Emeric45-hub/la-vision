@@ -144,10 +144,11 @@ function barre(src) {
   const ms = S.moisSuivant;
   if (ms) {
     const nom = MOIS[Number(ms.cle.slice(5)) - 1];
-    const etatMois = ms.envoi ? "envoyé" : ms.valideLe ? "validé" : "à préparer";
+    // Un envoi n'a de sens qu'après validation (un essai d'envoi sur un brouillon ne compte pas).
+    const etatMois = !ms.valideLe ? "à préparer" : ms.envoi ? "envoyé" : "validé";
     const p = el("button", "ac-pilule", `Planning de ${nom}`);
     p.type = "button";
-    p.append(el("span", "ac-pastille " + (ms.envoi || ms.valideLe ? "ok" : "alerte"), etatMois));
+    p.append(el("span", "ac-pastille " + (ms.valideLe ? "ok" : "alerte"), etatMois));
     p.onclick = () => C.ouvrir("planning", ms.cle + "-01");
     boutons.append(p);
   }
@@ -184,9 +185,11 @@ function semaine() {
 }
 
 function postit() {
+  const case_ = el("div", "ac-postit-case");   // la case mesure la place ; le post-it y reste carré
   const p = el("section", "ac-postit");
   p.append(el("span", "ac-scotch"), el("p", "ac-postit-attente", "Post-it : après l'étape 6."));
-  return p;
+  case_.append(p);
+  return case_;
 }
 
 function carte(classe, titre, attente) {

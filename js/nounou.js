@@ -133,6 +133,8 @@ function aConfirmer(d) {
   const res = {};
   for (const e of enfants()) {
     if (d === aujourdhui() && enCours(S.sessions, d, e.cle)) continue;
+    const p = S.src && S.src.plan[d];
+    if (p && p.nounouFait && p.nounouFait[e.cle]) continue;   // journée déjà confirmée ou « pas allé(e) »
     const r = nonCouverts(prevus(d, e), duJour(S.sessions, d, e.cle));
     if (r.length) res[e.cle] = r;
   }
@@ -174,11 +176,41 @@ async function cocherEcole() {
   finally { cochage = false; }
 }
 
+// Le jour même, l'app de pointage compte l'enfant scolarisé chez la nounou dès la sortie de
+// l'école tant qu'aucun créneau du soir n'existe. S'il n'y en aura pas, on décoche « école ».
+async function finirSoir(d, e, creesApresSortie) {
+  if (e.n !== "e2" || d !== aujourdhui() || !S.ecole.has(d) || creesApresSortie) return;
+  const sortie = enMin(C.fam.ecole.sortie);
+  if (duJour(S.sessions, d, e.cle).some(s => enMin(s.start) >= sortie)) return;
+  await C.F.setDoc(C.F.doc(col("schooldays"), d), { school: false });
+}
+
+// Journée traitée pour un enfant (« confirme » ou « absent ») : plus rien n'est proposé ce jour-là,
+// même si des créneaux prévus ont été retirés avant de confirmer.
+async function noterFait(d, e, valeur) {
+  const { doc, setDoc } = C.F;
+  await setDoc(doc(C.db, "vision", "planning", "jours", d), { nounouFait: { [e.cle]: valeur } }, { mergeFields: [`nounouFait.${e.cle}`] });
+  const p = S.src.plan[d] = S.src.plan[d] || {};
+  p.nounouFait = { ...(p.nounouFait || {}), [e.cle]: valeur };
+}
+
+// « Pas allé(e) chez la nounou ».
+async function absent(d, e) {
+  await ecrire(async () => {
+    await noterFait(d, e, "absent");
+    delete (S.brouillons[d] || {})[e.cle];
+    await finirSoir(d, e, false);
+    if (S.ouvert === d && !Object.keys(aConfirmer(d)).length) S.ouvert = null;
+  }, `${e.prenom} : pas chez la nounou ce jour-là, noté`);
+}
+
 async function confirmer(d, e, creneaux) {
   const ok = creneaux.filter(c => c.debut && c.fin && enMin(c.debut) < enMin(c.fin));
-  if (!ok.length) { S.message = "Heures incomplètes."; return rendre(); }
+  if (!ok.length) { S.message = "Heures incomplètes, ou aucun créneau : utiliser « Pas allé(e) »."; return rendre(); }
   await ecrire(async () => {
     for (const c of ok) await creer({ child: e.cle, date: d, start: c.debut, end: c.fin });
+    await noterFait(d, e, "confirme");
+    await finirSoir(d, e, ok.some(c => enMin(c.debut) >= enMin(C.fam.ecole.sortie)));
     delete (S.brouillons[d] || {})[e.cle];
     if (S.ouvert === d && !Object.keys(aConfirmer(d)).length) S.ouvert = null;
   }, `${e.prenom} : ${plages(ok)} enregistré`);
@@ -263,18 +295,24 @@ function rendreConfirmation(d, titre) {
     const br = S.brouillons[d][e.cle] = S.brouillons[d][e.cle] || restes[e.cle].map(c => ({ ...c }));
     const ligne = el("div", "nn-conf-ligne " + e.n);
     ligne.append(el("span", "nn-prenom", e.prenom));
-    const cr = el("div", "nn-creneaux");
     br.forEach((c, i) => {
-      const x = el("span", "nn-creneau");
-      x.append(heureInput(c.debut, v => { br[i].debut = v; }, `${e.prenom}, début du créneau ${i + 1}`),
-        el("span", "discret", "–"),
-        heureInput(c.fin, v => { br[i].fin = v; }, `${e.prenom}, fin du créneau ${i + 1}`));
-      cr.append(x);
+      const x = el("div", "nn-creneau");
+      const retirer = el("button", "nn-retirer", "✕");
+      retirer.type = "button"; retirer.setAttribute("aria-label", `Retirer ce créneau de ${e.prenom}`);
+      retirer.onclick = () => { br.splice(i, 1); rendre(); };
+      x.append(el("span", "nn-de", "de"), heureInput(c.debut, v => { br[i].debut = v; }, `${e.prenom}, début du créneau ${i + 1}`), retirer,
+        el("span", "nn-de", "à"), heureInput(c.fin, v => { br[i].fin = v; }, `${e.prenom}, fin du créneau ${i + 1}`));
+      ligne.append(x);
     });
+    const actions = el("div", "nn-conf-actions");
     const b = el("button", "bouton petit-bouton", "Confirmer");
-    b.type = "button"; b.disabled = S.occupe;
+    b.type = "button"; b.disabled = S.occupe || !br.length;
     b.onclick = () => confirmer(d, e, br);
-    ligne.append(cr, b);
+    const non = el("button", "bouton secondaire petit-bouton", "Pas allé(e)");
+    non.type = "button"; non.disabled = S.occupe;
+    non.onclick = () => absent(d, e);
+    actions.append(b, non);
+    ligne.append(actions);
     bloc.append(ligne);
   }
   return bloc;
