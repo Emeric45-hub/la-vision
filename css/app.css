@@ -152,9 +152,13 @@ input.note { width: 100%; }
 .nn-ajout { margin-left: auto; background: #E3E3E8; font-weight: 600; }
 .nn-confirmer { background: var(--alerte-fond); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .nn-confirmer h3 { margin: 0; font-size: 14px; color: var(--alerte); }
-.nn-conf-ligne { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.nn-creneaux { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-.nn-creneau { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nn-conf-ligne { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 4px 0; }
+.nn-conf-ligne + .nn-conf-ligne { border-top: 1px solid rgba(138,90,0,.2); padding-top: 8px; }
+.nn-creneau { display: grid; grid-template-columns: 22px auto 32px; align-items: center; gap: 4px 6px; }
+.nn-de { font-size: 13px; color: var(--alerte); }
+.nn-retirer { grid-row: span 2; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(0,0,0,.06); font: inherit; font-size: 13px; color: var(--discret); cursor: pointer; }
+.nn-creneau span.heure select { font-size: 15px; min-height: 34px; padding: 2px 4px; }
+.nn-conf-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .nn-conf-ligne .bouton { margin-top: 0; }
 .nn-passes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .nn-passes .seg-btn { background: #E3E3E8; text-transform: capitalize; }
@@ -244,3 +248,5 @@ body.sur-accueil .version { display: none; }
   .ac-colonnes > .ac-carte { min-height: 0; }
   .ac-jours { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+/* Le soir, quand il y a une journée à confirmer, le module nounou prend la place de « Ce soir ». */
+.ac-pile > .ac-nounou:has(.nn-confirmer) { flex: 4; }
