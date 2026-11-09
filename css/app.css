@@ -293,3 +293,23 @@ body.sur-accueil .version { display: none; }
 .ac-mt-cren { margin-top: 4px; }
 .ac-mt-l { margin: 1px 0; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ac-mt-conseil { display: inline-block; margin: 4px 0 2px; padding: 3px 10px; border-radius: 999px; background: #E3EEFD; color: var(--e2); font-size: 12.5px; font-weight: 600; }
+
+/* ---------- Accueil : compte à rebours ---------- */
+.ac-rb-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.ac-rb-tete .ac-titre { position: static; margin: 0 0 2px; padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; letter-spacing: .02em; }
+.ac-rb-tete .ac-mini { min-height: 26px; padding: 0 8px; font-size: 12px; }
+.ac-rb-grand { margin: 0; display: flex; align-items: baseline; gap: 6px; }
+.ac-rb-n { font-size: 32px; font-weight: 300; letter-spacing: -0.02em; line-height: 1; }
+.ac-rb-u { font-size: 14px; color: var(--discret); }
+.ac-rb-lib { margin: 2px 0 0; font-size: 13.5px; font-weight: 700; line-height: 1.25; }
+.ac-rb-date { margin: 0; font-size: 11.5px; color: var(--discret); }
+.ac-rb-autres { margin-top: 4px; border-top: 1px solid var(--trait); padding-top: 4px; }
+.ac-rb-autre { margin: 1px 0; display: flex; justify-content: space-between; font-size: 12px; }
+.ac-rb-choix { display: flex; flex-direction: column; gap: 4px; }
+.ac-rb-ligne { display: flex; gap: 4px; align-items: center; }
+.ac-rb-option { flex: 1; text-align: left; min-height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: #F2F2F7; font: inherit; font-size: 12.5px; color: var(--encre); cursor: pointer; }
+.ac-rb-option.actif { background: #E3EEFD; color: var(--e2); font-weight: 600; }
+.ac-rb-ajout { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.ac-rb-ajout input.note { font-size: 14px; min-height: 34px; }
+.ac-rb-an { font-size: 12.5px; }
+.ac-rb-ajout .bouton { margin-top: 0; align-self: flex-start; }

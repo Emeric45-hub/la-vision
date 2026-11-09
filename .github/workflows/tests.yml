@@ -29,6 +29,8 @@ jobs:
         run: node tests/fraicheur.test.mjs
       - name: Météo (prévisions fictives)
         run: node tests/meteo.test.mjs
+      - name: Compte à rebours
+        run: node tests/rebours.test.mjs
       - name: Dépendances de la tâche
         working-directory: tache
         run: npm install --no-audit --no-fund --ignore-scripts

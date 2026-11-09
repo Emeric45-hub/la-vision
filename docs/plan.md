@@ -30,8 +30,8 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 | 1 | Squelette : disposition, écran allumé, fraîcheur des sources | ✅ |
 | 2 | Barre du haut, Cette semaine, module assistante maternelle, alerte de la tâche | ✅ |
 | 3 | Aujourd'hui : fil du jour, situation des parents, statut de l'enfant 2, calendriers abonnés ; barre commune | ✅ |
-| 4 | Météo et conseil d'habillage (température ressentie) | 🟡 |
-| 5 | Compte à rebours | ⬜ |
+| 4 | Météo et conseil d'habillage (température ressentie) | ✅ |
+| 5 | Compte à rebours | 🟡 |
 | 6 | Rappels, À faire, Courses (Raccourci définitif) | ⬜ |
 | 6b | Post-it (dessin sur grand écran, texte depuis le téléphone) | ⬜ |
 | 7 | Ce soir : cantine, plat du soir | ⬜ |

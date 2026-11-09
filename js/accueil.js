@@ -6,6 +6,7 @@ import { niveau, depuis } from "./fraicheur.js";
 import { etiquettes, lignesCase, personnes, filDuJour, ligneE2 } from "./texte-jour.js";
 import { monterNounou, rechargerNounou } from "./nounou.js";
 import { affiche } from "../tache/moteur.js";
+import { prochaineAnnuelle, joursAvant } from "../tache/rebours.js";
 import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_METEO } from "./meteo.js";
 import { lundiDe } from "./nounou-calcul.js";
 
@@ -29,6 +30,10 @@ export function initAccueil(ctx) {
       if (cle !== S.cleEtat) { S.cleEtat = cle; S.semaine = null; }
       if (visible()) charger();
     }, () => { S.serveur = false; rendreSiVisible(); });
+  }
+  if (!S.stopRebours && C.db) {
+    const { onSnapshot, doc } = C.F;
+    S.stopRebours = onSnapshot(doc(C.db, "vision", "rebours"), snap => { S.rebours = snap.exists() ? snap.data() : {}; rendreSiVisible(); }, () => {});
   }
   lireMeteo();
   if (!S.minuteurMeteo) S.minuteurMeteo = setInterval(lireMeteo, 30 * 60000);
@@ -115,7 +120,7 @@ function rendre() {
   const haut = el("div", "ac-haut");
   haut.append(carte("ac-briefing", "Briefing", "Arrive avec le lot 3."),
     meteoCarte(),
-    carte("ac-rebours", "Compte à rebours", "Étape 5."));
+    reboursCarte());
   tout.append(haut);
 
   const cols = el("div", "ac-colonnes");
@@ -337,4 +342,86 @@ function meteoCarte() {
   c.append(liste);
   if (m.erreur) c.append(el("p", "ac-aide", `Dernière mise à jour à ${hm(new Date(m.lu))}.`));
   return c;
+}
+
+/* ---------- Compte à rebours ---------- */
+const JOURS_LONGS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+const dateLongue = d => `${JOURS_LONGS[new Date(d + "T12:00:00Z").getUTCDay()]} ${Number(d.slice(8))} ${MOIS[Number(d.slice(5, 7)) - 1]}`;
+
+function candidats() {
+  const j = aujourdhui(), r = S.rebours || {}, cal = r.calcules || {}, res = [];
+  (cal.posees || []).forEach((x, i) => res.push({ cle: "p:" + x.date, titre: x.titre, date: x.date, type: "posees", premiere: i === 0 }));
+  (cal.scolaires || []).forEach(x => res.push({ cle: "s:" + x.date, titre: x.titre, date: x.date, type: "scolaires" }));
+  res.push({ cle: "noel", titre: "Noël", date: prochaineAnnuelle("12-25", j), type: "fixe" });
+  (r.manuels || []).forEach(m => res.push({ cle: "m:" + m.id, titre: m.titre, date: m.annuel ? prochaineAnnuelle(m.date.slice(5), j) : m.date, type: "manuel", id: m.id, annuel: !!m.annuel }));
+  return res.filter(x => x.date >= j).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function reboursCarte() {
+  const c = el("section", "carte ac-carte ac-rebours");
+  const tete = el("div", "ac-rb-tete");
+  tete.append(el("h2", "ac-titre", "Compte à rebours"));
+  const choisir = el("button", "ac-mini", S.reboursOuvert ? "Fermer" : "Choisir");
+  choisir.type = "button"; choisir.onclick = () => { S.reboursOuvert = !S.reboursOuvert; rendre(); };
+  tete.append(choisir);
+  c.append(tete);
+  if (!S.rebours) { c.append(el("p", "ac-attente", "Chargement…")); return c; }
+  const liste = candidats(), j = aujourdhui();
+  if (S.reboursOuvert) { c.append(reboursChoix(liste)); return c; }
+  const auto = liste.find(x => x.premiere) || liste[0];
+  const choix = (S.rebours.choix && liste.find(x => x.cle === S.rebours.choix)) || auto;
+  if (!choix) { c.append(el("p", "ac-attente", "Rien à venir.")); return c; }
+  const n = joursAvant(choix.date, j);
+  const grand = el("p", "ac-rb-grand");
+  grand.append(el("span", "ac-rb-n", n === 0 ? "C'est" : String(n)), el("span", "ac-rb-u", n === 0 ? "aujourd'hui" : n === 1 ? "jour" : "jours"));
+  c.append(grand);
+  const libelle = choix === auto && choix.type === "posees" && !S.rebours.choix ? "avant nos prochaines vacances" : choix.titre;
+  c.append(el("p", "ac-rb-lib", libelle));
+  c.append(el("p", "ac-rb-date", dateLongue(choix.date)));
+  const autres = el("div", "ac-rb-autres");
+  for (const x of liste.filter(x => x !== choix).slice(0, 2)) {
+    const l = el("p", "ac-rb-autre");
+    l.append(el("span", "", x.titre), el("span", "", `${joursAvant(x.date, j)} j`));
+    autres.append(l);
+  }
+  c.append(autres);
+  return c;
+}
+
+function reboursChoix(liste) {
+  const bloc = el("div", "ac-rb-choix");
+  const j = aujourdhui();
+  const enregistrer = champs => C.F.setDoc(C.F.doc(C.db, "vision", "rebours"), champs, { mergeFields: Object.keys(champs) })
+    .catch(e => alerteEcriture(e));
+  const auto = el("button", "ac-rb-option" + (!S.rebours.choix ? " actif" : ""), "Prochaines vacances posées (automatique)");
+  auto.type = "button"; auto.onclick = () => { S.reboursOuvert = false; enregistrer({ choix: null }); };
+  bloc.append(auto);
+  for (const x of liste) {
+    const l = el("div", "ac-rb-ligne");
+    const b = el("button", "ac-rb-option" + (S.rebours.choix === x.cle ? " actif" : ""), `${x.titre} · ${joursAvant(x.date, j)} j`);
+    b.type = "button"; b.onclick = () => { S.reboursOuvert = false; enregistrer({ choix: x.cle }); };
+    l.append(b);
+    if (x.type === "manuel") {
+      const sup = el("button", "nn-retirer", "✕");
+      sup.type = "button"; sup.setAttribute("aria-label", "Supprimer " + x.titre);
+      sup.onclick = () => enregistrer({ manuels: (S.rebours.manuels || []).filter(m => m.id !== x.id) });
+      l.append(sup);
+    }
+    bloc.append(l);
+  }
+  // Ajout à la main (voyage, anniversaire…)
+  const f = el("div", "ac-rb-ajout");
+  const t = el("input", "note"); t.placeholder = "Événement (ex. Guadeloupe)"; t.maxLength = 40;
+  const d = el("input", "note"); d.type = "date"; d.min = j;
+  const an = el("label", "ac-rb-an"); const cb = el("input"); cb.type = "checkbox"; an.append(cb, document.createTextNode(" chaque année"));
+  const ok = el("button", "bouton petit-bouton", "Ajouter");
+  ok.type = "button";
+  ok.onclick = () => {
+    if (!t.value.trim() || !d.value) return;
+    const m = { id: Date.now().toString(36), titre: t.value.trim(), date: d.value, annuel: cb.checked };
+    enregistrer({ manuels: [...(S.rebours.manuels || []), m] });
+  };
+  f.append(t, d, an, ok);
+  bloc.append(f);
+  return bloc;
 }
