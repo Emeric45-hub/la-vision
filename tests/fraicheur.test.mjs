@@ -5,8 +5,8 @@ import { niveau, depuis, estNuit } from '../js/fraicheur.js';
 const m = new Date('2030-01-10T12:00:00Z');
 const il = min => new Date(m - min * 60000);
 assert.equal(niveau('agendas', il(30), m, '13:00').niveau, 'ok');
-assert.equal(niveau('agendas', il(61), m, '13:00').niveau, 'orange');
-assert.equal(niveau('agendas', il(181), m, '13:00').niveau, 'rouge');
+assert.equal(niveau('agendas', il(45), m, '13:00').niveau, 'orange');
+assert.equal(niveau('agendas', il(61), m, '13:00').niveau, 'rouge');
 assert.equal(niveau('agendas', il(130), m, '02:00').niveau, 'ok');      // nuit : passages toutes les 2 h
 assert.equal(niveau('agendas', il(200), m, '02:00').niveau, 'orange');
 assert.equal(niveau('agendas', null, m, '13:00').niveau, 'rouge');

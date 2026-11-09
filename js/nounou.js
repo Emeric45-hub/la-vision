@@ -14,6 +14,10 @@ const plages = cr => (cr || []).map(x => `${h(x.debut)}–${h(x.fin)}`).join(" �
 
 let C = null;            // { F, db, fam }
 let racine = null;
+const autres = new Set();   // autres emplacements (carte de l'accueil)
+const visible = e => e && e.isConnected && !e.closest(".vue").hidden;
+const cibles = () => [racine, ...autres].filter(visible);
+const afficherPartout = n => cibles().forEach(c => c.replaceChildren(typeof n === "function" ? n() : n.cloneNode(true)));
 const S = {
   jour: null, lundi: null, src: null, jours: {},      // planning de la semaine
   sessions: [], ecole: new Set(),                     // données de l'app de pointage
@@ -65,19 +69,22 @@ function tic() {
   if (lundiDe(aujourdhui()) !== S.lundi) { abonner(C.fam.nounou.journal); S.src = null; }
   if (S.jour !== aujourdhui()) S.src = null;
   if (S.message && Date.now() - (S.messageLe || 0) > 60000) S.message = "";
-  if (!racine.hidden) S.src ? rendre() : afficherNounou();
+  if (cibles().length) S.src ? rendre() : afficherNounou();
 }
-const rendreSiVisible = () => { if (racine && !racine.hidden && S.src) rendre(); };
+const rendreSiVisible = () => { if (S.src && cibles().length) rendre(); };
+
+// Affiche aussi le module dans un autre emplacement (l'accueil).
+export function monterNounou(e) { autres.add(e); S.src ? rendre() : afficherNounou(); }
 
 /* ---------- Planning de la semaine ---------- */
 export async function afficherNounou() {
   if (!racine) return;
-  if (!C || !C.fam) { racine.replaceChildren(el("div", "carte", "Configuration familiale absente.")); return; }
+  if (!C || !C.fam) { afficherPartout(el("div", "carte", "Configuration familiale absente.")); return; }
   if (!C.fam.nounou || !C.fam.nounou.journal) {
-    racine.replaceChildren(el("div", "carte", "Journal de pointage non configuré (famille.nounou.journal)."));
+    afficherPartout(el("div", "carte", "Journal de pointage non configuré (famille.nounou.journal)."));
     return;
   }
-  if (!S.src) racine.replaceChildren(el("p", "discret", "Chargement…"));
+  if (!S.src) afficherPartout(el("p", "discret", "Chargement…"));
   try {
     S.jour = aujourdhui();
     const lundi = lundiDe(S.jour), vendredi = decaler(lundi, 4);
@@ -90,7 +97,7 @@ export async function afficherNounou() {
     S.jours = {};
     for (const d of joursOuvres(lundi)) S.jours[d] = jourAffiche(d, S.src, C.fam);
   } catch (e) {
-    racine.replaceChildren(el("p", "message ko", "Lecture impossible (" + (e.code || e.name) + ")."));
+    afficherPartout(el("p", "message ko", "Lecture impossible (" + (e.code || e.name) + ")."));
     return;
   }
   surDonnees();
@@ -178,7 +185,9 @@ async function confirmer(d, e, creneaux) {
 }
 
 /* ---------- Rendu ---------- */
-function rendre() {
+function rendre() { afficherPartout(construire); }
+
+function construire() {
   const d = aujourdhui(), j = S.jours[d];
   const carte = el("div", "carte nn");
   const tete = el("div", "nn-tete");
@@ -241,7 +250,7 @@ function rendre() {
   pied.append(ajout);
   carte.append(pied);
   if (S.message) carte.append(el("p", "message ok", S.message));
-  racine.replaceChildren(carte);
+  return carte;
 }
 
 function rendreConfirmation(d, titre) {
