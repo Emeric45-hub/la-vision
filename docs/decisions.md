@@ -178,3 +178,9 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - Conseil fondé sur la température ressentie : < 5 °C manteau, bonnet et gants ; < 12 °C manteau ; ≤ 18 °C gilet ; au-delà tenue légère ; pluie ≥ 50 % imperméable et bottes. Seuils modifiables dans la configuration.
 - Lever et coucher du soleil déjà lus (serviront au fond de nuit, lot 4).
 - Fil du jour : le nom du calendrier abonné n'est plus affiché.
+
+## 2026-11-09 — Lot 2, étape 5 : compte à rebours
+
+- La tâche repère, sur 400 jours, le premier jour de chaque période de vacances ou congés posés par un parent (titre contenant « congé(s) » ou « vacances », hors « scolaires » et congés de l'assistante maternelle) et de chaque période de vacances scolaires ; écrit `vision/rebours.calcules` seulement s'ils ont changé (`tache/rebours.js`, testé).
+- Dans `vision/rebours` aussi : `manuels` = [{ id, titre, date, annuel }] (ajoutés dans l'app) et `choix` (clé de l'événement affiché ; absent = prochaines vacances posées). Noël est ajouté par l'app. Les anniversaires viendront du Raccourci (étape 6) ; d'ici là, ajout à la main avec « chaque année ».
+- Carte : nombre de jours, libellé, date, puis les deux autres événements les plus proches ; « Choisir » ouvre la liste, l'ajout et la suppression des événements ajoutés à la main.

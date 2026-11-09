@@ -16,6 +16,7 @@ import { feries } from './feries.mjs';
 import { empreinte } from './outils.mjs';
 import { executerPlanning } from './planning.mjs';
 import { cocherEcole } from './nounou.mjs';
+import { debutsDePeriodes, estVacancesPosees } from './rebours.js';
 
 export const AVANT = 7, APRES = 60;
 
@@ -119,12 +120,26 @@ export async function principal() {
       },
       erreur: null
     };
+    // Compte à rebours : débuts de vacances posées et de vacances scolaires sur 400 jours.
+    try {
+      const loin = decaler(aujourdhui, 400), veille = decaler(aujourdhui, -1);
+      const A4 = lireAgenda(ICAL, texteA, aujourdhui, loin), B4 = lireAgenda(ICAL, texteB, aujourdhui, loin);
+      const parents = {};
+      for (const src of [A4, B4]) for (const [j, l] of Object.entries(src)) (parents[j] = parents[j] || []).push(...l);
+      const calcules = {
+        posees: debutsDePeriodes(parents, e => estVacancesPosees(e.titre, config.famille), veille),
+        scolaires: texteVacances ? debutsDePeriodes(lireAgenda(ICAL, texteVacances, aujourdhui, loin), () => true, veille) : []
+      };
+      const emp = empreinte(calcules), ancien = (await fs.lire('vision/rebours')) || {};
+      if (ancien.empreinte !== emp) ecritures.push({ chemin: 'vision/rebours', donnees: { calcules, empreinte: emp, majLe: maintenant }, champsModifies: ['calcules', 'empreinte', 'majLe'] });
+      bilan.sources.rebours = { posees: calcules.posees.length, scolaires: calcules.scolaires.length };
+    } catch (e) { bilan.sources.rebours = { erreur: String(e.message).slice(0, 120) }; }
     ecritures.push({ chemin: 'vision/etat', donnees: { agendas: bilan }, champsModifies: ['agendas'] });
     await fs.ecrire(ecritures);
     console.log(`Agendas : ${bilan.ecrits} jours écrits, ${bilan.inchanges} inchangés ; ` +
       `${bilan.sources.A.evenements} + ${bilan.sources.B.evenements} occurrences ; ` +
       `calendrier commun : ${bilan.sources.C.erreur ? 'échec' : bilan.sources.C.lu ? bilan.sources.C.evenements + ' occurrences (avec abonnements)' : 'non configuré'} ; ` +
-      `abonnements : ${JSON.stringify(bilan.sources.abonnements)} ; ${Date.now() - t0} ms`);
+      `abonnements : ${JSON.stringify(bilan.sources.abonnements)} ; compte à rebours : ${JSON.stringify(bilan.sources.rebours)} ; ${Date.now() - t0} ms`);
   } catch (e) {
     // On garde la dernière lecture réussie (agendas.lu) et on note seulement l'échec.
     const message = String(e.message || e.name).slice(0, 200);
