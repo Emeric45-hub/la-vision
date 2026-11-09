@@ -219,7 +219,8 @@ body.sur-accueil .version { display: none; }
 .ac-semaine { flex-shrink: 0; }
 .ac-titre { margin: 0 0 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--discret); }
 .ac-attente { margin: 0; font-size: 14px; color: #AEAEB2; }
-.ac-postit { position: relative; aspect-ratio: 1; align-self: center; height: min(100%, 190px); max-width: 100%; justify-self: center; overflow: visible !important;
+.ac-droite > .ac-postit-case { container-type: size; overflow: visible; display: flex; align-items: center; justify-content: center; }
+.ac-postit { position: relative; flex: none; width: min(100cqw, 100cqh, 200px); height: min(100cqw, 100cqh, 200px);
   background: linear-gradient(160deg, #FFF59D 0%, #FFEE58 70%, #FDD835 100%); box-shadow: 0 6px 12px rgba(0,0,0,.15), 0 1px 2px rgba(0,0,0,.1);
   transform: rotate(-2deg); border-radius: 2px; padding: 22px 14px 14px; }
 .ac-scotch { position: absolute; top: -9px; left: 50%; width: 64px; height: 20px; transform: translateX(-50%) rotate(3deg);
