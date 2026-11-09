@@ -44,3 +44,17 @@ assert.equal(semaines('2026-11')[0][0].d, '2026-11-02');
 assert.equal(semaines('2027-02')[0][0].d, '2027-02-01');
 
 console.log('grille : tous les scénarios passent');
+
+// Texte de l'accueil : situation des parents et fil du jour
+const { personnes, filDuJour } = await import('../js/texte-jour.js');
+const jt = jour('2030-01-10', { B: [g] });
+assert.deepEqual(personnes(jt.calc, cfg).map(p => p.texte), ['Au travail' + (cfg.A.chm && cfg.A.chm.retour ? ', retour ' + cfg.A.chm.retour.replace(':00', 'h').replace(':', 'h') : ''), 'Garde (24 h)']);
+const agendaJour = {
+  A: [{ titre: 'Réunion', journee: false, debut: '2030-01-10T14:00', fin: '2030-01-10T15:00', notes: 'Apporter le dossier' }],
+  B: [{ titre: 'Astreinte', journee: true, debut: '2030-01-10', fin: '2030-01-10' }],
+  C: [{ titre: 'Soldes', journee: true, debut: '2030-01-10', fin: '2030-01-10', source: 'soldes' }]
+};
+const fil = filDuJour(agendaJour, jt, cfg);
+assert.deepEqual(fil.map(x => [x.heure, x.titre]), [[null, 'Soldes'], ['07:30', `${cfg.B.prenom} dépose`], ['14:00', 'Réunion'], ['19:00', `${cfg.A.prenom} récupère`]]);
+assert.equal(fil[2].notes, 'Apporter le dossier');
+console.log('texte de l\'accueil : tous les scénarios passent');

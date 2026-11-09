@@ -5,8 +5,10 @@
 // sont écrits ; fenêtre J-7 à J+60 ; si une source est illisible, rien n'est écrit et l'erreur
 // est notée dans vision/etat.agendas.
 //
-// Entrées : variables d'environnement ICS_A, ICS_B (adresses iCal), FIREBASE_SA (compte de service).
-// L'adresse du calendrier scolaire est lue dans vision/config.sources.vacances.
+// Entrées : variables d'environnement ICS_A, ICS_B (adresses iCal), ICS_C (calendrier commun,
+// facultatif), FIREBASE_SA (compte de service). L'adresse du calendrier scolaire est lue dans
+// vision/config.sources.vacances ; les calendriers abonnés (publics) dans
+// vision/config.sources.abonnements = [{ nom, url }], lus une fois par jour seulement.
 import { pathToFileURL } from 'node:url';
 import { connecter } from './firestore.mjs';
 import { lireAgenda, enParis, joursEntre, decaler } from './calendrier.mjs';
@@ -20,9 +22,11 @@ export const AVANT = 7, APRES = 60;
 export { empreinte };
 
 // Construit le contenu de chaque jour de la fenêtre à partir des textes iCal.
-export function construireJours(ICAL, { texteA, texteB, texteVacances }, du, au) {
+// abonnes : { 'AAAA-MM-JJ': [événements avec leur source] } déjà lus (cache quotidien).
+export function construireJours(ICAL, { texteA, texteB, texteVacances, texteC, abonnes }, du, au) {
   const A = lireAgenda(ICAL, texteA, du, au);
   const B = lireAgenda(ICAL, texteB, du, au);
+  const Cc = texteC ? lireAgenda(ICAL, texteC, du, au) : {};
   const V = texteVacances ? lireAgenda(ICAL, texteVacances, du, au) : {};
   const fer = { ...feries(Number(du.slice(0, 4))), ...feries(Number(au.slice(0, 4))) };
   const jours = {};
@@ -31,10 +35,32 @@ export function construireJours(ICAL, { texteA, texteB, texteVacances }, du, au)
       A: A[j] || [],
       B: B[j] || [],
       vacances: V[j] ? [...new Set(V[j].map(e => e.titre))].join(' · ') : null,
-      ferie: fer[j] || null
+      ferie: fer[j] || null,
+      C: [...(Cc[j] || []).map(e => ({ ...e, source: 'commun' })), ...((abonnes || {})[j] || [])]
+        .sort((x, y) => (x.debut + x.titre).localeCompare(y.debut + y.titre))
     };
   }
   return jours;
+}
+
+// Calendriers abonnés : relus au plus une fois toutes les 20 h, sinon repris du cache Firestore.
+// Un abonnement illisible n'empêche jamais la lecture des agendas.
+async function abonnements(ICAL, fs, config, du, au) {
+  const liste = (config.sources && config.sources.abonnements) || [];
+  if (!liste.length) return { parJour: {}, bilan: { etat: 'non configuré' } };
+  const cache = (await fs.lire('vision/agenda/sources/abonnements')) || {};
+  const age = cache.lu ? Date.now() - new Date(cache.lu).getTime() : Infinity;
+  if (age < 20 * 3600 * 1000 && cache.parJour) return { parJour: cache.parJour, bilan: { cache: true } };
+  const parJour = {}; let ok = 0, ko = 0;
+  for (const ab of liste) {
+    try {
+      const evs = lireAgenda(ICAL, await telecharger(ab.nom, ab.url), du, au);
+      for (const [j, l] of Object.entries(evs)) (parJour[j] = parJour[j] || []).push(...l.map(e => ({ ...e, source: ab.nom })));
+      ok++;
+    } catch (e) { ko++; }
+  }
+  if (ok) await fs.ecrire([{ chemin: 'vision/agenda/sources/abonnements', donnees: { lu: new Date().toISOString(), parJour } }]);
+  return { parJour: ok ? parJour : (cache.parJour || {}), bilan: { lus: ok, echecs: ko } };
 }
 
 async function telecharger(nom, url) {
@@ -62,7 +88,15 @@ export async function principal() {
 
     const aujourdhui = enParis(new Date()).jour;
     const du = decaler(aujourdhui, -AVANT), au = decaler(aujourdhui, APRES);
-    const jours = construireJours(ICAL, { texteA, texteB, texteVacances }, du, au);
+    // Sources secondaires : leur échec est noté mais ne bloque pas les agendas des parents.
+    let texteC = null, bilanC = { etat: 'non configuré' };
+    if (process.env.ICS_C) {
+      try { texteC = await telecharger('C', process.env.ICS_C.replace(/^webcal:/, 'https:')); bilanC = { lu: true }; }
+      catch (e) { bilanC = { erreur: String(e.message).slice(0, 120) }; }
+    }
+    let ab = { parJour: {}, bilan: { etat: 'non configuré' } };
+    try { ab = await abonnements(ICAL, fs, config, du, au); } catch (e) { ab.bilan = { erreur: String(e.message).slice(0, 120) }; }
+    const jours = construireJours(ICAL, { texteA, texteB, texteVacances, texteC, abonnes: ab.parJour }, du, au);
 
     // Empreintes des jours déjà écrits : une seule lecture au lieu d'une par jour.
     const index = (await fs.lire('vision/agenda')) || {};
@@ -80,7 +114,8 @@ export async function principal() {
       ecrits: Math.max(0, ecritures.length - 1), inchanges: Object.keys(jours).length - Math.max(0, ecritures.length - 1),
       sources: {
         A: { evenements: compte('A') }, B: { evenements: compte('B') },
-        vacances: urlVacances ? { jours: Object.values(jours).filter(x => x.vacances).length } : { etat: 'non configuré' }
+        vacances: urlVacances ? { jours: Object.values(jours).filter(x => x.vacances).length } : { etat: 'non configuré' },
+        C: { ...bilanC, evenements: compte('C') }, abonnements: ab.bilan
       },
       erreur: null
     };

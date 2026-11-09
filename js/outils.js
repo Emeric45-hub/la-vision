@@ -57,3 +57,14 @@ export function heureInput(val, surChange, libelle) {
   box.append(sh, el("span", "heure-sep", ":"), sm);
   return box;
 }
+
+// Un bloc garde sa taille ; s'il déborde, son contenu défile à l'intérieur et un fondu en bas
+// signale qu'il reste à voir (classe « deborde »).
+export function surveillerDebord(e) {
+  if (!e || e.dataset.surveille) return;
+  e.dataset.surveille = "1";
+  const maj = () => e.classList.toggle("deborde", e.scrollHeight - e.scrollTop - e.clientHeight > 4);
+  e.addEventListener("scroll", maj, { passive: true });
+  if (window.ResizeObserver) new ResizeObserver(maj).observe(e);
+  requestAnimationFrame(maj);
+}
