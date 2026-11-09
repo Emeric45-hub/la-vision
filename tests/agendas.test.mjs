@@ -75,6 +75,14 @@ assert.equal(feries(2027)['2027-05-17'], 'Lundi de Pentecôte');
 assert.equal(Object.keys(feries(2027)).length, 11);
 assert.equal(construireJours(ICAL, { texteA, texteB }, '2030-04-20', '2030-04-23')['2030-04-22'].ferie, 'Lundi de Pâques');
 
+// Calendrier commun et abonnements : fusionnés dans C, triés, avec leur source
+const texteC = cal(ev(['UID:c1', 'SUMMARY:Spectacle', 'DTSTART;TZID=Europe/Paris:20300110T170000', 'DTEND;TZID=Europe/Paris:20300110T180000']));
+const abonnes = { '2030-01-10': [{ titre: 'Soldes', journee: true, debut: '2030-01-10', fin: '2030-01-10', lieu: null, notes: null, source: 'soldes' }] };
+const JC = construireJours(ICAL, { texteA, texteB, texteC, abonnes }, '2030-01-09', '2030-01-11');
+assert.deepEqual(JC['2030-01-10'].C.map(e => [e.titre, e.source]), [['Soldes', 'soldes'], ['Spectacle', 'commun']]);
+assert.deepEqual(JC['2030-01-09'].C, []);
+assert.deepEqual(J['2030-01-10'].C, []);
+
 // Empreinte indépendante de l'ordre des clés
 assert.equal(empreinte({ a: 1, b: [1, { c: 2, d: 3 }] }), empreinte({ b: [1, { d: 3, c: 2 }], a: 1 }));
 

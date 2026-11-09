@@ -162,3 +162,11 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - Une fois confirmée ou marquée « absent », la journée de l'enfant n'est plus proposée : `vision/planning/jours/{date}.nounouFait.{clé enfant}` = `confirme` | `absent`.
 - Le jour même, si l'enfant scolarisé n'a pas de créneau du soir après confirmation, « école » est décoché dans l'app de pointage (sinon elle compterait l'enfant chez l'assistante maternelle toute la soirée).
 - Accueil : chaque bloc garde sa taille ; ce qui dépasse défile à l'intérieur du bloc (règle permanente pour tous les blocs).
+
+## 2026-11-09 — Lot 2, étape 3 : Aujourd'hui, calendriers supplémentaires, barre commune
+
+- Tâche : calendrier commun facultatif (secret `ICS_C`, `webcal:` accepté) lu à chaque passage ; calendriers abonnés publics (`vision/config.sources.abonnements = [{ nom, url }]`) lus au plus une fois toutes les 20 h, mis en cache dans `vision/agenda/sources/abonnements`. Leurs événements vont dans `jours[date].C` avec leur `source` ; un échec de ces sources est noté dans `vision/etat.agendas.sources` sans bloquer les agendas des parents. Le moteur de règles ne lit pas `C`.
+- Accueil, « Aujourd'hui » : situation de chaque parent, statut de l'enfant scolarisé modifiable (École / ALAE / Nounou / Avec nous + note, écrit dans `corrige` du jour), fil du jour (événements datés des agendas, du calendrier commun et des abonnements, dépôt et récupération du planning ; notes des événements affichées). Les événements « journée » des parents qui décrivent déjà leur situation (garde, repos, congé) sont omis.
+- Après une correction du jour faite dans l'app, « école » dans l'app de pointage suit la correction (cochée seulement s'il y a nounou après l'école), sauf si un créneau du soir est déjà saisi.
+- Grand écran : la barre de l'accueil remplace titre et onglets sur tous les écrans (« ‹ Accueil », nom de l'écran, accès aux autres écrans) ; les onglets restent sur téléphone.
+- Défilement dans les blocs : titre fixe, fondu en bas quand il reste à voir ; la position de défilement survit au rafraîchissement.

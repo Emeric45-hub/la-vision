@@ -4,7 +4,7 @@
 // Lit et écrit les créneaux de l'app de pointage existante, au même format, pour que les deux
 // apps restent synchronisées. Conçu compact : il sera repris tel quel sur l'accueil.
 import { affiche, ecoleAvecNounou } from "../tache/moteur.js";
-import { decaler, aujourdhui, maintenant, el, lirePlage, jourAffiche, heureInput } from "./outils.js";
+import { decaler, aujourdhui, maintenant, el, lirePlage, jourAffiche, heureInput, surveillerDebord } from "./outils.js";
 import { lundiDe, joursOuvres, duJour, enCours, totalJour, totalSemaine, duree, nonCouverts, verifierCreneau, enMin } from "./nounou-calcul.js";
 
 const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
@@ -17,7 +17,11 @@ let racine = null;
 const autres = new Set();   // autres emplacements (carte de l'accueil)
 const visible = e => e && e.isConnected && !e.closest(".vue").hidden;
 const cibles = () => [racine, ...autres].filter(visible);
-const afficherPartout = n => cibles().forEach(c => c.replaceChildren(typeof n === "function" ? n() : n.cloneNode(true)));
+const afficherPartout = n => cibles().forEach(c => {
+  const garde = c !== racine && c.firstElementChild ? c.firstElementChild.scrollTop : 0;   // position de défilement sur l'accueil
+  c.replaceChildren(typeof n === "function" ? n() : n.cloneNode(true));
+  if (c !== racine && c.firstElementChild) { c.firstElementChild.scrollTop = garde; surveillerDebord(c.firstElementChild); }
+});
 const S = {
   jour: null, lundi: null, src: null, jours: {},      // planning de la semaine
   sessions: [], ecole: new Set(),                     // données de l'app de pointage
@@ -75,6 +79,21 @@ const rendreSiVisible = () => { if (S.src && cibles().length) rendre(); };
 
 // Affiche aussi le module dans un autre emplacement (l'accueil).
 export function monterNounou(e) { autres.add(e); S.src ? rendre() : afficherNounou(); }
+// Relit le planning de la semaine (après une correction faite ailleurs).
+// Après une correction du planning du jour faite dans l'app, « école » suit la correction dans
+// l'app de pointage (sinon un enfant gardé à la maison y serait compté dès la sortie d'école).
+export async function rechargerNounou(ajuster) {
+  S.src = null;
+  await afficherNounou();
+  const d = aujourdhui(), j = S.jours[d];
+  if (!ajuster || !j || !lu()) return;
+  const voulu = ecoleAvecNounou(j.calc, j.aff, C.fam), coche = S.ecole.has(d);
+  const sortie = enMin(C.fam.ecole.sortie);
+  const soirSaisi = duJour(S.sessions, d, C.fam.enfants.e2.cle).some(x => enMin(x.start) >= sortie);
+  if (voulu !== coche && !soirSaisi) {
+    try { await C.F.setDoc(C.F.doc(col("schooldays"), d), { school: voulu }); } catch (e) { /* sans conséquence */ }
+  }
+}
 
 /* ---------- Planning de la semaine ---------- */
 export async function afficherNounou() {

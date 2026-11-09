@@ -45,3 +45,49 @@ export function lignesCase(j, fam) {
   if (aff.note) out.push({ cls: "note", txt: aff.note });
   return out;
 }
+
+// Situation de chaque parent ce jour-là : [{ qui: prénom, texte }].
+export function personnes(calc, fam) {
+  if (!calc) return [];
+  const A = calc.A, B = calc.B, res = [];
+  let ta;
+  if (calc.ferie) ta = "Férié";
+  else if (A.gardeSoir) ta = "Garde ce soir";
+  else if (A.lendemain || A.statut === "repos") ta = "Repos de garde";
+  else if (A.statut === "conge") ta = "En congé";
+  else if (A.statut === "off") ta = "À la maison";
+  else if (A.statut === "site") ta = `${fam.A.site.lieu}, retour ${h(fam.A.site.retour)}`;
+  else if (A.statut === "chm") ta = fam.A.chm && fam.A.chm.retour ? `Au travail, retour ${h(fam.A.chm.retour)}` : "Au travail";
+  else if (A.statut === "fmc") ta = "Formation";
+  else ta = "Planning inconnu";
+  res.push({ qui: fam.A.prenom, texte: ta });
+  const tb = { garde: "Garde (24 h)", lendemain: "Repos de garde", repos: "Off", conge: "En vacances",
+    travail: `Cabinet ${h(B.debut)}–${h(B.fin)}`, a_saisir: "Horaires à saisir" }[B.statut] || "?";
+  res.push({ qui: fam.B.prenom, texte: tb });
+  return res;
+}
+
+// Fil de la journée : événements datés des agendas (parents, calendrier commun, abonnements) et
+// dépôt / récupération du planning, triés par heure. Les événements « journée » des parents qui
+// décrivent déjà leur situation (garde, repos, congé) sont omis.
+export function filDuJour(agendaJour, j, fam) {
+  const items = [];
+  if (!agendaJour) agendaJour = {};
+  const motifs = [fam.A.garde, fam.B.garde, fam.B.repos, fam.B.conge].filter(Boolean).map(m => new RegExp(m, "i"));
+  const ajouter = (e, qui, source) => {
+    if (e.journee && qui && motifs.some(m => m.test(e.titre.trim()))) return;
+    const heure = e.journee ? null : e.debut.slice(11, 16);
+    items.push({ heure, fin: e.journee ? null : e.fin.slice(11, 16), titre: e.titre, notes: e.notes || null, lieu: e.lieu || null,
+      qui, source: source || null });
+  };
+  (agendaJour.A || []).forEach(e => ajouter(e, fam.A.prenom));
+  (agendaJour.B || []).forEach(e => ajouter(e, fam.B.prenom));
+  (agendaJour.C || []).forEach(e => ajouter(e, null, e.source === "commun" ? null : e.source));
+  const aff = j && j.aff;
+  if (aff && aff.e1) {
+    const nom = q => q === "A" ? fam.A.prenom : q === "B" ? fam.B.prenom : "?";
+    if (aff.depot && aff.depot.heure) items.push({ heure: aff.depot.heure, titre: `${nom(aff.depot.qui)} dépose`, planning: true });
+    if (aff.recup && aff.recup.heure) items.push({ heure: aff.recup.heure, titre: `${nom(aff.recup.qui)} récupère`, planning: true });
+  }
+  return items.sort((x, y) => (x.heure || "").localeCompare(y.heure || "") || (x.planning ? 1 : 0) - (y.planning ? 1 : 0));
+}

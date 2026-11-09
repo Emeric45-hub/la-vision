@@ -17,7 +17,30 @@ const $ = id => document.getElementById(id);
 const etat = { config: null, F: null, db: null, auth: null };
 
 /* ---------- Onglets ---------- */
+// Grand écran : même barre que l'accueil sur tous les écrans (les onglets restent sur téléphone).
+const NOMS_VUES = { planning: "Planning", nounou: "Nounou", reglages: "Réglages" };
+function barreEcran(vue) {
+  const b = $("barre-ecran");
+  b.hidden = vue === "accueil";
+  if (b.hidden) return;
+  const mk = (tag, cls, txt) => { const e = document.createElement(tag); e.className = cls; if (txt) e.textContent = txt; return e; };
+  const retour = mk("button", "ac-pilule", "‹ Accueil");
+  retour.type = "button"; retour.onclick = () => ouvrir("accueil");
+  const titre = mk("span", "ac-date", NOMS_VUES[vue] || "");
+  const etat = mk("span", "be-etat", $("etat-sync").textContent);
+  const nav = mk("div", "ac-boutons");
+  for (const v of ["planning", "nounou"]) {
+    if (v === vue) continue;
+    const p = mk("button", "ac-pilule", NOMS_VUES[v]); p.type = "button"; p.onclick = () => ouvrir(v); nav.append(p);
+  }
+  if (vue !== "reglages") {
+    const r = mk("button", "ac-pilule ac-icone", "⚙︎"); r.type = "button"; r.setAttribute("aria-label", "Réglages"); r.onclick = () => ouvrir("reglages"); nav.append(r);
+  }
+  b.replaceChildren(retour, titre, etat, nav, mk("span", "ac-marque", "LA VISION"));
+}
+
 function ouvrir(vue, jour) {
+  barreEcran(vue);
   document.querySelectorAll(".onglet").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.vue === vue)));
   document.querySelectorAll(".vue").forEach(v => { v.hidden = v.id !== "vue-" + vue; });
   document.body.classList.toggle("large", vue === "planning" || vue === "accueil");

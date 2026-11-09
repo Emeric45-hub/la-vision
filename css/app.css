@@ -250,3 +250,36 @@ body.sur-accueil .version { display: none; }
 }
 /* Le soir, quand il y a une journée à confirmer, le module nounou prend la place de « Ce soir ». */
 .ac-pile > .ac-nounou:has(.nn-confirmer) { flex: 4; }
+
+/* ---------- Barre commune des grands écrans ---------- */
+.barre-ecran { display: none; }
+@media (min-width: 901px) {
+  .entete, .onglets { display: none !important; }
+  .barre-ecran:not([hidden]) { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; max-width: 1400px; margin: 0 auto 14px; min-height: 44px; }
+  body:not(.large) .barre-ecran { max-width: 760px; }
+}
+.be-etat { font-size: 13px; color: var(--discret); }
+
+/* ---------- Accueil : Aujourd'hui ---------- */
+.ac-personne { margin: 0 0 2px; font-size: 14px; }
+.ac-statut { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: #F2F2F7; display: flex; flex-direction: column; gap: 6px; }
+.ac-statut-ligne { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; }
+.ac-mini { min-height: 32px; padding: 0 10px; border: 1px solid var(--trait); border-radius: 999px; background: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--encre); }
+.ac-statut .seg-btn { min-height: 34px; font-size: 13px; padding: 0 8px; }
+.ac-aide { margin: 0; font-size: 12px; color: var(--discret); }
+.ac-fil { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ac-item { display: grid; grid-template-columns: 48px 1fr; gap: 6px; font-size: 14px; }
+.ac-h { font-variant-numeric: tabular-nums; color: var(--discret); font-size: 13px; padding-top: 1px; }
+.ac-corps { display: flex; flex-direction: column; min-width: 0; }
+.ac-item.planning .ac-t { font-weight: 600; }
+.ac-item.abonnement { opacity: .65; }
+.ac-lieu { font-size: 12px; color: var(--discret); }
+.ac-notes { margin-top: 3px; padding: 4px 8px; border-radius: 8px; background: var(--alerte-fond); color: var(--alerte); font-size: 12.5px; white-space: pre-line; }
+.ac-vide { font-size: 14px; color: var(--discret); }
+
+/* ---------- Accueil : défilement à l'intérieur des blocs ---------- */
+.ac-carte > .ac-titre { position: sticky; top: -12px; margin: -12px -14px 6px; padding: 12px 14px 4px; background: var(--carte); z-index: 1; }
+.ac-nounou { overflow: hidden !important; border-radius: var(--rayon); }
+.ac-nounou > .carte { height: 100%; overflow: auto; }
+.ac-nounou .nn-tete { position: sticky; top: -10px; margin: -10px -12px 0; padding: 10px 12px 4px; background: var(--carte); z-index: 1; }
+.deborde { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent); }
