@@ -3,7 +3,8 @@
 // la nuit, toutes les 2 h (alerte au-delà de 4 h 30).
 export const SEUILS = {
   agendas: { jour: { orange: 40, rouge: 60 }, nuit: { orange: 150, rouge: 270 } },
-  rappels: { jour: { orange: 360, rouge: 24 * 60 }, nuit: { orange: 600, rouge: 24 * 60 } }
+  rappels: { jour: { orange: 360, rouge: 24 * 60 }, nuit: { orange: 600, rouge: 24 * 60 } },
+  meteo: { jour: { orange: 90, rouge: 240 }, nuit: { orange: 90, rouge: 240 } }
 };
 export const estNuit = heure => { const h = Number(heure.slice(0, 2)); return h >= 23 || h < 6; };
 

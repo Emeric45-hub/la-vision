@@ -6,6 +6,7 @@ import { niveau, depuis } from "./fraicheur.js";
 import { etiquettes, lignesCase, personnes, filDuJour, ligneE2 } from "./texte-jour.js";
 import { monterNounou, rechargerNounou } from "./nounou.js";
 import { affiche } from "../tache/moteur.js";
+import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_METEO } from "./meteo.js";
 import { lundiDe } from "./nounou-calcul.js";
 
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -29,6 +30,8 @@ export function initAccueil(ctx) {
       if (visible()) charger();
     }, () => { S.serveur = false; rendreSiVisible(); });
   }
+  lireMeteo();
+  if (!S.minuteurMeteo) S.minuteurMeteo = setInterval(lireMeteo, 30 * 60000);
   if (!S.minuteur) S.minuteur = setInterval(() => {
     if (S.semaine && S.semaine.jour !== aujourdhui()) S.semaine = null;
     if (visible()) charger();
@@ -84,11 +87,13 @@ async function charger() {
 }
 
 /* ---------- Fraîcheur des sources ---------- */
-const NOMS = { agendas: "Agendas" };
+const NOMS = { agendas: "Agendas", meteo: "Météo" };
 const enDate = ts => ts && ts.toDate ? ts.toDate() : ts ? new Date(ts) : null;
 function sources() {
   const ag = S.etat && S.etat.agendas;
-  return [{ cle: "agendas", ...niveau("agendas", enDate(ag && ag.lu), new Date(), maintenant()), lu: enDate(ag && ag.lu) }];
+  const res = [{ cle: "agendas", ...niveau("agendas", enDate(ag && ag.lu), new Date(), maintenant()), lu: enDate(ag && ag.lu) }];
+  if (meteoConfiguree()) res.push({ cle: "meteo", ...niveau("meteo", S.meteo && S.meteo.lu ? new Date(S.meteo.lu) : null, new Date(), maintenant()), lu: S.meteo && S.meteo.lu ? new Date(S.meteo.lu) : null });
+  return res;
 }
 const hm = d => d ? d.toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" }) : "?";
 
@@ -101,7 +106,7 @@ function rendre() {
 
   if (!S.serveur) tout.append(el("p", "ac-bandeau", "Base de données injoignable : l'accueil n'affiche rien plutôt qu'un faux vide."));
   if (S.erreurEcriture) tout.append(el("p", "ac-bandeau", `Correction non enregistrée (${S.erreurEcriture}).`));
-  for (const s of src.filter(x => x.niveau === "rouge")) {
+  for (const s of src.filter(x => x.niveau === "rouge" && x.cle === "agendas")) {
     tout.append(el("p", "ac-bandeau", s.minutes == null
       ? "La tâche planifiée n'a jamais lu les agendas."
       : `La tâche planifiée n'a pas lu les agendas depuis ${depuis(s.minutes)} (dernier passage à ${hm(s.lu)}) : vérifier cron-job.org.`));
@@ -109,7 +114,7 @@ function rendre() {
 
   const haut = el("div", "ac-haut");
   haut.append(carte("ac-briefing", "Briefing", "Arrive avec le lot 3."),
-    carte("ac-meteo", "Météo", "Étape 4."),
+    meteoCarte(),
     carte("ac-rebours", "Compte à rebours", "Étape 5."));
   tout.append(haut);
 
@@ -235,7 +240,7 @@ function aujourdhuiCarte() {
     const li = el("li", "ac-item" + (x.planning ? " planning" : "") + (x.source ? " abonnement" : ""));
     li.append(el("span", "ac-h", x.heure ? h(x.heure) : "Journée"));
     const corps = el("span", "ac-corps");
-    corps.append(el("span", "ac-t", (x.qui && !x.planning ? x.qui + " : " : "") + x.titre + (x.source ? ` (${x.source})` : "")));
+    corps.append(el("span", "ac-t", (x.qui && !x.planning ? x.qui + " : " : "") + x.titre));
     if (x.lieu) corps.append(el("span", "ac-lieu", x.lieu));
     if (x.notes) corps.append(el("span", "ac-notes", x.notes));
     li.append(corps);
@@ -286,3 +291,50 @@ async function changerE2(d, champs) {
 }
 function alerteEcriture(e) { S.erreurEcriture = e.code || e.name; rendre(); }
 
+
+/* ---------- Météo (Open-Meteo, lue directement par l'app) ---------- */
+const meteoConfiguree = () => !!(C && C.fam && C.fam.meteo && C.fam.meteo.lat != null && C.fam.meteo.lon != null);
+async function lireMeteo() {
+  if (!meteoConfiguree()) return;
+  if (!S.meteo) {   // dernière prévision gardée sur l'appareil, en attendant la nouvelle
+    try { const m = JSON.parse(localStorage.getItem("vision-meteo") || "null"); if (m && m.data) S.meteo = m; } catch (e) { /* sans stockage */ }
+  }
+  try {
+    const r = await fetch(urlMeteo(C.fam.meteo.lat, C.fam.meteo.lon), { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    S.meteo = { data: await r.json(), lu: new Date().toISOString(), erreur: null };
+    try { localStorage.setItem("vision-meteo", JSON.stringify(S.meteo)); } catch (e) { /* sans stockage */ }
+  } catch (e) { S.meteo = { ...(S.meteo || {}), erreur: e.message || e.name }; }
+  rendreSiVisible();
+}
+
+function meteoCarte() {
+  const c = el("section", "carte ac-carte ac-meteo");
+  c.append(el("h2", "ac-titre", "Météo"));
+  if (!meteoConfiguree()) { c.append(el("p", "ac-attente", "Coordonnées à ajouter dans la configuration (famille.meteo).")); return c; }
+  const m = S.meteo;
+  if (!m || !m.data) { c.append(el("p", "ac-attente", m && m.erreur ? `Prévisions indisponibles (${m.erreur}).` : "Chargement…")); return c; }
+  const d = m.data, cur = d.current || {};
+  const jour = aujourdhui(), demain = decaler(jour, 1);
+  const desc = decrire(cur.weather_code);
+  const haut = el("div", "ac-mt-haut");
+  haut.append(el("span", "ac-mt-icone", desc.icone), el("span", "ac-mt-temp", `${Math.round(cur.temperature_2m)}°`));
+  const det = el("div", "ac-mt-det");
+  det.append(el("span", "", desc.texte), el("span", "ac-mt-ress", `ressenti ${Math.round(cur.apparent_temperature)}°`));
+  haut.append(det);
+  c.append(haut);
+  const seuils = { ...SEUILS_METEO, ...(C.fam.meteo.seuils || {}) };
+  const x = creneauxMeteo(d, jour, demain, maintenant(), seuils);
+  // Le conseil d'abord (le plus utile), puis les créneaux sur une ligne chacun.
+  if (x.conseil) c.append(el("p", "ac-mt-conseil", x.conseil));
+  const liste = el("div", "ac-mt-cren");
+  for (const k of x.creneaux) {
+    const l = el("p", "ac-mt-l");
+    l.title = `${decrire(k.code).texte}, ressenti ${k.ressenti}°`;
+    l.append(el("strong", "", k.libelle), document.createTextNode(` ${decrire(k.code).icone} ${k.temp}° · ress. ${k.ressenti}°${k.pluie >= 30 ? ` · ☔ ${k.pluie} %` : ""}`));
+    liste.append(l);
+  }
+  c.append(liste);
+  if (m.erreur) c.append(el("p", "ac-aide", `Dernière mise à jour à ${hm(new Date(m.lu))}.`));
+  return c;
+}
