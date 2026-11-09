@@ -228,7 +228,7 @@ function aujourdhuiCarte() {
   // Statut de l'enfant scolarisé, modifiable quand la journée dévie
   if (j && j.aff && !j.calc.ferie) c.append(statutE2(d, j));
   // Fil du jour
-  const fil = filDuJour(s.src.agenda[d], j, C.fam);
+  const fil = filDuJour(s.src.agenda[d], j, C.fam, d);
   const liste = el("ol", "ac-fil");
   if (!fil.length) liste.append(el("li", "ac-vide", "Rien de prévu."));
   for (const x of fil) {

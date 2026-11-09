@@ -58,3 +58,8 @@ const fil = filDuJour(agendaJour, jt, cfg);
 assert.deepEqual(fil.map(x => [x.heure, x.titre]), [[null, 'Soldes'], ['07:30', `${cfg.B.prenom} dépose`], ['14:00', 'Réunion'], ['19:00', `${cfg.A.prenom} récupère`]]);
 assert.equal(fil[2].notes, 'Apporter le dossier');
 console.log('texte de l\'accueil : tous les scénarios passent');
+// Congé de plusieurs jours saisi avec des heures : omis du fil (déjà sur la ligne du parent)
+const fil2 = filDuJour({ A: [{ titre: 'Congé de naissance', journee: false, debut: '2030-01-08T00:00', fin: '2030-01-20T00:00' },
+  { titre: 'Anniversaire', journee: false, debut: '2030-01-10T00:00', fin: '2030-01-11T00:00' }] }, null, cfg, '2030-01-10');
+assert.deepEqual(fil2.map(x => [x.heure, x.titre]), [[null, 'Anniversaire']]);
+console.log('fil du jour : journées à heures traitées');
