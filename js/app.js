@@ -4,6 +4,7 @@ import { lireClasseur } from "./semainier.js";
 import { initPlanning, afficherPlanning } from "./planning.js";
 import { initNounou, afficherNounou } from "./nounou.js";
 import { initVersion } from "./version.js";
+import { initAccueil, afficherAccueil } from "./accueil.js";
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 const FIREBASE = {
@@ -16,13 +17,19 @@ const $ = id => document.getElementById(id);
 const etat = { config: null, F: null, db: null, auth: null };
 
 /* ---------- Onglets ---------- */
-document.querySelectorAll(".onglet").forEach(b => b.addEventListener("click", () => {
-  document.querySelectorAll(".onglet").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
-  document.querySelectorAll(".vue").forEach(v => { v.hidden = v.id !== "vue-" + b.dataset.vue; });
-  document.body.classList.toggle("large", b.dataset.vue === "planning");
-  if (b.dataset.vue === "planning" && etat.db) afficherPlanning();
-  if (b.dataset.vue === "nounou" && etat.db) afficherNounou();
-}));
+function ouvrir(vue) {
+  document.querySelectorAll(".onglet").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.vue === vue)));
+  document.querySelectorAll(".vue").forEach(v => { v.hidden = v.id !== "vue-" + vue; });
+  document.body.classList.toggle("large", vue === "planning" || vue === "accueil");
+  document.body.classList.toggle("sur-accueil", vue === "accueil");
+  if (!etat.db) return;
+  if (vue === "planning") afficherPlanning();
+  if (vue === "nounou") afficherNounou();
+  if (vue === "accueil") afficherAccueil();
+}
+document.querySelectorAll(".onglet").forEach(b => b.addEventListener("click", () => ouvrir(b.dataset.vue)));
+// Onglet de départ : l'accueil sur un grand écran (iPad, Mac), le module nounou sur un téléphone.
+ouvrir(window.matchMedia("(min-width: 900px)").matches ? "accueil" : "nounou");
 
 function sync(texte, classe) {
   const el = $("etat-sync");
@@ -106,6 +113,8 @@ async function chargerTout() {
     const ctx = { F: etat.F, db: etat.db, fam: etat.config && etat.config.famille };
     initNounou(ctx);
     if (!$("vue-nounou").hidden) afficherNounou();
+    initAccueil(ctx);
+    if (!$("vue-accueil").hidden) afficherAccueil();
     sync("À jour · " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), "ok");
   } catch (e) {
     sync("Serveur injoignable (" + (e.code || e.name) + ") : rien n'est affiché plutôt qu'un faux vide.", "ko");

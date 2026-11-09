@@ -142,3 +142,10 @@ Retirés : `tests/faisabilite.mjs`, son workflow, la page `test-ipad/`. Ce dép�
 ## 2026-11-09 — Version dans l'adresse des fichiers
 
 Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro de version mais exécuté l'ancien code (copie gardée en mémoire malgré le service worker). Désormais `index.html` lit `version.json` sans cache, puis charge la feuille de style et chaque module avec `?v=<version>` (carte d'import générée avant le premier module). Une nouvelle version change donc l'adresse de tous les fichiers. Hors connexion, le service worker sert la dernière copie en ignorant le paramètre.
+
+## 2026-11-09 — Lot 2, étape 1 : squelette de l'accueil
+
+- Onglet « Accueil » (`js/accueil.js`), ouvert au démarrage sur un écran d'au moins 900 px de large ; le module assistante maternelle sur un téléphone.
+- Disposition : briefing (2/4), météo, compte à rebours ; quatre colonnes (Aujourd'hui ; Nounou + Ce soir ; Rappels du jour ; À faire) ; bande « Cette semaine ».
+- Écran maintenu allumé (`navigator.wakeLock`) tant que l'accueil est affiché.
+- Fraîcheur (`js/fraicheur.js`, testé) : écoute de `vision/etat` ; agendas orange au-delà d'1 h, rouge au-delà de 3 h (nuit, 23 h–6 h : 2 h 30 / 4 h 30, la tâche ne passe que toutes les 2 h) ; Rappels (étape 6) orange au-delà de 6 h. Un niveau rouge affiche un bandeau qui nomme la source. Sans confirmation du serveur, l'accueil le dit au lieu d'afficher un faux vide.

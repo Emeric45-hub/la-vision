@@ -23,9 +23,21 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 | 8 | Export de la grille mensuelle (image) | ✅ |
 | 9 | Recette sur le premier mois réel saisi dans l'app (sans ancien document en parallèle) | 🟡 |
 
+## Lot 2 — accueil (iPad paysage)
+
+| # | Étape | État |
+|---|---|---|
+| 1 | Squelette : disposition, écran allumé, fraîcheur des sources | 🟡 |
+| 2 | Cette semaine + module assistante maternelle | ⬜ |
+| 3 | Aujourd'hui : fil du jour, trajets, statut de l'enfant 2, calendriers abonnés | ⬜ |
+| 4 | Météo et conseil d'habillage (température ressentie) | ⬜ |
+| 5 | Compte à rebours | ⬜ |
+| 6 | Rappels, À faire, Courses (Raccourci définitif) | ⬜ |
+| 7 | Ce soir : cantine, plat du soir | ⬜ |
+| 8 | Boutons Raccourcis, essai à distance | ⬜ |
+
 ## Lots suivants
 
-- Lot 2 — accueil en lecture seule.
 - Lot 3 — briefing.
 - Lot 4 — habillage (fonds météo, nuit, saison).
 
