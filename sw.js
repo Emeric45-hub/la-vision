@@ -16,7 +16,7 @@ self.addEventListener("fetch", e => {
       if (rep.ok) { const copie = rep.clone(); caches.open(CACHE).then(c => c.put(req.url, copie)); }
       return rep;
     } catch (err) {
-      const copie = await caches.match(req.url);
+      const copie = await caches.match(req.url) || await caches.match(req.url, { ignoreSearch: true });
       if (copie) return copie;
       throw err;
     }
