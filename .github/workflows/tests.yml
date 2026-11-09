@@ -27,6 +27,8 @@ jobs:
         run: node tests/grille.test.mjs
       - name: Fraîcheur des sources
         run: node tests/fraicheur.test.mjs
+      - name: Météo (prévisions fictives)
+        run: node tests/meteo.test.mjs
       - name: Dépendances de la tâche
         working-directory: tache
         run: npm install --no-audit --no-fund --ignore-scripts

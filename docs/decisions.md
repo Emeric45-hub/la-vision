@@ -170,3 +170,11 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - Après une correction du jour faite dans l'app, « école » dans l'app de pointage suit la correction (cochée seulement s'il y a nounou après l'école), sauf si un créneau du soir est déjà saisi.
 - Grand écran : la barre de l'accueil remplace titre et onglets sur tous les écrans (« ‹ Accueil », nom de l'écran, accès aux autres écrans) ; les onglets restent sur téléphone.
 - Défilement dans les blocs : titre fixe, fondu en bas quand il reste à voir ; la position de défilement survit au rafraîchissement.
+
+## 2026-11-09 — Lot 2, étape 4 : météo
+
+- Open-Meteo lu directement par l'app (sans clé), toutes les 30 min, coordonnées dans `vision/config.famille.meteo = { lat, lon, seuils? }` (jamais dans le dépôt). Dernière prévision gardée sur l'appareil (stockage local) en attendant la suivante ; fraîcheur suivie (orange au-delà d'1 h 30).
+- Carte : temps actuel et ressenti ; conseil d'habillage pour la prochaine sortie (ce matin avant 9 h, cet après-midi avant 17 h, sinon demain matin) ; créneaux 8 h, 16 h 30 (moyenne des deux heures encadrantes, pluie = maximum) et demain 8 h.
+- Conseil fondé sur la température ressentie : < 5 °C manteau, bonnet et gants ; < 12 °C manteau ; ≤ 18 °C gilet ; au-delà tenue légère ; pluie ≥ 50 % imperméable et bottes. Seuils modifiables dans la configuration.
+- Lever et coucher du soleil déjà lus (serviront au fond de nuit, lot 4).
+- Fil du jour : le nom du calendrier abonné n'est plus affiché.
