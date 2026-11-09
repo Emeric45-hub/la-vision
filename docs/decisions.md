@@ -138,3 +138,7 @@ GitHub Pages autorise les navigateurs à garder les fichiers 10 minutes, et l'ap
 ## 2026-11-08 — Nettoyage de fin de lot 1
 
 Retirés : `tests/faisabilite.mjs`, son workflow, la page `test-ipad/`. Ce dépôt ne porte plus aucun secret ; toutes les tâches tournent depuis `la-vision-tache`. Les documents `vision_test/*` et leur règle Firestore sont supprimés. Les noms des anciens secrets (avec prénoms) restent visibles dans l'historique Git : résidu accepté.
+
+## 2026-11-09 — Version dans l'adresse des fichiers
+
+Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro de version mais exécuté l'ancien code (copie gardée en mémoire malgré le service worker). Désormais `index.html` lit `version.json` sans cache, puis charge la feuille de style et chaque module avec `?v=<version>` (carte d'import générée avant le premier module). Une nouvelle version change donc l'adresse de tous les fichiers. Hors connexion, le service worker sert la dernière copie en ignorant le paramètre.

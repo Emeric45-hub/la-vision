@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#F2F2F7">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css" id="feuille">
 <title>La Vision</title>
 <!-- Lecture des classeurs Excel (même version que l'app d'origine du lecteur) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
@@ -77,6 +77,29 @@
   </form>
 </div>
 
-<script type="module" src="js/app.js"></script>
+<script>
+// Chargement par version : chaque fichier de l'app est demandé avec « ?v=<version publiée> ».
+// Un navigateur qui garde une ancienne copie en mémoire ne peut donc pas la réutiliser
+// après une mise à jour. Tout nouveau module doit être ajouté à cette liste.
+(function () {
+  var MODULES = ["js/app.js", "js/planning.js", "js/nounou.js", "js/nounou-calcul.js", "js/outils.js",
+    "js/grille.js", "js/semainier.js", "js/version.js", "tache/moteur.js"];
+  function lancer(v) {
+    var q = "?v=" + encodeURIComponent(v), base = new URL(".", location.href), imports = {};
+    MODULES.forEach(function (m) { imports[new URL(m, base).href] = new URL(m + q, base).href; });
+    var carte = document.createElement("script");
+    carte.type = "importmap"; carte.textContent = JSON.stringify({ imports: imports });
+    document.head.appendChild(carte);
+    document.getElementById("feuille").href = "css/app.css" + q;
+    var s = document.createElement("script");
+    s.type = "module"; s.src = "js/app.js" + q;
+    document.body.appendChild(s);
+  }
+  fetch("version.json", { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { lancer(j.version); })
+    .catch(function () { lancer("hors-connexion"); });
+})();
+</script>
 </body>
 </html>
