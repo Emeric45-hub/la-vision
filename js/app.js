@@ -17,13 +17,13 @@ const $ = id => document.getElementById(id);
 const etat = { config: null, F: null, db: null, auth: null };
 
 /* ---------- Onglets ---------- */
-function ouvrir(vue) {
+function ouvrir(vue, jour) {
   document.querySelectorAll(".onglet").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.vue === vue)));
   document.querySelectorAll(".vue").forEach(v => { v.hidden = v.id !== "vue-" + vue; });
   document.body.classList.toggle("large", vue === "planning" || vue === "accueil");
   document.body.classList.toggle("sur-accueil", vue === "accueil");
   if (!etat.db) return;
-  if (vue === "planning") afficherPlanning();
+  if (vue === "planning") afficherPlanning(jour);
   if (vue === "nounou") afficherNounou();
   if (vue === "accueil") afficherAccueil();
 }
@@ -113,7 +113,7 @@ async function chargerTout() {
     const ctx = { F: etat.F, db: etat.db, fam: etat.config && etat.config.famille };
     initNounou(ctx);
     if (!$("vue-nounou").hidden) afficherNounou();
-    initAccueil(ctx);
+    initAccueil({ ...ctx, ouvrir });
     if (!$("vue-accueil").hidden) afficherAccueil();
     sync("À jour · " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), "ok");
   } catch (e) {

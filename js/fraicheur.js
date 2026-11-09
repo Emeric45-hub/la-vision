@@ -1,7 +1,8 @@
 // Fraîcheur des sources de l'accueil (pur, testé sous Node).
-// Seuils en minutes : de jour, la tâche passe toutes les 30 min ; la nuit, toutes les 2 h.
+// Seuils en minutes : de jour, la tâche passe toutes les 30 min (alerte au-delà d'1 h) ;
+// la nuit, toutes les 2 h (alerte au-delà de 4 h 30).
 export const SEUILS = {
-  agendas: { jour: { orange: 60, rouge: 180 }, nuit: { orange: 150, rouge: 270 } },
+  agendas: { jour: { orange: 40, rouge: 60 }, nuit: { orange: 150, rouge: 270 } },
   rappels: { jour: { orange: 360, rouge: 24 * 60 }, nuit: { orange: 600, rouge: 24 * 60 } }
 };
 export const estNuit = heure => { const h = Number(heure.slice(0, 2)); return h >= 23 || h < 6; };

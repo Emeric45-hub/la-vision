@@ -149,3 +149,9 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - Disposition : briefing (2/4), météo, compte à rebours ; quatre colonnes (Aujourd'hui ; Nounou + Ce soir ; Rappels du jour ; À faire) ; bande « Cette semaine ».
 - Écran maintenu allumé (`navigator.wakeLock`) tant que l'accueil est affiché.
 - Fraîcheur (`js/fraicheur.js`, testé) : écoute de `vision/etat` ; agendas orange au-delà d'1 h, rouge au-delà de 3 h (nuit, 23 h–6 h : 2 h 30 / 4 h 30, la tâche ne passe que toutes les 2 h) ; Rappels (étape 6) orange au-delà de 6 h. Un niveau rouge affiche un bandeau qui nomme la source. Sans confirmation du serveur, l'accueil le dit au lieu d'afficher un faux vide.
+
+## 2026-11-09 — Déclenchement de la tâche et lot 2, étape 2
+
+- La programmation de GitHub sautait la plupart des passages (4 par jour au lieu de ~36). La tâche est désormais lancée par un service de déclenchement extérieur (appel de l'API `workflow_dispatch`), à la même fréquence ; programmation GitHub retirée ; un seul passage à la fois (`concurrency`). Jeton GitHub limité au droit « Actions » du dépôt de la tâche. L'en-tête `X-GitHub-Api-Version: 2022-11-28` est annoncé retiré en mars 2028 : à changer d'ici là.
+- Alerte : de jour, bandeau dès que les agendas n'ont pas été lus depuis plus d'1 h (orange au-delà de 40 min) ; la nuit, au-delà de 4 h 30.
+- Accueil : barre du haut reprise de la maquette (date, heure, état des sources, « Planning de <mois suivant> » avec son état, réglages, nom de l'app) à la place du titre et des onglets ; disposition à hauteur d'écran sur grand écran. Colonne de droite : Rappels du jour (2/3) + post-it (1/3), « À faire, plus tard » dessous. Bande « Cette semaine » (lundi → dimanche, texte commun avec l'écran Planning, `js/texte-jour.js`) ; toucher un jour ouvre le planning sur ce jour. Le module assistante maternelle s'affiche aussi dans l'accueil (`monterNounou`).

@@ -4,6 +4,7 @@
 import { couchesAffichage, partieValidee, affiche, jourSemaine } from "../tache/moteur.js";
 import { pad, decaler, aujourdhui, propre, canon, el, lirePlage as lire, jourAffiche, heureInput } from "./outils.js";
 import { lignesJour, dessiner } from "./grille.js";
+import { etiquettes as etiq, ligneE2 as ligne2, lignesCase } from "./texte-jour.js";
 
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
@@ -53,31 +54,10 @@ function rafraichirJour(d, nouveau) {
 }
 
 /* ---------- Libellés ---------- */
-function etiquettes(calc) {
-  if (!calc) return [];
-  const A = C.fam.A.prenom, B = C.fam.B.prenom, out = [];
-  if (calc.ferie) return [calc.ferie];
-  if (calc.A.gardeSoir) out.push(`Garde ${A}`);
-  else if (calc.A.lendemain) out.push(`Repos ${A}`);
-  else if (calc.A.statut === "conge") out.push(`${A} en congé`);
-  else if (calc.A.statut === "off") out.push(`${A} à la maison`);
-  if (calc.B.statut === "garde") out.push(`Garde ${B}`);
-  else if (calc.B.statut === "lendemain") out.push(`Repos ${B}`);
-  else if (calc.B.statut === "repos") out.push(`${B} off`);
-  else if (calc.B.statut === "conge") out.push(`${B} en vacances`);
-  if (calc.vacances) out.push("Vacances");
-  return out;
-}
+const etiquettes = calc => etiq(calc, C.fam);
+const ligneE2 = aff => ligne2(aff, C.fam);
 const qui = q => q === "A" ? C.fam.A.prenom : q === "B" ? C.fam.B.prenom : "?";
 const plages = cr => (cr || []).map(x => `${h(x.debut)}–${h(x.fin)}`).join(" · ");
-function ligneE2(aff) {
-  const n = C.fam.enfants.e2.prenom;
-  if (!aff.e2 || aff.e2 === "maison") return aff.e2 ? `${n} avec nous` : `${n} : ?`;
-  const cr = plages(aff.creneauxE2);
-  if (aff.e2 === "ecole") return cr ? `${n} ${cr}` : `${n} école`;
-  if (aff.e2 === "nounou") return `${n} ${cr || "?"}`;
-  return `${n} ${LIEUX[aff.e2]}${cr ? " · nounou " + cr : ""}`;
-}
 
 /* ---------- Rendu ---------- */
 let racine;
@@ -87,8 +67,9 @@ export function initPlanning(ctx) {
   if (!S.mois) { const t = aujourdhui(); S.mois = t.slice(0, 7); }
 }
 
-export async function afficherPlanning() {
+export async function afficherPlanning(jour) {
   if (!racine) return;
+  if (jour) { S.mois = jour.slice(0, 7); S.selection = jour; S.mode = "grille"; }
   if (!C || !C.fam) { racine.replaceChildren(el("div", "carte", "Configuration familiale absente.")); return; }
   racine.replaceChildren(el("p", "discret", "Chargement…"));
   try { await chargerMois(); }
@@ -156,13 +137,7 @@ function rendreGrille(a, m) {
     b.append(el("span", "pl-num", String(Number(d.slice(8)))));
     etiquettes(c).forEach(t => b.append(el("span", "pl-etiq", t)));
     if (aff) {
-      const n1 = C.fam.enfants.e1.prenom;
-      if (aff.e1) b.append(el("span", "pl-e1", aff.creneauxE1.length ? `${n1} ${plages(aff.creneauxE1)}` : `${n1} ?`));
-      else if (!c.ferie) b.append(el("span", "pl-e1 attenue", `${n1} avec nous`));
-      if (!c.ferie) b.append(el("span", "pl-e2", ligneE2(aff)));
-      if (aff.e1 && aff.depot) b.append(el("span", "pl-mvt", `Dépôt ${qui(aff.depot.qui)} ${h(aff.depot.heure)}`));
-      if (aff.e1 && aff.recup) b.append(el("span", "pl-mvt", `Récup. ${qui(aff.recup.qui)} ${h(aff.recup.heure)}`));
-      if (aff.note) b.append(el("span", "pl-note", aff.note));
+      for (const l of lignesCase(j, C.fam)) b.append(el("span", l.cls.split(" ").map((x, k) => k ? x : "pl-" + x).join(" "), l.txt));
       const n = c.points.length + (j.ecart ? 1 : 0);
       if (n && !j.passe) b.append(el("span", "pl-flag", `${n} à vérifier`));
       if (aff.corrige && j.p.corrige && j.p.corrige.apresValidation) b.append(el("span", "pl-flag bleu", "modifié depuis la validation"));
