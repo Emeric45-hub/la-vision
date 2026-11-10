@@ -201,6 +201,16 @@ function barre(src) {
   b.append(etat);
 
   const boutons = el("div", "ac-boutons");
+  // Raccourcis de l'appareil (applications Maison, caméras…) : famille.boutons = [{ libelle, icone, raccourci }].
+  // Lancés par l'adresse shortcuts:// (le Raccourci doit exister sur l'appareil qui affiche l'accueil).
+  for (const x of (C && C.fam && C.fam.boutons) || []) {
+    const b = el("a", "ac-pilule ac-raccourci", `${x.icone ? x.icone + " " : ""}${x.libelle}`);
+    b.href = "shortcuts://run-shortcut?name=" + encodeURIComponent(x.raccourci);
+    boutons.append(b);
+  }
+  const rec = el("button", "ac-pilule", "📖 Recettes");
+  rec.type = "button"; rec.onclick = () => ouvrirRecette(C, null);
+  boutons.append(rec);
   const ms = S.moisSuivant;
   if (ms) {
     const nom = MOIS[Number(ms.cle.slice(5)) - 1];
