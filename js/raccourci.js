@@ -28,12 +28,19 @@ export function lire(donnees) {
   return { le, rappels, evenements, anniversaires };
 }
 
-// Rappels du jour (échéance aujourd'hui ou dépassée) et « à faire, plus tard » (le reste).
-export function repartir(rappels, aujourdhui) {
+// Listes de rappels récurrents : reconnues à leur nom (« … (récurrents) »), modifiable par
+// la configuration (famille.rappels.recurrents = expression régulière). Raccourcis ne transmet
+// pas la récurrence d'un rappel.
+export const RECURRENTS = "r[ée]currente?s?";
+
+// Rappels du jour (échéance aujourd'hui ou dépassée, toutes listes) et « à faire, plus tard »
+// (rappels ponctuels sans date ou à date future ; les récurrents n'y figurent pas).
+export function repartir(rappels, aujourdhui, motif = RECURRENTS) {
+  const rec = new RegExp(motif || RECURRENTS, "i");
   const cle = r => (r.jour || "9999") + (r.heure || "99:99") + r.titre;
   const jour = rappels.filter(r => r.jour && r.jour <= aujourdhui).map(r => ({ ...r, retard: r.jour < aujourdhui }))
     .sort((a, b) => cle(a).localeCompare(cle(b)));
-  const plusTard = rappels.filter(r => !r.jour || r.jour > aujourdhui)
+  const plusTard = rappels.filter(r => (!r.jour || r.jour > aujourdhui) && !rec.test(r.liste))
     .sort((a, b) => cle(a).localeCompare(cle(b)));
   return { jour, plusTard };
 }

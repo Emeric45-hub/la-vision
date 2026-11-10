@@ -192,3 +192,4 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - App (`js/raccourci.js`) : rappels dont l'échéance est aujourd'hui ou dépassée → « Rappels du jour » ; les autres → « À faire, plus tard ». Événements du calendrier local ajoutés au fil du jour (sans doublon). Anniversaires proposés dans le compte à rebours.
 - Fraîcheur : alerte orange au-delà de 6 h de jour ; la « nuit » du Raccourci va de 21 h à 7 h (pas de passage), seuil 11 h ; bandeau rouge au-delà de 24 h.
 - Cocher, ajouter et courses : partie réception, étape suivante.
+- Correction du 10/11 : « À faire, plus tard » ne montre que les rappels ponctuels. Raccourcis ne transmettant pas la récurrence, les listes de rappels récurrents sont reconnues à leur nom (motif par défaut « récurrent(e)s », remplaçable par `famille.rappels.recurrents`). Un rappel récurrent n'apparaît que dans « Rappels du jour », le jour de son échéance ou en retard.
