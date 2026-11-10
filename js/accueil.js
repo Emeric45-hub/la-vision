@@ -427,11 +427,10 @@ const envoyerAction = donnees => C.F.addDoc(C.F.collection(C.db, "vision", "racc
 
 function rappelsCarte() {
   const c = el("section", "carte ac-carte ac-rappels");
-  const b = el("button", "ac-mini", S.coursesOuvert ? "Fermer" : "🛒 Courses");
-  b.type = "button"; b.onclick = () => { S.coursesOuvert = !S.coursesOuvert; S.coursesMsg = null; rendre(); };
+  const b = el("button", "ac-mini", "🛒 Courses");
+  b.type = "button"; b.onclick = fenetreCourses;
   const tete = teteCarte("Rappels du jour", b);
   c.append(tete);
-  if (S.coursesOuvert) c.append(formCourses());
   const r = etatRappels(c);
   if (!r) return c;
   const a = boutonAnnuler(r.jour);
@@ -443,36 +442,16 @@ function rappelsCarte() {
   return c;
 }
 
-// Ajout à la liste des courses : le champ reste ouvert pour enchaîner les articles.
-function formCourses() {
-  const f = el("form", "ac-form");
-  const t = el("input", "note"); t.type = "text"; t.placeholder = "Article à ajouter aux courses"; t.maxLength = 80;
-  t.enterKeyHint = "send"; t.autocapitalize = "sentences";
-  const ok = el("button", "bouton petit-bouton", "Ajouter"); ok.type = "submit";
-  const msg = el("p", "ac-aide", S.coursesMsg || "Ajouté dans Rappels au prochain passage du Raccourci.");
-  f.onsubmit = async e => {
-    e.preventDefault();
-    const v = t.value.trim();
-    if (!v) return;
-    try { await envoyerAction({ type: "courses", t: v }); t.value = ""; S.coursesMsg = `« ${v} » ajouté.`; msg.textContent = S.coursesMsg; }
-    catch (er) { msg.textContent = `Non enregistré (${er.code || er.name}).`; }
-    t.focus();
-  };
-  f.append(t, ok, msg);
-  return f;
-}
-
 function afaireCarte() {
   const c = el("section", "carte ac-carte ac-afaire");
   const listes = (C.fam && C.fam.rappels && C.fam.rappels.ajout) || [];
   let b = null;
   if (listes.length) {
-    b = el("button", "ac-mini", S.ajoutOuvert ? "Fermer" : "+ Ajouter");
-    b.type = "button"; b.onclick = () => { S.ajoutOuvert = !S.ajoutOuvert; rendre(); };
+    b = el("button", "ac-mini", "+ Ajouter");
+    b.type = "button"; b.onclick = () => fenetreAjout(listes);
   }
   const tete = teteCarte("À faire, plus tard", b);
   c.append(tete);
-  if (S.ajoutOuvert && listes.length) c.append(formAjout(listes));
   const r = etatRappels(c);
   if (!r) return c;
   const a = boutonAnnuler(r.plusTard);
@@ -484,10 +463,49 @@ function afaireCarte() {
   return c;
 }
 
-function formAjout(listes) {
-  const f = el("form", "ac-form ac-form-ajout");
+/* Fenêtres d'ajout : au centre de l'écran, au-dessus de l'accueil (hors des blocs, que le
+   rafraîchissement de l'accueil ne touche pas). Fermeture : bouton, fond ou touche Échap. */
+function fenetre(titre) {
+  const fond = el("div", "ac-fenetre-fond");
+  const f = el("form", "ac-fenetre");
+  f.setAttribute("role", "dialog"); f.setAttribute("aria-modal", "true"); f.setAttribute("aria-label", titre);
+  f.append(el("h2", "ac-fenetre-titre", titre));
+  const fermer = () => { fond.remove(); document.removeEventListener("keydown", echap); };
+  const echap = e => { if (e.key === "Escape") fermer(); };
+  fond.onclick = e => { if (e.target === fond) fermer(); };
+  document.addEventListener("keydown", echap);
+  fond.append(f);
+  document.body.append(fond);
+  return { f, fermer };
+}
+
+// Courses : la fenêtre reste ouverte pour enchaîner les articles.
+function fenetreCourses() {
+  const { f, fermer } = fenetre("Ajouter aux courses");
+  const t = el("input", "note ac-fenetre-champ"); t.type = "text"; t.placeholder = "Article"; t.maxLength = 80;
+  t.enterKeyHint = "send"; t.autocapitalize = "sentences";
+  const msg = el("p", "ac-aide", "Ajouté dans Rappels au prochain passage du Raccourci.");
+  const pied = el("div", "ac-fenetre-pied");
+  const fin = el("button", "bouton secondaire", "Terminé"); fin.type = "button"; fin.onclick = fermer;
+  const ok = el("button", "bouton", "Ajouter"); ok.type = "submit";
+  pied.append(fin, ok);
+  f.append(t, msg, pied);
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const v = t.value.trim();
+    if (!v) return;
+    ok.disabled = true;
+    try { await envoyerAction({ type: "courses", t: v }); t.value = ""; msg.textContent = `« ${v} » ajouté.`; }
+    catch (er) { msg.textContent = `Non enregistré (${er.code || er.name}).`; }
+    ok.disabled = false; t.focus();
+  };
+  t.focus();
+}
+
+function fenetreAjout(listes) {
+  const { f, fermer } = fenetre("Nouveau rappel");
   if (!listes.includes(S.ajoutListe)) S.ajoutListe = listes[0];
-  const t = el("input", "note"); t.type = "text"; t.placeholder = "Nouveau rappel"; t.maxLength = 120; t.autocapitalize = "sentences";
+  const t = el("input", "note ac-fenetre-champ"); t.type = "text"; t.placeholder = "Titre du rappel"; t.maxLength = 120; t.autocapitalize = "sentences";
   const seg = el("div", "seg");
   for (const nom of listes) {
     const x = el("button", "seg-btn" + (nom === S.ajoutListe ? " actif" : ""), nom);
@@ -495,19 +513,24 @@ function formAjout(listes) {
     x.onclick = () => { S.ajoutListe = nom; seg.querySelectorAll(".seg-btn").forEach(y => y.classList.toggle("actif", y === x)); };
     seg.append(x);
   }
-  const d = el("input", "note"); d.type = "date"; d.min = aujourdhui(); d.title = "Échéance (facultative)";
-  const ok = el("button", "bouton petit-bouton", "Ajouter"); ok.type = "submit";
+  const lib = el("label", "ac-fenetre-date");
+  const d = el("input", "note"); d.type = "date"; d.min = aujourdhui();
+  lib.append(document.createTextNode("Échéance (facultative)"), d);
+  const msg = el("p", "ac-aide", "Créé dans Rappels au prochain passage du Raccourci.");
+  const pied = el("div", "ac-fenetre-pied");
+  const non = el("button", "bouton secondaire", "Annuler"); non.type = "button"; non.onclick = fermer;
+  const ok = el("button", "bouton", "Ajouter"); ok.type = "submit";
+  pied.append(non, ok);
+  f.append(t, seg, lib, msg, pied);
   f.onsubmit = async e => {
     e.preventDefault();
     const v = t.value.trim();
-    if (!v) return;
-    try {
-      await envoyerAction({ type: "creer", t: v, l: S.ajoutListe, e: d.value || "" });
-      t.value = ""; d.value = ""; S.ajoutOuvert = false; t.blur(); rendre();
-    } catch (er) { alerteEcriture(er); }
+    if (!v) { t.focus(); return; }
+    ok.disabled = true;
+    try { await envoyerAction({ type: "creer", t: v, l: S.ajoutListe, e: d.value || "" }); fermer(); rendre(); }
+    catch (er) { ok.disabled = false; msg.textContent = `Non enregistré (${er.code || er.name}).`; }
   };
-  f.append(t, seg, d, ok);
-  return f;
+  t.focus();
 }
 
 /* ---------- Météo (Open-Meteo, lue directement par l'app) ---------- */

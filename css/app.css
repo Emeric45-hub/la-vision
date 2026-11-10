@@ -338,3 +338,15 @@ body.sur-accueil .version { display: none; }
 .ac-rb-ajout input.note { font-size: 14px; min-height: 34px; }
 .ac-rb-an { font-size: 12.5px; }
 .ac-rb-ajout .bouton { margin-top: 0; align-self: flex-start; }
+
+/* Fenêtres d'ajout (courses, nouveau rappel) */
+.ac-fenetre-fond { position: fixed; inset: 0; z-index: 50; background: rgba(20, 20, 30, .35); display: flex; align-items: flex-start; justify-content: center; padding: 12vh 16px 16px; }
+.ac-fenetre { width: min(520px, 100%); background: var(--carte, #fff); border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.25); padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; }
+.ac-fenetre-titre { margin: 0; font-size: 20px; }
+.ac-fenetre-champ { font-size: 18px; min-height: 48px; width: 100%; box-sizing: border-box; }
+.ac-fenetre .seg-btn { min-height: 44px; font-size: 15px; }
+.ac-fenetre-date { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 15px; color: var(--discret); }
+.ac-fenetre-date .note { flex: 0 1 200px; min-height: 44px; }
+.ac-fenetre .ac-aide { margin: 0; }
+.ac-fenetre-pied { display: flex; justify-content: flex-end; gap: 10px; }
+.ac-fenetre-pied .bouton { min-height: 44px; padding: 0 20px; }
