@@ -339,22 +339,33 @@ function alerteEcriture(e) { S.erreurEcriture = e.code || e.name; rendre(); }
 // ALAE / centre (mercredis, vacances) → accueil de loisirs ; ailleurs, pas de ligne.
 function soirCarte() {
   const c = el("section", "carte ac-carte ac-soir");
-  c.append(el("h2", "ac-titre", "Ce soir"));
   const d = aujourdhui(), j = S.semaine && S.semaine.jours && S.semaine.jours[d];
   const lieu = j && j.aff && j.aff.e2;
   const source = lieu === "ecole" ? "ecole" : (lieu === "alae" || lieu === "centre") ? "loisirs" : null;
+  let midi = null;
   if (source && S.cantine) {
+    const prenom = C.fam.enfants.e2.prenom;
     const plats = pourEnfant((S.cantine[source] || {})[d]);
-    const b = el("div", "ac-cantine");
-    b.append(el("span", "ac-cantine-t", `Ce midi à la cantine (${C.fam.enfants.e2.prenom})`));
-    b.append(el("span", "ac-cantine-p", plats.length ? plats.join(" · ") : "Menu non publié."));
-    c.append(b);
+    midi = el("button", "ac-mini", `🍽 Midi ${prenom}`);
+    midi.type = "button";
+    midi.onclick = () => {
+      const { f, fermer } = fenetre(`Ce midi à la cantine (${prenom})`);
+      const l = el("ul", "ac-midi-liste");
+      if (!plats.length) l.append(el("li", "ac-vide", "Menu non publié."));
+      plats.forEach(p => l.append(el("li", "", p)));
+      const pied = el("div", "ac-fenetre-pied");
+      const ok = el("button", "bouton", "Fermer"); ok.type = "button"; ok.onclick = fermer;
+      pied.append(ok);
+      f.append(l, pied);
+      f.onsubmit = e => { e.preventDefault(); fermer(); };
+    };
   }
+  c.append(teteCarte("Ce soir", midi));
   c.append(platsDuSoir());
   return c;
 }
 
-// Plats de la semaine qui restent, dans l'ordre du plan ; le premier est celui prévu.
+// Le plat prévu ce soir (le premier qui reste, dans l'ordre du plan) ; les autres dans une fenêtre.
 // Toucher un plat ouvre sa recette (PDF) avec « On l'a fait ce soir ».
 function platsDuSoir() {
   const b = el("div", "ac-plats");
@@ -366,21 +377,50 @@ function platsDuSoir() {
   const reste = P.plats.filter(p => !faits.includes(p.id));
   const { doc, updateDoc, arrayUnion, arrayRemove } = C.F;
   const ref = doc(C.db, "vision", "plats");
-  if (!reste.length) b.append(el("p", "ac-attente", "Tous les plats de la semaine sont faits."));
-  reste.forEach((p, i) => {
-    const x = el("button", "ac-plat" + (i === 0 ? " prevu" : ""));
+  const ouvrir = p => ouvrirRecette(C, p, () => updateDoc(ref, { faits: arrayUnion(p.id) }));
+  const bouton = (p, prevu) => {
+    const x = el("button", "ac-plat" + (prevu ? " prevu" : ""));
     x.type = "button";
-    const haut = el("span", "ac-plat-j", i === 0 ? `Prévu · ${p.jour}` : p.jour);
-    x.append(haut, el("span", "ac-plat-t", p.repas), el("span", "ac-plat-d", [p.proteine, p.temps].filter(Boolean).join(" · ")));
-    x.onclick = () => ouvrirRecette(C, p, () => updateDoc(ref, { faits: arrayUnion(p.id) }));
-    b.append(x);
-  });
-  if (faits.length) {
-    const dernier = P.plats.find(p => p.id === faits[faits.length - 1]);
-    const r = el("button", "ac-lien", `Rétablir « ${dernier ? dernier.repas : "le dernier"} »`);
-    r.type = "button"; r.onclick = () => updateDoc(ref, { faits: arrayRemove(faits[faits.length - 1]) }).catch(alerteEcriture);
-    b.append(r);
+    x.append(el("span", "ac-plat-j", prevu ? `Prévu · ${p.jour}` : p.jour), el("span", "ac-plat-t", p.repas),
+      el("span", "ac-plat-d", [p.proteine, p.temps].filter(Boolean).join(" · ")));
+    return x;
+  };
+  // Fenêtre « Autres plats » : les plats restants après celui prévu, et « Rétablir » le dernier fait.
+  const fenetreAutres = () => {
+    const { f, fermer } = fenetre("Autres plats de la semaine");
+    const l = el("div", "ac-plats");
+    if (reste.length < 2) l.append(el("p", "ac-attente", "Aucun autre plat cette semaine."));
+    reste.slice(1).forEach(p => { const x = bouton(p, false); x.onclick = () => { fermer(); ouvrir(p); }; l.append(x); });
+    const pied = el("div", "ac-fenetre-pied");
+    if (faits.length) {
+      const dernier = P.plats.find(p => p.id === faits[faits.length - 1]);
+      const r = el("button", "bouton secondaire", `Rétablir « ${dernier ? dernier.repas : "le dernier"} »`);
+      r.type = "button"; r.onclick = () => { fermer(); updateDoc(ref, { faits: arrayRemove(faits[faits.length - 1]) }).catch(alerteEcriture); };
+      pied.append(r);
+    }
+    const ok = el("button", "bouton", "Fermer"); ok.type = "button"; ok.onclick = fermer;
+    pied.append(ok);
+    f.append(l, pied);
+    f.onsubmit = e => { e.preventDefault(); fermer(); };
+  };
+  const autres = el("button", "ac-lien", reste.length > 1 ? `Autres (${reste.length - 1}) ›` : "Autres ›");
+  autres.type = "button";
+  autres.onclick = e => { e.stopPropagation(); fenetreAutres(); };
+  if (!reste.length) {
+    const v = el("div", "ac-plats-bas");
+    v.append(el("span", "ac-attente", "Tous les plats sont faits."), autres);
+    b.append(v);
+    return b;
   }
+  // Le plat prévu : toucher la carte ouvre la recette ; « Autres › » ouvre la liste.
+  const p = reste[0];
+  const x = el("div", "ac-plat prevu");
+  x.setAttribute("role", "button"); x.tabIndex = 0;
+  const haut = el("div", "ac-plat-haut");
+  haut.append(el("span", "ac-plat-j", `Prévu · ${p.jour}`), autres);
+  x.append(haut, el("span", "ac-plat-t", p.repas), el("span", "ac-plat-d", [p.proteine, p.temps].filter(Boolean).join(" · ")));
+  x.onclick = () => ouvrir(p);
+  b.append(x);
   return b;
 }
 

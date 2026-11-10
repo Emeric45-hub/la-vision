@@ -38,7 +38,9 @@ assert.deepEqual(Object.keys(m), ['2030-03-02', '2030-03-05', '2030-03-06', '203
 assert.deepEqual(m['2030-03-09'], ['Salade', 'Poisson pané', 'Purée']);
 assert.deepEqual(pourEnfant(m['2030-03-02']), ['Potage', 'Poulet rôti', 'Haricots verts', 'Yaourt']);   // alternative végé retirée
 assert.deepEqual(pourEnfant(m['2030-03-05']), ['Carottes râpées', 'Boulettes végétales sauce tomate', 'Semoule']);   // jour végé gardé
-assert.equal(pourEnfant(m['2030-03-06']).length, 3);   // cas ambigu : les deux gratins restent
+assert.deepEqual(pourEnfant(m['2030-03-06']), ['Gratin de pâtes/jambon', 'Pomme']);   // variante avec viande seulement
+assert.deepEqual(pourEnfant(['Gratin de choux-fleurs/pommes de terre/lardons', 'Gratin de choux-fleurs/pommes de terre/emmental', 'Orange']), ['Gratin de choux-fleurs/pommes de terre/lardons', 'Orange']);
+assert.deepEqual(pourEnfant(['Crêpe au fromage', 'Jambon blanc', 'Oeuf dur sauce tomate']), ['Crêpe au fromage', 'Jambon blanc', 'Oeuf dur sauce tomate']);
 assert.deepEqual(lireMenus(''), {});
 
 // Une lecture par jour, à partir de 5 h à Paris
