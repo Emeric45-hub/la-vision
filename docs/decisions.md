@@ -267,3 +267,7 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 ## 2026-11-10 — Parent B « Absente »
 
 Quatrième choix dans la saisie des horaires de B (avec Off et Vacances) : `saisies.B = { type: 'absent' }`, statut calculé `absent`. B n'est ni à la maison ni disponible : A dépose en partant (heure de dépôt tôt, ou heure de congé s'il est à la maison) et récupère en rentrant ; lendemain de garde de A ou A indisponible le soir → point à vérifier. Mercredi scolaire avec A au travail → point à vérifier. L'alerte « long événement : B absente ? » n'est plus émise pour B ce jour-là. Pas de détection par mots de l'agenda (risque de fausse détection) : saisie à la main seulement.
+
+## 2026-11-10 — Alerte « absent ? » sur les événements « journée entière »
+
+L'alerte « long événement : parent absent ? » couvre aussi les événements « journée entière » sur au moins deux jours. Pas d'alerte quand le parent est en congé ou en jour non travaillé (séjour, voyage). Pas de statut « Absent » automatique pour A : la correction du jour reste manuelle.

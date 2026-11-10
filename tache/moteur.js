@@ -257,7 +257,8 @@ function calculerBase(entree, cfg) {
 // Le moteur n'interprète pas les rendez-vous (leur effet sur les horaires n'est pas déductible) :
 // il les signale. Deux cas :
 //  - un événement dont le titre contient le prénom d'un enfant, un jour où cet enfant est confié ;
-//  - un événement horaire d'un parent de 12 h ou plus (congrès, formation…) qui n'est pas une garde.
+//  - un événement d'un parent de 12 h ou plus, ou sur la journée entière pendant au moins deux jours
+//    (congrès, formation…), qui n'est pas une garde.
 const minutes = s => Date.parse(s.length === 10 ? s + 'T00:00Z' : s + 'Z') / 60000;
 const echapper = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -281,9 +282,12 @@ function alertes(res, entree, cfg) {
   }
   for (const [qui, evs] of [['A', ag.A || []], ['B', ag.B || []]]) {
     if (qui === 'B' && res.B && res.B.statut === 'absent') continue;   // absence déjà saisie : question réglée
+    // Parent en congé ou en vacances ce jour-là : un long événement n'apprend rien (voyage, séjour).
+    if (['conge', 'off'].includes(res[qui] && res[qui].statut)) continue;
     for (const e of evs) {
-      if (e.journee || connu(e.titre)) continue;
-      if (minutes(e.fin) - minutes(e.debut) < 12 * 60) continue;
+      if (connu(e.titre)) continue;
+      // Événement à heures de 12 h ou plus, ou « journée entière » sur au moins deux jours (fin incluse).
+      if (minutes(e.fin) - minutes(e.debut) < (e.journee ? 1440 : 12 * 60)) continue;
       const msg = `${e.titre} : ${cfg[qui].prenom} absent${qui === 'B' ? 'e' : ''} ?`;
       if (!res.points.includes(msg)) res.points.push(msg);
     }
