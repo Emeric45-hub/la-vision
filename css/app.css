@@ -497,3 +497,6 @@ body[class*="fond-"] .ac-jourc { background: rgba(var(--carte-rgb), .55); }
    on le contient (la bande « Cette semaine » était le seul bloc concerné). */
 .carte { isolation: isolate; }
 .ac-semaine, .ac-haut .ac-carte, .barre-ecran .ac-pilule, .ac-barre .ac-pilule { overflow: hidden; }
+/* Compte à rebours : même bandeau de titre que les autres blocs */
+.ac-rebours > .ac-rb-tete { position: sticky; top: -12px; z-index: 1; margin: -12px -14px 6px; padding: 12px 14px 4px; background: var(--carte); }
+body[class*="fond-"] .ac-rebours > .ac-rb-tete { background: rgba(var(--carte-rgb), var(--opacite-carte)); }
