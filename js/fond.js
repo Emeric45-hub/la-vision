@@ -3,7 +3,13 @@
 // Décors dessinés et immobiles (pas d'animation : ménage les appareils anciens).
 
 // Code météo (OMS) + date 'AAAA-MM-JJ' → nom d'ambiance (pur, testé sous Node).
-export function ambiance(code, date) {
+export function ambiance(code, date, nuit = false) {
+  if (nuit) {
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return "nuit-neige";
+    if ([61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].includes(code)) return "nuit-pluie";
+    if ([0, 1, 2].includes(code) || code == null) return "nuit-claire";
+    return "nuit-nuageuse";
+  }
   if (code === 0) return "soleil";
   if (code === 3) return "couvert";
   if ([45, 48].includes(code)) return "brouillard";
@@ -11,6 +17,15 @@ export function ambiance(code, date) {
   if ([95, 96, 99].includes(code)) return "orage";
   if ([71, 73, 75, 77, 85, 86].includes(code)) return "neige";
   return saison(date);   // 1, 2, bruine, inconnu
+}
+
+// Nuit : avant le lever ou après le coucher du soleil du jour (heures Open-Meteo, heure de Paris).
+// quand : 'AAAA-MM-JJTHH:MM' à Paris ; daily : { time, sunrise, sunset }.
+export function estNuit(daily, quand) {
+  if (!daily || !daily.time) return false;
+  const i = daily.time.indexOf(quand.slice(0, 10));
+  if (i < 0) return false;
+  return quand < daily.sunrise[i] || quand >= daily.sunset[i];
 }
 
 export function saison(date) {
@@ -79,6 +94,13 @@ function givre() {
   return s + "</g>";
 }
 
+function etoiles(n, graine) {
+  const r = alea(graine); let s = `<g fill="#fff">`;
+  for (let i = 0; i < n; i++) s += `<circle cx="${r() * 1000}" cy="${r() * 700}" r="${(.6 + r() * 1.4).toFixed(2)}" opacity="${(.35 + r() * .6).toFixed(2)}"/>`;
+  return s + "</g>";
+}
+const nuagesNuit = (n, graine) => nuages(n, .12, graine);
+
 const DECORS = {
   soleil: () => svg(`<defs><radialGradient id="h"><stop offset="0" stop-color="#FFF6C8" stop-opacity=".95"/><stop offset=".35" stop-color="#FFE38A" stop-opacity=".55"/><stop offset="1" stop-color="#FFE38A" stop-opacity="0"/></radialGradient></defs><circle cx="880" cy="70" r="320" fill="url(#h)"/><circle cx="880" cy="70" r="55" fill="#FFF3B0"/>`),
   couvert: () => svg(nuages(9, .55, 7)),
@@ -89,6 +111,10 @@ const DECORS = {
   automne: () => svg(feuilles(23)),
   hiver: () => svg(givre()),
   printemps: () => svg(fleurs(29)),
+  "nuit-claire": () => svg(etoiles(160, 31) + `<path d="M860 70 a46 46 0 1 0 38 72 a38 38 0 1 1 -38 -72 Z" fill="#F4EBC8" opacity=".9"/>`),
+  "nuit-nuageuse": () => svg(etoiles(50, 37) + nuagesNuit(7, 41)),
+  "nuit-pluie": () => svg(nuagesNuit(6, 43) + pluie(130, "rgba(190,205,230,.35)", 47)),
+  "nuit-neige": () => svg(etoiles(30, 53) + flocons(80, 59)),
   ete: () => svg(`<defs><radialGradient id="e"><stop offset="0" stop-color="#FFE9B0" stop-opacity=".8"/><stop offset="1" stop-color="#FFE9B0" stop-opacity="0"/></radialGradient></defs><circle cx="900" cy="40" r="420" fill="url(#e)"/>`)
 };
 
@@ -102,4 +128,5 @@ export function appliquerFond(nom) {
   calque.innerHTML = DECORS[nom]();
   [...document.body.classList].filter(c => c.startsWith("fond-")).forEach(c => document.body.classList.remove(c));
   document.body.classList.add("fond-" + nom);
+  document.body.classList.toggle("nuit", nom.startsWith("nuit-"));
 }
