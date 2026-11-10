@@ -36,7 +36,7 @@ function barreEcran(vue) {
   const nav = mk("div", "ac-boutons");
   nav.append(...boutonsRaccourcis(etat.config && etat.config.famille));
   if (vue !== "reglages") nav.append(boutonIcone(ICONES.roue, "Réglages", () => ouvrir("reglages")));
-  b.replaceChildren(retour, titre, etatSync, nav, mk("span", "ac-marque", "LA VISION"));
+  b.replaceChildren(retour, titre, etatSync, nav, (m => { m.setAttribute("aria-label", "La Vision"); return m; })(mk("span", "ac-marque", "LΛ VISION")));
 }
 
 // Date du jour sous « LA VISION » (téléphone), mise à jour chaque minute.
