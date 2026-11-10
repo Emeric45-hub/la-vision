@@ -280,7 +280,22 @@ body.sur-accueil .version { display: none; }
 .ac-rp-liste { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
 .ac-rp-colonnes { display: block; columns: 2; column-gap: 22px; }
 .ac-rp-colonnes > li { break-inside: avoid; margin-bottom: 7px; }
-.ac-rp { display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: baseline; font-size: 14px; }
+.ac-rp { display: grid; grid-template-columns: 20px 20px 1fr auto; gap: 6px; align-items: baseline; font-size: 14px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; max-height: 120px; transition: max-height .3s ease, opacity .3s ease, margin .3s ease; }
+.ac-rp-case { align-self: center; width: 18px; height: 18px; border: 1.5px solid var(--trait); border-radius: 50%; font-size: 12px; line-height: 15px; text-align: center; color: #fff; transition: background .2s, border-color .2s; }
+.ac-rp.coche .ac-rp-case { background: var(--accent, #2f6fdf); border-color: var(--accent, #2f6fdf); }
+.ac-rp .ac-tx { background: linear-gradient(currentColor, currentColor) no-repeat 0 55% / 0 1.5px; -webkit-box-decoration-break: clone; box-decoration-break: clone; transition: background-size .45s ease, color .3s; }
+.ac-rp.coche .ac-tx { background-size: 100% 1.5px; color: var(--discret); }
+.ac-rp.coche .ac-rp-notes, .ac-rp.coche .ac-rp-quand { opacity: .5; }
+.ac-rp.replie { max-height: 0; opacity: 0; margin: 0 !important; overflow: hidden; }
+.ac-rp-tete { display: flex; align-items: center; justify-content: space-between; gap: 8px; position: sticky; top: -12px; margin: -12px -14px 6px; padding: 12px 14px 4px; background: var(--carte); z-index: 1; }
+.ac-rp-tete .ac-titre { position: static; margin: 0; padding: 0; background: none; }
+.ac-rp-boutons { display: flex; gap: 6px; flex-shrink: 0; }
+.ac-annuler { min-height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--encre); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.ac-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 2px 0 8px; }
+.ac-form .note { flex: 1 1 160px; min-width: 0; }
+.ac-form .ac-aide { flex-basis: 100%; margin: 0; }
+.ac-form-ajout .seg { flex: 1 1 100%; }
 .ac-rp-picto { font-size: 13px; text-align: center; }
 .ac-rp .ac-t { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ac-rp-notes { font-size: 12px; color: var(--discret); white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

@@ -1,6 +1,6 @@
 // Tests de la lecture des données du Raccourci (données fictives).
 import assert from 'node:assert/strict';
-import { lire, repartir, evenementsDuJour, picto } from '../js/raccourci.js';
+import { lire, repartir, evenementsDuJour, picto, appliquerActions } from '../js/raccourci.js';
 
 const texte = JSON.stringify({
   le: '2030-03-12T10:30:05+01:00',
@@ -46,4 +46,17 @@ assert.equal(picto('🏠 Liste A'), '🏠');
 assert.equal(picto('Liste B'), '');
 assert.deepEqual(lire({ texte: '{pas du json' }), { erreur: 'format' });
 assert.deepEqual(lire(null), { erreur: 'vide' });
+const avec = appliquerActions(r.rappels, [
+  { id: 'a1', type: 'cocher', t: 'Rappel en retard', l: 'Liste B' },
+  { id: 'a2', type: 'cocher', t: 'Rappel plus tard', l: 'Autre liste' },          // liste différente : pas masqué
+  { id: 'a3', type: 'creer', t: 'Nouveau', l: 'Liste A', e: '2030-03-12' },
+  { id: 'a4', type: 'creer', t: 'Sans date', l: 'Liste A', e: '' },
+  { id: 'a5', type: 'courses', t: 'Article' }
+]);
+assert.equal(avec.some(x => x.titre === 'Rappel en retard'), false);
+assert.equal(avec.some(x => x.titre === 'Rappel plus tard'), true);
+assert.equal(avec.find(x => x.titre === 'Nouveau').action, 'a3');
+assert.deepEqual(repartir(avec, '2030-03-12').jour.map(x => x.titre), ['Récurrent du jour', 'Rappel daté ce soir', 'Nouveau', 'Rappel sans heure']);
+assert.equal(repartir(avec, '2030-03-12').plusTard.some(x => x.titre === 'Sans date'), true);
+assert.equal(avec.some(x => x.titre === 'Article'), false);
 console.log('raccourci : tous les scénarios passent');

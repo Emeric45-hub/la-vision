@@ -63,3 +63,15 @@ export function picto(nom) {
 
 // Libellé d'un anniversaire : « Prénom Nom (5 ans) » → « Anniversaire de Prénom Nom (5 ans) ».
 export const libelleAnniversaire = t => `Anniversaire de ${t}`;
+
+// Actions faites dans l'app, en attente du prochain passage du Raccourci (collection
+// vision/raccourci/actions : { type: cocher | creer | courses, t, l, e }).
+// Les rappels cochés disparaissent ; les rappels créés apparaissent déjà.
+export const cleRappel = r => `${r.titre}\u0001${r.liste}`;
+export function appliquerActions(rappels, actions) {
+  const coches = new Set(actions.filter(a => a.type === "cocher").map(a => `${a.t}\u0001${a.l || ""}`));
+  const restants = rappels.filter(r => !coches.has(cleRappel(r)));
+  const crees = actions.filter(a => a.type === "creer" && a.t)
+    .map(a => ({ titre: a.t, liste: a.l || "", jour: /^\d{4}-\d{2}-\d{2}$/.test(a.e || "") ? a.e : null, heure: null, notes: null, action: a.id }));
+  return [...restants, ...crees];
+}
