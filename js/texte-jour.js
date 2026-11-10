@@ -9,7 +9,8 @@ export const plages = cr => (cr || []).map(x => `${h(x.debut)}–${h(x.fin)}`).j
 export function etiquettes(calc, fam) {
   if (!calc) return [];
   const A = fam.A.prenom, B = fam.B.prenom, out = [];
-  if (calc.ferie) return [calc.ferie];
+  // Férié : le nom du jour d'abord, puis les gardes (une garde l'emporte toujours sur le férié).
+  if (calc.ferie) out.push(calc.ferie);
   if (calc.A.gardeSoir) out.push(`Garde ${A}`);
   else if (calc.A.lendemain) out.push(`Repos ${A}`);
   else if (calc.A.statut === "conge") out.push(`${A} en congé`);
@@ -58,9 +59,9 @@ export function personnes(calc, fam) {
   if (!calc) return [];
   const A = calc.A, B = calc.B, res = [];
   let ta;
-  if (calc.ferie) ta = "Férié";
-  else if (A.gardeSoir) ta = "Garde ce soir";
+  if (A.gardeSoir) ta = "Garde ce soir";
   else if (A.lendemain || A.statut === "repos") ta = "Repos de garde";
+  else if (calc.ferie) ta = "Férié";
   else if (A.statut === "conge") ta = "En congé";
   else if (A.statut === "off") ta = "À la maison";
   else if (A.statut === "site") ta = `${fam.A.site.lieu}, retour ${h(fam.A.site.retour)}`;
@@ -68,7 +69,7 @@ export function personnes(calc, fam) {
   else if (A.statut === "fmc") ta = "Formation";
   else ta = "Planning inconnu";
   res.push({ qui: fam.A.prenom, texte: ta });
-  const tb = { garde: "Garde (24 h)", lendemain: "Repos de garde", repos: "Off", conge: "En vacances",
+  const tb = calc.ferie && !["garde", "lendemain", "conge"].includes(B.statut) ? "Férié" : { garde: "Garde (24 h)", lendemain: "Repos de garde", repos: "Off", conge: "En vacances",
     travail: `Cabinet ${h(B.debut)}–${h(B.fin)}`, a_saisir: "Horaires à saisir" }[B.statut] || "?";
   res.push({ qui: fam.B.prenom, texte: tb });
   return res;
