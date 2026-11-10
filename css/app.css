@@ -177,9 +177,20 @@ input.note { width: 100%; }
 .version { max-width: 760px; margin: 24px auto 0; text-align: center; font-size: 12px; color: var(--discret); }
 
 /* ---------- Accueil (iPad paysage) ---------- */
-body.sur-accueil .entete, body.sur-accueil .onglets { display: none; }
-body.sur-accueil { padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: 8px; }
+/* Grand écran : l'accueil a sa propre barre. Téléphone : en-tête et onglets toujours visibles. */
+@media (min-width: 901px) {
+  body.sur-accueil .entete, body.sur-accueil .onglets { display: none; }
+  body.sur-accueil { padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: 8px; }
+}
 body.sur-accueil .version { display: none; }
+@media (max-width: 900px) {
+  .ac .ac-barre { display: none; }
+  .entete { align-items: center; }
+  .entete .etat-sync { flex-basis: 100%; margin: 0; }
+  .ac .ac-haut .ac-carte { height: auto; }   /* téléphone : les blocs prennent leur hauteur */
+}
+.tel-icones { display: flex; gap: 6px; margin-left: auto; }
+@media (min-width: 901px) { .tel-icones { display: none; } }
 @media (min-width: 901px) {
   body.sur-accueil main { height: calc(100vh - 18px - env(safe-area-inset-top)); height: calc(100dvh - 18px - env(safe-area-inset-top)); }
   body.sur-accueil #vue-accueil, .ac { height: 100%; }

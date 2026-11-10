@@ -238,3 +238,7 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 ## 2026-11-10 — Lot 4, étape 1 : notes d'habillage récurrentes
 
 - `famille.habillage = [{ jours, enfant, texte, jusqua, ecole }]` : note affichée sous le conseil d'habillage de la météo (et reprise dans le briefing du matin) les jours indiqués, jusqu'à l'heure donnée, et seulement si l'enfant est à l'école ce jour-là quand `ecole` est vrai.
+
+## 2026-11-10 — Téléphone
+
+- Sur téléphone, en-tête et onglets toujours visibles (Accueil, Nounou, Post-it, Planning, Réglages), y compris sur l'accueil, dont la barre de grand écran est masquée ; icônes Maison, Caméras (Raccourcis de l'appareil) et Recettes dans l'en-tête. Onglet de départ : l'accueil sur tous les appareils. Les blocs du haut de l'accueil prennent leur hauteur naturelle.
