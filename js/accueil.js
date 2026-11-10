@@ -223,7 +223,9 @@ function barre(src) {
   boutons.append(...boutonsRaccourcis(C && C.fam));
   boutons.append(boutonIcone(ICONES.menu, "Recettes", () => ouvrirRecette(C, null)));
   boutons.append(boutonIcone(ICONES.roue, "Réglages", () => C.ouvrir("reglages")));
-  b.append(boutons, el("span", "ac-marque", "LA VISION"));
+  const marque = el("span", "ac-marque", "LΛ VISION");   // Λ : un A sans barre
+  marque.setAttribute("aria-label", "La Vision");
+  b.append(boutons, marque);
   return b;
 }
 
