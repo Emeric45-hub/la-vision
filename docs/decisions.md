@@ -278,3 +278,10 @@ L'alerte « long événement : parent absent ? » couvre aussi les événements 
 - Format : `{ fait, documents: { chemin: champs bruts Firestore } }` (valeurs typées, restaurables telles quelles par l'API REST). Le fichier est déposé comme pièce jointe du passage dans le dépôt privé (conservée 90 jours) ; il ne passe jamais par ce dépôt. Après dépôt, `vision/etat.sauvegarde = { le, documents }` ; l'écran Réglages affiche la date et alerte au-delà de 15 jours.
 - Restauration : à la main (pas de bouton), en réécrivant les documents du fichier.
 - Configuration : à chaque enregistrement qui la modifie, l'ancienne version est gardée dans `vision/config_historique = { versions: [{ le, texte }] }` (5 dernières) ; « Reprendre la version précédente » la recharge dans la zone de texte.
+
+## 2026-11-10 — Bibliothèques dans le dépôt, versions figées
+
+- SheetJS 0.18.5 et PDF.js 6.2.108 (édition « legacy ») sont copiés dans `vendor/` (fichiers identiques à ceux des CDN ; pour PDF.js, comparés au paquet npm) : plus de dépendance à un site tiers au chargement, et disponibles hors connexion. Les CDN ne servent que de secours si la copie locale ne se charge pas. Les deux fichiers de PDF.js portent l'extension `.js`.
+- `tache/package-lock.json` fige les versions des dépendances de la tâche, y compris indirectes.
+- Briefing du soir : un changement de la journée en cours (« ceSoir ») justifie aussi une réécriture (au plus une par heure).
+- Non faits, volontairement : corrections simultanées du même jour sur deux appareils (la dernière écriture l'emporte), date du dernier PDF de repas (les PDF font moins de 200 Ko pour une limite de 1 Mio).

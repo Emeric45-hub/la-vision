@@ -5,12 +5,20 @@
 import { el } from "./outils.js";
 
 // Édition « legacy » : compatible avec les Safari plus anciens (iPad resté en iPadOS 17).
-const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/";
+// Copie gardée dans le dépôt (vendor/pdfjs, version 6.2.108) : pas de dépendance à un site tiers,
+// et disponible hors connexion. Le CDN ne sert que de secours si la copie locale ne se charge pas.
+const LOCAL = new URL("../vendor/pdfjs/", import.meta.url).href;
+const CDN = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/";
 let pdfjs = null;
 async function chargerPdfjs() {
   if (pdfjs) return pdfjs;
-  pdfjs = await import(PDFJS + "pdf.min.mjs");
-  pdfjs.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.mjs";
+  try {
+    pdfjs = await import(LOCAL + "pdf.min.js");
+    pdfjs.GlobalWorkerOptions.workerSrc = LOCAL + "pdf.worker.min.js";
+  } catch (e) {
+    pdfjs = await import(CDN + "pdf.min.mjs");
+    pdfjs.GlobalWorkerOptions.workerSrc = CDN + "pdf.worker.min.mjs";
+  }
   return pdfjs;
 }
 
