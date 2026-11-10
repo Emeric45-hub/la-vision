@@ -234,3 +234,7 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - Réécriture : nouveau moment ou nouveau jour ; sinon seulement si l'essentiel change (planning, enfants, événements), au plus une fois par heure. Rappels, courses, post-it et plats cochés ne déclenchent rien. Coût attendu ≈ 1 à 2 € par mois.
 - API indisponible : texte de secours construit par le code (« résumé automatique »).
 - `vision/briefing = { cle, moment, date, texte, ia, essentiel, le }`.
+
+## 2026-11-10 — Lot 4, étape 1 : notes d'habillage récurrentes
+
+- `famille.habillage = [{ jours, enfant, texte, jusqua, ecole }]` : note affichée sous le conseil d'habillage de la météo (et reprise dans le briefing du matin) les jours indiqués, jusqu'à l'heure donnée, et seulement si l'enfant est à l'école ce jour-là quand `ecole` est vrai.

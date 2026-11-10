@@ -54,3 +54,14 @@ export function url(lat, lon) {
     "&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code" +
     "&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min&timezone=Europe%2FParis&forecast_days=2";
 }
+
+// Notes d'habillage récurrentes (famille.habillage = [{ jours: [1..7, 0 = dimanche], enfant: "e1" | "e2",
+// texte, jusqua: "HH:MM", ecole: true }]). ecole : seulement si l'enfant est à l'école ce jour-là
+// (ni vacances, ni férié). Renvoie les textes à afficher, préfixés du prénom.
+export function notesHabillage(regles, { jourSemaine, heure, lieux }, fam) {
+  return (regles || []).filter(r =>
+    (r.jours || []).includes(jourSemaine) &&
+    (!r.jusqua || heure < r.jusqua) &&
+    (!r.ecole || lieux[r.enfant] === "ecole")
+  ).map(r => `${(fam.enfants[r.enfant] || {}).prenom || ""} : ${r.texte}`.replace(/^ : /, ""));
+}

@@ -1,6 +1,6 @@
 // Tests de la météo de l'accueil, sur des prévisions fictives.
 import assert from 'node:assert/strict';
-import { conseil, decrire, aHeure, creneaux } from '../js/meteo.js';
+import { notesHabillage, conseil, decrire, aHeure, creneaux } from '../js/meteo.js';
 
 assert.equal(conseil(2, 10), 'manteau, bonnet et gants');
 assert.equal(conseil(8, 60), 'manteau + imperméable et bottes');
@@ -29,4 +29,10 @@ assert.deepEqual(a.creneaux.map(x => x.libelle), ['16h30', 'Demain 8h']);
 assert.equal(a.conseil, 'Cet après-midi : gilet + imperméable et bottes');
 const s = creneaux(data, '2030-01-10', '2030-01-11', '19:00');
 assert.equal(s.conseil, 'Demain matin : manteau');
+const famN = { enfants: { e1: { prenom: 'Petit' }, e2: { prenom: 'Grand' } } };
+const regle = [{ jours: [2], enfant: 'e2', texte: 'pas de robe (motricité)', jusqua: '12:00', ecole: true }];
+assert.deepEqual(notesHabillage(regle, { jourSemaine: 2, heure: '07:10', lieux: { e2: 'ecole' } }, famN), ['Grand : pas de robe (motricité)']);
+assert.deepEqual(notesHabillage(regle, { jourSemaine: 2, heure: '12:30', lieux: { e2: 'ecole' } }, famN), []);   // après midi
+assert.deepEqual(notesHabillage(regle, { jourSemaine: 2, heure: '07:10', lieux: { e2: 'alae' } }, famN), []);    // vacances
+assert.deepEqual(notesHabillage(regle, { jourSemaine: 3, heure: '07:10', lieux: { e2: 'ecole' } }, famN), []);   // autre jour
 console.log('météo : tous les scénarios passent');
