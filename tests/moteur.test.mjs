@@ -168,4 +168,19 @@ const congres = { titre: 'Congrès fictif', debut: '2030-01-07T11:00', fin: '203
 assert.deepEqual(jour('2030-01-08', { B: [congres], saisie: travail('09:00', '17:00') }).points, ['Congrès fictif : Bea absente ?']);
 assert.equal(jour('2030-01-08', { B: [garde('2030-01-08T08:30', '2030-01-09T08:30')] }).points.length, 0);
 
+
+// Parent B absent de la maison (déplacement, congrès…) : A dépose en partant et récupère en rentrant.
+const absent = { type: 'absent' };
+assert.deepEqual(resume(jour('2030-01-07', { saisie: absent })), {
+  depot: ['A', '06:45'], recup: ['A', '19:00', false], e1: ['06:45-19:00'], e2: ['ecole', '06:45-08:30', '16:30-19:00'], points: 0 });
+assert.equal(jour('2030-01-07', { saisie: absent }).B.statut, 'absent');
+// A en congé : ses heures de congé
+assert.deepEqual(resume(jour('2030-01-07', { semA: sem('Congé de naissance'), saisie: absent })).depot, ['A', '08:30']);
+// A lendemain de garde : personne pour déposer → point à vérifier
+assert.deepEqual(resume(jour('2030-01-07', { VA: [garde('2030-01-06T08:00', '2030-01-07T08:00')], saisie: absent })).depot, [null, null]);
+// Mercredi, A au travail : point à vérifier
+assert.equal(jour('2030-01-09', { saisie: absent }).points.length, 1);
+// Absence saisie : l'alerte « … absente ? » d'un long événement n'a plus lieu d'être
+assert.deepEqual(jour('2030-01-08', { B: [congres], saisie: absent }).points, []);
+
 console.log('moteur : tous les scénarios passent');
