@@ -33,7 +33,7 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 | 4 | Météo et conseil d'habillage (température ressentie) | ✅ |
 | 5 | Compte à rebours | 🟡 |
 | 6 | Rappels, À faire, Courses (Raccourci définitif) | ✅ 2026-11-10 |
-| 6b | Post-it (dessin au doigt sur tous les écrans, texte) | ⬜ |
+| 6b | Post-it (dessin au doigt sur tous les écrans, texte) | ✅ 2026-11-10 (à valider sur appareil) |
 | 7 | Ce soir : cantine, plat du soir | ⬜ |
 | 8 | Boutons Raccourcis, essai à distance | ⬜ |
 
