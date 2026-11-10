@@ -276,7 +276,20 @@ function rendreHoraires() {
     ligne.append(el("span", "hor-date", `${JOURS[jourSemaine(d)].slice(0, 3)}. ${Number(d.slice(8))}`));
     const s = (j.p.saisies && j.p.saisies.B) || null;
     if (!c) { ligne.append(el("span", "discret", "—")); liste.append(ligne); continue; }
-    if (c.ferie) { ligne.append(el("span", "hor-info", c.ferie)); liste.append(ligne); continue; }
+    if (c.ferie && !["garde", "lendemain"].includes(c.B.statut)) {
+      // Férié : pas d'horaires, mais l'absence de la maison peut être notée (briefing, affichage).
+      const abs = s && s.type === "absent";
+      const b = el("button", "bouton secondaire petit-bouton", abs ? "Absente ✓" : "Absente");
+      b.onclick = async () => {
+        try {
+          const p = { ...(S.source.plan[d] || {}) };
+          if (abs) { await ecrireJour(d, { saisies: { B: C.F.deleteField() } }); if (p.saisies) delete p.saisies.B; }
+          else { await ecrireJour(d, { saisies: { B: { type: "absent" } } }, ["saisies.B"]); p.saisies = { ...(p.saisies || {}), B: { type: "absent" } }; }
+          rafraichirJour(d, p); rendre();
+        } catch (e) { b.textContent = "Échec"; }
+      };
+      ligne.append(el("span", "hor-info", c.ferie), b); liste.append(ligne); continue;
+    }
     if (c.B.statut === "garde" || c.B.statut === "lendemain") {
       ligne.append(el("span", "hor-info", c.B.statut === "garde" ? "Garde" : "Lendemain de garde"));
       liste.append(ligne); continue;
