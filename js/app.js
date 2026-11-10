@@ -38,6 +38,13 @@ function barreEcran(vue) {
   b.replaceChildren(retour, titre, etatSync, nav, mk("span", "ac-marque", "LA VISION"));
 }
 
+// Date du jour sous « LA VISION » (téléphone), mise à jour chaque minute.
+function dateDuJour() {
+  const d = new Date().toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long" });
+  $("tel-date").textContent = d.charAt(0).toUpperCase() + d.slice(1);
+}
+dateDuJour(); setInterval(dateDuJour, 60000);
+
 let vueActuelle = null;
 function ouvrir(vue, jour) {
   vueActuelle = vue;
