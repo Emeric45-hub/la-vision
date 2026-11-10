@@ -190,6 +190,14 @@ body.sur-accueil .version { display: none; }
   .ac .ac-haut .ac-carte { height: auto; }   /* téléphone : les blocs prennent leur hauteur */
 }
 .tel-icones { display: flex; gap: 6px; margin-left: auto; }
+/* Téléphone : « LA VISION » en petites capitales espacées, la date du jour en dessous, comme sur l'iPad */
+@media (max-width: 900px) {
+  .tel-titre { display: flex; flex-direction: column; gap: 2px; flex: 1 1 0; min-width: 0; }
+  .tel-icones { flex: none; }
+  .entete h1 { font-size: 13px; font-weight: 700; letter-spacing: .32em; text-transform: uppercase; color: var(--encre); }
+  .tel-date { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: var(--encre); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (min-width: 901px) { .tel-date { display: none; } }
 @media (min-width: 901px) { .tel-icones { display: none; } }
 @media (min-width: 901px) {
   body.sur-accueil main { height: calc(100vh - 18px - env(safe-area-inset-top)); height: calc(100dvh - 18px - env(safe-area-inset-top)); }
