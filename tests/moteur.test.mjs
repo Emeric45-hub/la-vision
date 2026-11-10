@@ -183,4 +183,12 @@ assert.equal(jour('2030-01-09', { saisie: absent }).points.length, 1);
 // Absence saisie : l'alerte « … absente ? » d'un long événement n'a plus lieu d'être
 assert.deepEqual(jour('2030-01-08', { B: [congres], saisie: absent }).points, []);
 
+// Événement « journée entière » sur plusieurs jours : même alerte ; sur un seul jour : rien
+const du = { titre: 'Séminaire fictif', debut: '2030-01-07', fin: '2030-01-09', journee: true };
+assert.deepEqual(jour('2030-01-08', { A: [du], saisie: travail('09:00', '17:00') }).points, ['Séminaire fictif : Alex absent ?']);
+assert.deepEqual(jour('2030-01-08', { B: [du], saisie: travail('09:00', '17:00') }).points, ['Séminaire fictif : Bea absente ?']);
+assert.deepEqual(jour('2030-01-07', { A: [{ ...du, fin: '2030-01-07' }], saisie: travail('09:00', '17:00') }).points, []);
+// A en congé : pas d'alerte (séjour, voyage)
+assert.deepEqual(jour('2030-01-08', { semA: sem('Congés'), A: [du], saisie: travail('09:00', '17:00') }).points, []);
+
 console.log('moteur : tous les scénarios passent');
