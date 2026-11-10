@@ -4,7 +4,8 @@
 // d'un plat, avec « On l'a fait ce soir » ; ou à la première page (bouton Recettes).
 import { el } from "./outils.js";
 
-const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/build/";
+// Édition « legacy » : compatible avec les Safari plus anciens (iPad resté en iPadOS 17).
+const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/";
 let pdfjs = null;
 async function chargerPdfjs() {
   if (pdfjs) return pdfjs;
@@ -35,7 +36,7 @@ export async function ouvrirRecette(ctx, plat, fait) {
   f.append(titre, pages, pied);
   fond.append(f);
   document.body.append(fond);
-  let fini = false;
+  let fini = false, secours = null;
   const fermer = () => { fini = true; fond.remove(); document.removeEventListener("keydown", echap); };
   const echap = e => { if (e.key === "Escape") fermer(); };
   document.addEventListener("keydown", echap);
@@ -48,6 +49,7 @@ export async function ouvrirRecette(ctx, plat, fait) {
     if (!d || !d.pdf) { msg.textContent = "Le PDF n'a pas encore été envoyé par le Raccourci de l'iPhone."; return; }
     const octets = typeof d.pdf.toUint8Array === "function" ? d.pdf.toUint8Array()
       : Uint8Array.from(atob(String(d.pdf)), c => c.charCodeAt(0));
+    secours = octets.slice();   // copie gardée : PDF.js vide le tableau qu'on lui donne
     const lib = await chargerPdfjs();
     const doc = await lib.getDocument({ data: octets }).promise;
     msg.remove();
@@ -69,7 +71,14 @@ export async function ouvrirRecette(ctx, plat, fait) {
     cadres[cible - 1].scrollIntoView({ block: "start" });
     for (let i = 1; i <= doc.numPages && !fini; i++) if (i !== cible) await rendre(i);
   } catch (e) {
-    msg.textContent = `PDF illisible (${e.code || e.name}).`;
+    msg.textContent = `Affichage impossible sur cet appareil (${e.name}${e.message ? " : " + String(e.message).slice(0, 80) : ""}).`;
     if (!msg.isConnected) pages.prepend(msg);
+    // Secours : la visionneuse PDF du navigateur, dans un nouvel onglet.
+    if (secours) {
+      const b = el("button", "bouton", "Ouvrir le PDF");
+      b.type = "button";
+      b.onclick = () => window.open(URL.createObjectURL(new Blob([secours], { type: "application/pdf" })), "_blank");
+      pages.append(b);
+    }
   }
 }
