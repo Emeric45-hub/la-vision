@@ -7,6 +7,7 @@ import { initNounou, afficherNounou } from "./nounou.js";
 import { initVersion } from "./version.js";
 import { initAccueil, afficherAccueil } from "./accueil.js";
 import { initPostit, afficherPostit } from "./postit.js";
+import { ouvrirRecette } from "./recette.js";
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 const FIREBASE = {
@@ -52,8 +53,8 @@ function ouvrir(vue, jour) {
   if (vue === "postit") afficherPostit();
 }
 document.querySelectorAll(".onglet").forEach(b => b.addEventListener("click", () => ouvrir(b.dataset.vue)));
-// Onglet de départ : l'accueil sur un grand écran (iPad, Mac), le module nounou sur un téléphone.
-ouvrir(window.matchMedia("(min-width: 900px)").matches ? "accueil" : "nounou");
+// Onglet de départ : l'accueil, sur tous les appareils.
+ouvrir("accueil");
 
 function sync(texte, classe) {
   const el = $("etat-sync");
@@ -142,6 +143,9 @@ async function chargerTout() {
     initAccueil({ ...ctx, ouvrir });
     if (!$("vue-accueil").hidden) afficherAccueil();
     barreEcran(vueActuelle);   // icônes des Raccourcis, lues dans la configuration
+    // Téléphone : icônes Maison, Caméras (Raccourcis de l'appareil) et Recettes dans l'en-tête.
+    $("tel-icones").replaceChildren(...boutonsRaccourcis(etat.config && etat.config.famille),
+      boutonIcone(ICONES.menu, "Recettes", () => ouvrirRecette(ctx, null)));
     sync("À jour · " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), "ok");
   } catch (e) {
     sync("Serveur injoignable (" + (e.code || e.name) + ") : rien n'est affiché plutôt qu'un faux vide.", "ko");
