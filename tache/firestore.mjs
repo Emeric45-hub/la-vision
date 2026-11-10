@@ -42,6 +42,7 @@ export function depuisFirestore(v) {
   if ('doubleValue' in v) return v.doubleValue;
   if ('stringValue' in v) return v.stringValue;
   if ('timestampValue' in v) return v.timestampValue;
+  if ('bytesValue' in v) return v.bytesValue;   // base64
   if ('arrayValue' in v) return (v.arrayValue.values || []).map(depuisFirestore);
   if ('mapValue' in v) return Object.fromEntries(Object.entries(v.mapValue.fields || {}).map(([k, x]) => [k, depuisFirestore(x)]));
   return null;

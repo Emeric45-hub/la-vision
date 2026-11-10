@@ -376,3 +376,16 @@ body.sur-accueil .version { display: none; }
 .ac-cantine { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; margin-bottom: 8px; border-radius: 10px; background: #F2F2F7; }
 .ac-cantine-t { font-size: 12px; font-weight: 700; color: var(--discret); }
 .ac-cantine-p { font-size: 14px; line-height: 1.35; }
+.ac-plats { display: flex; flex-direction: column; gap: 6px; }
+.ac-plat { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 7px 10px; border: 1px solid var(--trait); border-radius: 10px; background: #fff;
+  font: inherit; color: var(--encre); text-align: left; cursor: pointer; }
+.ac-plat.prevu { border-color: #9DBEF5; background: #E3EEFD; }
+.ac-plat-j { font-size: 11.5px; font-weight: 700; color: var(--discret); text-transform: uppercase; letter-spacing: .03em; }
+.ac-plat-t { font-size: 14.5px; font-weight: 600; line-height: 1.25; }
+.ac-plat-d { font-size: 12px; color: var(--discret); }
+.ac-lien { align-self: flex-start; border: 0; background: none; padding: 2px 0; font: inherit; font-size: 12.5px; color: var(--accent); cursor: pointer; }
+/* Recette : PDF dans une grande fenêtre */
+.rc-fond { padding: 16px; align-items: center; }
+.rc-fenetre { width: min(900px, 100%); height: calc(100dvh - 32px); padding: 16px 18px; }
+.rc-pages { flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 10px; background: #E9E9EE; border-radius: 10px; padding: 10px; }
+.rc-page { width: 100%; height: auto; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
