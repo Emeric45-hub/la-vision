@@ -59,6 +59,12 @@ const ligneE2 = aff => ligne2(aff, C.fam);
 const qui = q => q === "A" ? C.fam.A.prenom : q === "B" ? C.fam.B.prenom : "?";
 const plages = cr => (cr || []).map(x => `${h(x.debut)}–${h(x.fin)}`).join(" · ");
 
+/* ---------- Points à vérifier ---------- */
+// Un point est considéré comme traité quand le jour a été corrigé à la main ou que le mois est
+// validé (valider = « j'ai tout vérifié »). Un écart avec le calcul validé reste toujours signalé.
+const pointsTraites = j => !!((j.p && j.p.corrige) || S.valide);
+const nbPointsJour = j => (pointsTraites(j) ? 0 : (j.calc.points || []).length) + (j.ecart ? 1 : 0);
+
 /* ---------- Rendu ---------- */
 let racine;
 export function initPlanning(ctx) {
@@ -81,7 +87,7 @@ function rendre() {
   const [a, m] = S.mois.split("-").map(Number);
   const nomMois = MOIS[m - 1];
   const jours = Object.values(S.jours);
-  const nbPoints = jours.filter(j => !j.passe && j.calc).reduce((n, j) => n + j.calc.points.length + (j.ecart ? 1 : 0), 0);
+  const nbPoints = jours.filter(j => !j.passe && j.calc).reduce((n, j) => n + nbPointsJour(j), 0);
 
   const tete = el("div", "pl-tete");
   const nav = el("div", "pl-nav");
@@ -138,7 +144,7 @@ function rendreGrille(a, m) {
     etiquettes(c).forEach(t => b.append(el("span", "pl-etiq", t)));
     if (aff) {
       for (const l of lignesCase(j, C.fam)) b.append(el("span", l.cls.split(" ").map((x, k) => k ? x : "pl-" + x).join(" "), l.txt));
-      const n = c.points.length + (j.ecart ? 1 : 0);
+      const n = nbPointsJour(j);
       if (n && !j.passe) b.append(el("span", "pl-flag", `${n} à vérifier`));
       if (aff.corrige && j.p.corrige && j.p.corrige.apresValidation) b.append(el("span", "pl-flag bleu", "modifié depuis la validation"));
       if (S.envoi && texteGrille(d) !== (S.envoi.lignes || {})[d]) b.append(el("span", "pl-flag", "modifié depuis l'envoi"));
@@ -171,7 +177,8 @@ function rendrePanneau() {
   const just = el("div", "pl-pourquoi");
   (c.justification || []).forEach(t => just.append(el("p", "", t)));
   if (just.childNodes.length) pan.append(just);
-  (c.points || []).forEach(t => pan.append(el("p", "point", t)));
+  const traite = pointsTraites(j);
+  (c.points || []).forEach(t => pan.append(el("p", "point" + (traite ? " traite" : ""), traite ? `${t} (traité)` : t)));
   if (j.ecart) {
     const box = el("div", "pl-ecart");
     box.append(el("p", "", "Le calcul a changé depuis la validation."));

@@ -500,3 +500,4 @@ body[class*="fond-"] .ac-jourc { background: rgba(var(--carte-rgb), .55); }
 /* Compte à rebours : même bandeau de titre que les autres blocs */
 .ac-rebours > .ac-rb-tete { position: sticky; top: -12px; z-index: 1; margin: -12px -14px 6px; padding: 12px 14px 4px; background: var(--carte); }
 body[class*="fond-"] .ac-rebours > .ac-rb-tete { background: rgba(var(--carte-rgb), var(--opacite-carte)); }
+.point.traite { opacity: .5; text-decoration: line-through; text-decoration-thickness: 1px; }
