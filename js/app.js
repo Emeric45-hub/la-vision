@@ -8,6 +8,7 @@ import { initVersion } from "./version.js";
 import { initAccueil, afficherAccueil } from "./accueil.js";
 import { initPostit, afficherPostit } from "./postit.js";
 import { ouvrirRecette } from "./recette.js";
+import { appliquerReglages, formulaireEcran } from "./fond.js";
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 const FIREBASE = {
@@ -45,6 +46,7 @@ function dateDuJour() {
 }
 dateDuJour(); setInterval(dateDuJour, 60000);
 
+appliquerReglages();
 let vueActuelle = null;
 function ouvrir(vue, jour) {
   vueActuelle = vue;
@@ -58,6 +60,7 @@ function ouvrir(vue, jour) {
   if (vue === "nounou") afficherNounou();
   if (vue === "accueil") afficherAccueil();
   if (vue === "postit") afficherPostit();
+  if (vue === "reglages") formulaireEcran($("reglages-ecran"));
 }
 document.querySelectorAll(".onglet").forEach(b => b.addEventListener("click", () => ouvrir(b.dataset.vue)));
 // Onglet de départ : l'accueil, sur tous les appareils.

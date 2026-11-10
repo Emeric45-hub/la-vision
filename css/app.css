@@ -2,6 +2,7 @@
   color-scheme: light;
   --fond: #F2F2F7;
   --carte: #FFFFFF;
+  --carte-rgb: 255, 255, 255;
   --surface: #FFFFFF;     /* champs, boutons blancs */
   --surface2: #F2F2F7;    /* encarts gris clair */
   --surface3: #E3E3E8;    /* boutons et segments gris */
@@ -460,7 +461,7 @@ body.fond-nuit-pluie { background: linear-gradient(180deg, #141A24 0%, #252D3A 1
 body.fond-nuit-neige { background: linear-gradient(180deg, #1B2638 0%, #2E3B52 100%); }
 body.nuit {
   color-scheme: dark;
-  --carte: #1E2633; --surface: #273142; --surface2: #273142; --surface3: #323D50;
+  --carte: #1E2633; --carte-rgb: 30, 38, 51; --surface: #273142; --surface2: #273142; --surface3: #323D50;
   --encre: #E8ECF2; --discret: #9AA5B4; --trait: #3A4659;
 }
 body.nuit .ac-jourc.aujourdhui, body.nuit .ac-plat.prevu { background: #23395E; border-color: #3F6299; }
@@ -472,3 +473,23 @@ body.nuit .bouton:not(.secondaire) { background: #E8ECF2; color: #1D1D1F; }
 body.nuit .ac .ac-briefing { background: linear-gradient(160deg, #3B4656 0%, #313A48 100%); }
 body.nuit { --e1: #FF7A72; --e2: #7DB0FF; --alerte-fond: #4A3A1A; --alerte: #F5C66B; }
 body.nuit .ac-mt-conseil, body.nuit .pl-flag.bleu { background: #23395E; }
+
+/* ---------- Blocs en verre (lot 4) : transparence et flou réglables par appareil ---------- */
+:root { --opacite-carte: .6; --flou-carte: 6px; }
+body[class*="fond-"] .carte, body[class*="fond-"] .ac-pilule {
+  background: rgba(var(--carte-rgb), var(--opacite-carte));
+  -webkit-backdrop-filter: blur(var(--flou-carte)) saturate(1.1); backdrop-filter: blur(var(--flou-carte)) saturate(1.1);
+}
+body[class*="fond-"] .ac-pilule { background: rgba(var(--carte-rgb), calc(var(--opacite-carte) + .25)); }
+body[class*="fond-"] .ac-carte > .ac-titre, body[class*="fond-"] .ac-rp-tete, body[class*="fond-"] .ac-nounou .nn-tete { background: rgba(var(--carte-rgb), var(--opacite-carte)); }
+/* Briefing : ardoise translucide */
+body[class*="fond-"] .ac .ac-briefing { background: rgba(80, 92, 108, calc(var(--opacite-carte) + .3)); }
+body.nuit[class*="fond-"] .ac .ac-briefing { background: rgba(59, 70, 86, calc(var(--opacite-carte) + .3)); }
+body[class*="fond-"] .ac .ac-briefing .ac-rp-tete { background: transparent; }
+body[class*="fond-"] .ac-jourc { background: rgba(var(--carte-rgb), .55); }
+.ac-fenetre, .rc-fenetre { background: var(--carte) !important; }
+.re-grille { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.re-ligne { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; }
+.re-curseur { display: inline-flex; align-items: center; gap: 10px; }
+.re-curseur input { width: 160px; }
+.re-valeur { min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; color: var(--discret); }

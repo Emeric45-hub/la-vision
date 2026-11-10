@@ -119,8 +119,12 @@ const DECORS = {
 };
 
 // Applique l'ambiance à la page (classe sur <body> pour le dégradé, décor dans un calque fixe).
-let actuelle = null;
+let actuelle = null, voulue = null;
 export function appliquerFond(nom) {
+  if (nom) voulue = nom;   // ambiance calculée (météo, saison, nuit)
+  const r = lireReglages();
+  if (r.fond !== "auto" && DECORS[r.fond]) nom = r.fond;   // fond forcé dans les réglages
+  else nom = voulue;
   if (!nom || nom === actuelle || !DECORS[nom]) return;
   actuelle = nom;
   let calque = document.getElementById("fond");
@@ -129,4 +133,42 @@ export function appliquerFond(nom) {
   [...document.body.classList].filter(c => c.startsWith("fond-")).forEach(c => document.body.classList.remove(c));
   document.body.classList.add("fond-" + nom);
   document.body.classList.toggle("nuit", nom.startsWith("nuit-"));
+}
+
+/* ---------- Réglages de l'écran (propres à l'appareil : stockage local) ---------- */
+export const NOMS_FONDS = { auto: "Automatique", soleil: "Soleil", couvert: "Couvert", brouillard: "Brouillard", pluie: "Pluie",
+  orage: "Orage", neige: "Neige", automne: "Automne", hiver: "Hiver", printemps: "Printemps", ete: "Été",
+  "nuit-claire": "Nuit claire", "nuit-nuageuse": "Nuit nuageuse", "nuit-pluie": "Nuit de pluie", "nuit-neige": "Nuit de neige" };
+export const FLOUS = { 0: "Aucun", 6: "Léger", 14: "Moyen" };
+const DEFAUT = { fond: "auto", transparence: 40, flou: 6 };
+export function lireReglages() {
+  try { return { ...DEFAUT, ...(JSON.parse(localStorage.getItem("vision-ecran") || "{}")) }; } catch (e) { return { ...DEFAUT }; }
+}
+export function appliquerReglages() {
+  const r = lireReglages(), st = document.documentElement.style;
+  st.setProperty("--opacite-carte", String((100 - r.transparence) / 100));
+  st.setProperty("--flou-carte", r.flou + "px");
+  const forcer = actuelle; actuelle = null; appliquerFond(null); if (!actuelle) actuelle = forcer;
+}
+export function enregistrerReglages(champs) {
+  try { localStorage.setItem("vision-ecran", JSON.stringify({ ...lireReglages(), ...champs })); } catch (e) { /* sans stockage */ }
+  appliquerReglages();
+}
+
+// Formulaire de l'écran Réglages.
+export function formulaireEcran(racine) {
+  if (!racine) return;
+  const r = lireReglages(), el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; };
+  const ligne = (libelle, champ) => { const l = el("label", "re-ligne"); l.append(el("span", "", libelle), champ); return l; };
+  const fond = el("select", "nn-jour");
+  for (const [k, v] of Object.entries(NOMS_FONDS)) { const o = el("option", "", v); o.value = k; o.selected = k === r.fond; fond.append(o); }
+  fond.onchange = () => enregistrerReglages({ fond: fond.value });
+  const tr = el("input"); tr.type = "range"; tr.min = 0; tr.max = 80; tr.step = 10; tr.value = r.transparence;
+  const trv = el("span", "re-valeur", r.transparence + " %");
+  tr.oninput = () => { trv.textContent = tr.value + " %"; enregistrerReglages({ transparence: Number(tr.value) }); };
+  const trBloc = el("span", "re-curseur"); trBloc.append(tr, trv);
+  const flou = el("select", "nn-jour");
+  for (const [k, v] of Object.entries(FLOUS)) { const o = el("option", "", v); o.value = k; o.selected = Number(k) === r.flou; flou.append(o); }
+  flou.onchange = () => enregistrerReglages({ flou: Number(flou.value) });
+  racine.replaceChildren(ligne("Fond", fond), ligne("Transparence des blocs", trBloc), ligne("Flou derrière les blocs", flou));
 }

@@ -250,3 +250,8 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 ## 2026-11-10 — Lot 4, étape 3 : nuit
 
 - Du coucher au lever du soleil (heures Open-Meteo du jour) : fond nuit claire (étoiles, croissant de lune), nuageuse, pluie ou neige ; revu chaque minute. Classe `nuit` sur `<body>` : palette sombre par variables (`--carte`, `--surface*`, `--encre`, `--discret`, `--trait`, couleurs des enfants éclaircies). Les fonds blancs codés en dur sont passés en variables (`--surface`, `--surface2`, `--surface3`).
+
+## 2026-11-10 — Lot 4, étape 4 : blocs en verre et réglages de l'écran
+
+- Blocs translucides (`rgba(--carte-rgb, --opacite-carte)`) avec flou d'arrière-plan (`backdrop-filter`) dès qu'un fond est appliqué ; briefing en ardoise translucide ; fenêtres d'ajout et de recette opaques.
+- Réglages propres à l'appareil (stockage local, `vision-ecran`) : fond Automatique ou forcé, transparence 0–80 % (40 % par défaut), flou Aucun / Léger (6 px, défaut) / Moyen (14 px). À baisser si un appareil ancien rame.
