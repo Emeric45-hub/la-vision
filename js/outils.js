@@ -68,3 +68,31 @@ export function surveillerDebord(e) {
   if (window.ResizeObserver) new ResizeObserver(maj).observe(e);
   requestAnimationFrame(maj);
 }
+
+/* ---------- Icônes de la barre du haut (dessins au trait, mêmes sur tous les appareils) ---------- */
+const SVG = d => `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+export const ICONES = {
+  maison: SVG('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11h14V9"/><path d="M10 20v-6h4v6"/>'),
+  camera: SVG('<rect x="3" y="7" width="13" height="10" rx="2"/><path d="m16 11 5-3v8l-5-3"/>'),
+  menu: SVG('<path d="M6 3v7a2 2 0 0 0 4 0V3"/><path d="M8 3v18"/><path d="M17 21V3c-2.2 1.6-3 4.6-3 8h3"/>'),
+  roue: SVG('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>')
+};
+
+export function boutonIcone(icone, libelle, action) {
+  const b = el("button", "ac-pilule ac-icone");
+  b.type = "button"; b.innerHTML = icone; b.title = libelle; b.setAttribute("aria-label", libelle);
+  b.onclick = action;
+  return b;
+}
+
+// Raccourcis de l'appareil (famille.boutons = [{ libelle, dessin | icone, raccourci }]), lancés par
+// shortcuts:// (le Raccourci doit exister sur l'appareil lui-même).
+export function boutonsRaccourcis(fam) {
+  return ((fam && fam.boutons) || []).map(x => {
+    const dessin = ICONES[x.dessin] || ICONES[{ "🏠": "maison", "📹": "camera" }[x.icone]];
+    const b = el("a", "ac-pilule ac-raccourci" + (dessin ? " ac-icone" : ""), dessin ? "" : x.libelle);
+    if (dessin) { b.innerHTML = dessin; b.setAttribute("aria-label", x.libelle); b.title = x.libelle; }
+    b.href = "shortcuts://run-shortcut?name=" + encodeURIComponent(x.raccourci);
+    return b;
+  });
+}

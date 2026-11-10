@@ -1,5 +1,6 @@
 // La Vision — coquille de l'app : connexion, onglets, configuration, import du semainier.
 // Firebase est chargé à part : si son chargement échoue, la page reste utilisable et le dit.
+import { boutonsRaccourcis, boutonIcone, ICONES } from "./outils.js";
 import { lireClasseur } from "./semainier.js";
 import { initPlanning, afficherPlanning } from "./planning.js";
 import { initNounou, afficherNounou } from "./nounou.js";
@@ -28,19 +29,17 @@ function barreEcran(vue) {
   const retour = mk("button", "ac-pilule", "‹ Accueil");
   retour.type = "button"; retour.onclick = () => ouvrir("accueil");
   const titre = mk("span", "ac-date", NOMS_VUES[vue] || "");
-  const etat = mk("span", "be-etat", $("etat-sync").textContent);
+  const etatSync = mk("span", "be-etat", $("etat-sync").textContent);
+  // Mêmes icônes que l'accueil : Raccourcis de l'appareil et réglages (sauf sur l'écran Réglages).
   const nav = mk("div", "ac-boutons");
-  for (const v of ["planning", "nounou"]) {
-    if (v === vue) continue;
-    const p = mk("button", "ac-pilule", NOMS_VUES[v]); p.type = "button"; p.onclick = () => ouvrir(v); nav.append(p);
-  }
-  if (vue !== "reglages") {
-    const r = mk("button", "ac-pilule ac-icone", "⚙︎"); r.type = "button"; r.setAttribute("aria-label", "Réglages"); r.onclick = () => ouvrir("reglages"); nav.append(r);
-  }
-  b.replaceChildren(retour, titre, etat, nav, mk("span", "ac-marque", "LA VISION"));
+  nav.append(...boutonsRaccourcis(etat.config && etat.config.famille));
+  if (vue !== "reglages") nav.append(boutonIcone(ICONES.roue, "Réglages", () => ouvrir("reglages")));
+  b.replaceChildren(retour, titre, etatSync, nav, mk("span", "ac-marque", "LA VISION"));
 }
 
+let vueActuelle = null;
 function ouvrir(vue, jour) {
+  vueActuelle = vue;
   barreEcran(vue);
   document.querySelectorAll(".onglet").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.vue === vue)));
   document.querySelectorAll(".vue").forEach(v => { v.hidden = v.id !== "vue-" + vue; });
@@ -142,6 +141,7 @@ async function chargerTout() {
     if (!$("vue-postit").hidden) afficherPostit();
     initAccueil({ ...ctx, ouvrir });
     if (!$("vue-accueil").hidden) afficherAccueil();
+    barreEcran(vueActuelle);   // icônes des Raccourcis, lues dans la configuration
     sync("À jour · " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), "ok");
   } catch (e) {
     sync("Serveur injoignable (" + (e.code || e.name) + ") : rien n'est affiché plutôt qu'un faux vide.", "ko");
