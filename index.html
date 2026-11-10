@@ -88,7 +88,7 @@
 // après une mise à jour. Tout nouveau module doit être ajouté à cette liste.
 (function () {
   var MODULES = ["js/app.js", "js/planning.js", "js/nounou.js", "js/nounou-calcul.js", "js/outils.js",
-    "js/grille.js", "js/semainier.js", "js/version.js", "js/accueil.js", "js/fraicheur.js", "js/texte-jour.js", "js/meteo.js", "tache/moteur.js", "tache/rebours.js"];
+    "js/grille.js", "js/semainier.js", "js/version.js", "js/accueil.js", "js/fraicheur.js", "js/texte-jour.js", "js/meteo.js", "js/raccourci.js", "tache/moteur.js", "tache/rebours.js"];
   function lancer(v) {
     var q = "?v=" + encodeURIComponent(v), base = new URL(".", location.href), imports = {};
     MODULES.forEach(function (m) { imports[new URL(m, base).href] = new URL(m + q, base).href; });
