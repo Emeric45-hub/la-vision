@@ -9,6 +9,7 @@ import { affiche } from "../tache/moteur.js";
 import { prochaineAnnuelle, joursAvant } from "../tache/rebours.js";
 import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_METEO } from "./meteo.js";
 import { lundiDe } from "./nounou-calcul.js";
+import { postit as postitFamille, initPostit } from "./postit.js";
 import { lire as lireRaccourci, repartir, evenementsDuJour, picto, libelleAnniversaire, appliquerActions, cleRappel } from "./raccourci.js";
 
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -54,6 +55,7 @@ export function initAccueil(ctx) {
       rendreSiVisible();
     }, () => {});
   }
+  initPostit(C);
   lireMeteo();
   if (!S.minuteurMeteo) S.minuteurMeteo = setInterval(lireMeteo, 30 * 60000);
   if (!S.minuteur) S.minuteur = setInterval(() => {
@@ -237,9 +239,7 @@ function semaine() {
 
 function postit() {
   const case_ = el("div", "ac-postit-case");   // la case mesure la place ; le post-it y reste carré
-  const p = el("section", "ac-postit");
-  p.append(el("span", "ac-scotch"), el("p", "ac-postit-attente", "Post-it : après l'étape 6."));
-  case_.append(p);
+  case_.append(postitFamille("ac-postit"));
   return case_;
 }
 

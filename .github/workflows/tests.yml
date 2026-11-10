@@ -33,6 +33,8 @@ jobs:
         run: node tests/rebours.test.mjs
       - name: Données du Raccourci iOS (fictives)
         run: node tests/raccourci.test.mjs
+      - name: Post-it (codage des traits)
+        run: node tests/postit.test.mjs
       - name: Dépendances de la tâche
         working-directory: tache
         run: npm install --no-audit --no-fund --ignore-scripts

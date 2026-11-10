@@ -224,12 +224,7 @@ body.sur-accueil .version { display: none; }
 .ac-titre { margin: 0 0 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--discret); }
 .ac-attente { margin: 0; font-size: 14px; color: #AEAEB2; }
 .ac-droite > .ac-postit-case { container-type: size; overflow: visible; display: flex; align-items: center; justify-content: center; }
-.ac-postit { position: relative; flex: none; width: min(100cqw, 100cqh, 200px); height: min(100cqw, 100cqh, 200px);
-  background: linear-gradient(160deg, #FFF59D 0%, #FFEE58 70%, #FDD835 100%); box-shadow: 0 6px 12px rgba(0,0,0,.15), 0 1px 2px rgba(0,0,0,.1);
-  transform: rotate(-2deg); border-radius: 2px; padding: 22px 14px 14px; }
-.ac-scotch { position: absolute; top: -9px; left: 50%; width: 64px; height: 20px; transform: translateX(-50%) rotate(3deg);
-  background: rgba(255,255,255,.55); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
-.ac-postit-attente { margin: 0; font-size: 13px; color: rgba(0,0,0,.45); }
+.ac-postit { flex: none; width: min(100cqw, 100cqh, 220px); height: min(100cqw, 100cqh, 220px); transform: rotate(-2deg); }
 .ac-semaine { min-height: 0; padding: 8px 12px 10px; }
 .ac-semaine > .ac-titre { margin-bottom: 4px; font-size: 12px; }
 .ac-jours { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
@@ -351,3 +346,29 @@ body.sur-accueil .version { display: none; }
 .ac-fenetre .ac-aide { margin: 0; }
 .ac-fenetre-pied { display: flex; justify-content: flex-end; gap: 10px; }
 .ac-fenetre-pied .bouton { min-height: 44px; padding: 0 20px; }
+
+/* Post-it familial (accueil, onglet du téléphone, éditeur) */
+.pi { position: relative; display: block; padding: 0; border: 0; border-radius: 2px; aspect-ratio: 1; cursor: pointer; font: inherit; color: #3A3200;
+  background: linear-gradient(160deg, #FFF59D 0%, #FFEE58 70%, #FDD835 100%); box-shadow: 0 6px 12px rgba(0,0,0,.15), 0 1px 2px rgba(0,0,0,.1);
+  -webkit-tap-highlight-color: transparent; overflow: visible; }
+.pi-scotch { position: absolute; top: -9px; left: 50%; width: 30%; height: 20px; transform: translateX(-50%) rotate(3deg); z-index: 2;
+  background: rgba(255,255,255,.55); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.pi-dessin { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.pi-texte { position: absolute; left: 8%; right: 8%; bottom: 14%; text-align: center; font-family: "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive;
+  font-size: clamp(14px, 11cqmin, 30px); line-height: 1.15; overflow-wrap: anywhere; text-shadow: 0 0 4px #FFF59D, 0 0 2px #FFF59D; }
+.ac-postit-case .pi-texte { font-size: 17px; }
+.pi-vide { position: absolute; inset: 25% 12% auto; text-align: center; font-size: 13px; color: rgba(0,0,0,.4); }
+.pi-attente { position: absolute; inset: 40% 0 auto; text-align: center; color: rgba(0,0,0,.35); }
+.pi-heure { position: absolute; right: 7px; bottom: 5px; font-size: 10.5px; color: rgba(0,0,0,.4); }
+.pi-fenetre { width: min(560px, 100%); max-height: calc(100dvh - 32px); overflow: auto; }
+.pi-fenetre-fond { padding-top: max(16px, 4vh); }
+.pi-grand { width: min(100%, 52vh); margin: 4px auto 0; cursor: crosshair; transform: none; }
+.pi-outils { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pi-couleur { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1px var(--trait); cursor: pointer; padding: 0; }
+.pi-couleur.actif { box-shadow: 0 0 0 3px var(--accent); }
+.pi-outil { min-height: 34px; padding: 0 12px; border: 1px solid var(--trait); border-radius: 999px; background: #fff; font: inherit; font-size: 14px; font-weight: 600; color: var(--encre); cursor: pointer; }
+.pi-outil.actif { background: var(--encre); color: #fff; border-color: var(--encre); }
+.pi-page { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 28px 16px; }
+.pi-page-postit { width: min(86vw, 420px); transform: rotate(-1.5deg); }
+.onglet { white-space: nowrap; }
+@media (max-width: 420px) { .onglet { font-size: 14px; } }

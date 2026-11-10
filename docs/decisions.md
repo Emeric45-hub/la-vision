@@ -202,3 +202,9 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - Ajout : fenêtre au centre de l'écran (listes de `famille.rappels.ajout`, date facultative ; sans configuration, pas de bouton). Courses : même fenêtre, qui reste ouverte pour enchaîner les articles. Les blocs restent trop petits pour un formulaire.
 - L'accueil ne se reconstruit pas pendant une saisie (champ en cours de frappe).
 - Rééquilibrage de l'accueil (10/11) : bande « Cette semaine » plus compacte (dépôt → récupération sur une ligne, avec les initiales), place rendue au module nounou et à « À faire, plus tard ».
+
+## 2026-11-10 — Lot 2, étape 6b : post-it
+
+- Un seul post-it partagé, document `vision/postit` : `{ traits: [{ c, e, g, p: "x,y;…" }], texte, le }`, coordonnées entières 0–1000 (indépendantes de l'écran), gomme = tracé en `destination-out`. Plafond de 30 000 points par sécurité (limite de taille d'un document).
+- Dessin au doigt et texte depuis tous les écrans : toucher le post-it ouvre l'éditeur (5 couleurs, 2 épaisseurs, gomme, annuler le dernier trait, tout effacer avec confirmation). Sur téléphone, onglet « Post-it ». Mise à jour en direct (lecture en continu), sans passer par le Raccourci.
+- Affichage : heure du dernier enregistrement en petit, pas de nom.

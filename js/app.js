@@ -5,6 +5,7 @@ import { initPlanning, afficherPlanning } from "./planning.js";
 import { initNounou, afficherNounou } from "./nounou.js";
 import { initVersion } from "./version.js";
 import { initAccueil, afficherAccueil } from "./accueil.js";
+import { initPostit, afficherPostit } from "./postit.js";
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 const FIREBASE = {
@@ -49,6 +50,7 @@ function ouvrir(vue, jour) {
   if (vue === "planning") afficherPlanning(jour);
   if (vue === "nounou") afficherNounou();
   if (vue === "accueil") afficherAccueil();
+  if (vue === "postit") afficherPostit();
 }
 document.querySelectorAll(".onglet").forEach(b => b.addEventListener("click", () => ouvrir(b.dataset.vue)));
 // Onglet de départ : l'accueil sur un grand écran (iPad, Mac), le module nounou sur un téléphone.
@@ -136,6 +138,8 @@ async function chargerTout() {
     const ctx = { F: etat.F, db: etat.db, fam: etat.config && etat.config.famille };
     initNounou(ctx);
     if (!$("vue-nounou").hidden) afficherNounou();
+    initPostit(ctx);
+    if (!$("vue-postit").hidden) afficherPostit();
     initAccueil({ ...ctx, ouvrir });
     if (!$("vue-accueil").hidden) afficherAccueil();
     sync("À jour · " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), "ok");
