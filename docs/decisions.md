@@ -255,3 +255,7 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 
 - Blocs translucides (`rgba(--carte-rgb, --opacite-carte)`) avec flou d'arrière-plan (`backdrop-filter`) dès qu'un fond est appliqué ; briefing en ardoise translucide ; fenêtres d'ajout et de recette opaques.
 - Réglages propres à l'appareil (stockage local, `vision-ecran`) : fond Automatique ou forcé, transparence 0–80 % (40 % par défaut), flou Aucun / Léger (6 px, défaut) / Moyen (14 px). À baisser si un appareil ancien rame.
+
+## 2026-11-10 — Points à vérifier traités
+
+- Un point à vérifier est considéré comme traité quand le jour a été corrigé à la main ou que le mois est validé : plus de pastille ni de décompte ; il reste visible, barré, dans le détail du jour. Un écart entre le calcul actuel et le calcul validé reste toujours signalé.
