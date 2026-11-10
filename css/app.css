@@ -434,3 +434,18 @@ body.sur-accueil .version { display: none; }
 .ac .ac-briefing .ac-brief { color: #F2F4F7; }
 .ac .ac-briefing .ac-brief-quand, .ac .ac-briefing .ac-attente { color: rgba(255,255,255,.55); }
 .ac-mt-note { margin: 4px 0 0; padding: 3px 10px; border-radius: 8px; background: var(--alerte-fond); color: var(--alerte); font-size: 12.5px; font-weight: 600; display: inline-block; }
+/* ---------- Fond : météo marquée ou saison (lot 4) ---------- */
+html { min-height: 100%; }
+body[class*="fond-"] { min-height: 100vh; background-attachment: fixed; }
+#fond { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+#fond svg { display: block; }
+body.fond-soleil { background: linear-gradient(180deg, #CFE6FA 0%, #EAF4FD 100%); }
+body.fond-couvert { background: linear-gradient(180deg, #C9D2DC 0%, #E4E8ED 100%); }
+body.fond-brouillard { background: linear-gradient(180deg, #DADDE1 0%, #EEEFF1 100%); }
+body.fond-pluie { background: linear-gradient(180deg, #9FADBD 0%, #C8D1DA 100%); }
+body.fond-orage { background: linear-gradient(180deg, #7D8796 0%, #AEB6C1 100%); }
+body.fond-neige { background: linear-gradient(180deg, #DCE7F2 0%, #F4F8FC 100%); }
+body.fond-automne { background: linear-gradient(180deg, #F1DFC6 0%, #F8EEE2 100%); }
+body.fond-hiver { background: linear-gradient(180deg, #D3E0EE 0%, #EEF3F8 100%); }
+body.fond-printemps { background: linear-gradient(180deg, #DDEDD6 0%, #F3F8EE 100%); }
+body.fond-ete { background: linear-gradient(180deg, #FAE6C0 0%, #FDF5E6 100%); }
