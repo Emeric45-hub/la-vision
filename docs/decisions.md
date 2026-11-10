@@ -246,3 +246,7 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 ## 2026-11-10 — Lot 4, étape 2 : fond météo ou saison
 
 - `js/fond.js` : fond de la météo quand elle est marquée (soleil, couvert, brouillard, pluie, orage avec éclair, neige avec flocons) ; les jours ordinaires (variable, partiellement nuageux, bruine), fond de la saison (automne : feuilles ; hiver : givre ; printemps : fleurs ; été : lumière chaude), saisons aux dates astronomiques. Dégradé sur `<body>` et décor SVG immobile dans un calque fixe ; positions déterministes. L'ancienne option « motif de saison superposé » est remplacée par ce choix (décision du 10/11).
+
+## 2026-11-10 — Lot 4, étape 3 : nuit
+
+- Du coucher au lever du soleil (heures Open-Meteo du jour) : fond nuit claire (étoiles, croissant de lune), nuageuse, pluie ou neige ; revu chaque minute. Classe `nuit` sur `<body>` : palette sombre par variables (`--carte`, `--surface*`, `--encre`, `--discret`, `--trait`, couleurs des enfants éclaircies). Les fonds blancs codés en dur sont passés en variables (`--surface`, `--surface2`, `--surface3`).

@@ -11,7 +11,7 @@ import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_M
 import { lundiDe } from "./nounou-calcul.js";
 import { postit as postitFamille, initPostit } from "./postit.js";
 import { pourEnfant } from "../tache/cantine.js";
-import { ambiance, appliquerFond } from "./fond.js";
+import { ambiance, appliquerFond, estNuit } from "./fond.js";
 import { ouvrirRecette } from "./recette.js";
 import { lire as lireRaccourci, repartir, evenementsDuJour, picto, libelleAnniversaire, appliquerActions, cleRappel } from "./raccourci.js";
 
@@ -72,6 +72,7 @@ export function initAccueil(ctx) {
   if (!S.minuteurMeteo) S.minuteurMeteo = setInterval(lireMeteo, 30 * 60000);
   if (!S.minuteur) S.minuteur = setInterval(() => {
     if (S.semaine && S.semaine.jour !== aujourdhui()) S.semaine = null;
+    majFond();
     if (visible()) charger();
   }, 60000);
   document.addEventListener("visibilitychange", gererVerrou);
@@ -667,9 +668,15 @@ async function lireMeteo() {
     try { localStorage.setItem("vision-meteo", JSON.stringify(S.meteo)); } catch (e) { /* sans stockage */ }
   } catch (e) { S.meteo = { ...(S.meteo || {}), erreur: e.message || e.name }; }
   // Fond de l'écran : météo marquée, sinon la saison (sans météo : la saison).
-  const code = S.meteo && S.meteo.data && S.meteo.data.current ? S.meteo.data.current.weather_code : null;
-  appliquerFond(ambiance(code, aujourdhui()));
+  majFond();
   rendreSiVisible();
+}
+// Fond selon la météo, la saison et l'heure (nuit du coucher au lever du soleil) ; revu chaque minute.
+function majFond() {
+  const d = S.meteo && S.meteo.data;
+  const code = d && d.current ? d.current.weather_code : null;
+  const quand = aujourdhui() + "T" + maintenant();
+  appliquerFond(ambiance(code, aujourdhui(), estNuit(d && d.daily, quand)));
 }
 
 function meteoCarte() {
