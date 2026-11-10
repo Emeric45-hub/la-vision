@@ -197,7 +197,8 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 ## 2026-11-10 — Lot 2, étape 6 (2/2) : actions vers le Raccourci
 
 - Collection `vision/raccourci/actions` : `{ type: cocher | creer | courses, t, l, e (AAAA-MM-JJ), le }`. Les quatre champs texte sont toujours présents, vides au besoin : un chemin de clé absent arrête Raccourcis. Les fiches incomplètes sont complétées par l'app. Le Raccourci lit la collection à chaque passage (avant l'envoi), applique chaque action dans Rappels, puis supprime la fiche (DELETE par son nom) : une action ajoutée pendant un passage n'est jamais perdue.
-- Cocher : le rappel se raye et reste 5 s ; un second toucher ou « Annuler » le rétablit sans rien écrire. Ensuite la ligne se replie et l'action est enregistrée ; tout rappel ayant une action « cocher » en attente est masqué sur tous les appareils.
+- Cocher : le rappel se raye et reste 3 s (5 s au départ, raccourci le 10/11) ; un second toucher ou « Annuler » le rétablit sans rien écrire. Ensuite la ligne se replie et l'action est enregistrée ; tout rappel ayant une action « cocher » en attente est masqué sur tous les appareils.
 - Rappel créé dans l'app : affiché tout de suite (depuis sa fiche) ; le cocher avant le passage supprime simplement la fiche.
 - Ajout : fenêtre au centre de l'écran (listes de `famille.rappels.ajout`, date facultative ; sans configuration, pas de bouton). Courses : même fenêtre, qui reste ouverte pour enchaîner les articles. Les blocs restent trop petits pour un formulaire.
 - L'accueil ne se reconstruit pas pendant une saisie (champ en cours de frappe).
+- Rééquilibrage de l'accueil (10/11) : bande « Cette semaine » plus compacte (dépôt → récupération sur une ligne, avec les initiales), place rendue au module nounou et à « À faire, plus tard ».
