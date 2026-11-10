@@ -34,6 +34,9 @@ const faits = { moment: 'matin', date, aujourdhui: f, rappelsDuJour: ['A'], plat
 const e1 = JSON.stringify(essentiel(faits));
 assert.equal(JSON.stringify(essentiel({ ...faits, rappelsDuJour: ['A', 'B'], platPrevuCeSoir: 'Y' })), e1);
 assert.notEqual(JSON.stringify(essentiel({ ...faits, aujourdhui: corr })), e1);
+// Le soir, un changement de la journée en cours compte aussi
+{ const soir = { moment: 'soir', date: faits.date, ceSoir: faits.aujourdhui, demain: null };
+  assert.notEqual(JSON.stringify(essentiel({ ...soir, ceSoir: corr })), JSON.stringify(essentiel(soir))); }
 
 // Réécriture
 const cle = cleMoment('matin', date), t = Date.parse('2030-01-08T10:00:00Z');

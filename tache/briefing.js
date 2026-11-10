@@ -42,8 +42,8 @@ export function faitsDuJour(date, j, agendaJour, fam) {
 }
 
 // Ce qui, en changeant, justifie de réécrire le briefing (les rappels, courses, post-it et plats
-// cochés n'en font pas partie).
-export const essentiel = faits => ({ m: faits.moment, d: faits.date, j: [faits.aujourdhui, faits.demain].map(x => x && {
+// cochés n'en font pas partie). Le soir, la journée en cours (« ceSoir ») compte aussi.
+export const essentiel = faits => ({ m: faits.moment, d: faits.date, j: [faits.aujourdhui || faits.ceSoir, faits.demain].map(x => x && {
   parents: x.parents, e1: x.enfant1, e2: x.enfant2, depot: x.depot, recup: x.recup, note: x.note, ev: x.evenements, ferie: x.ferie
 }) });
 

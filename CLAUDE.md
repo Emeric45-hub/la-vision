@@ -37,7 +37,7 @@ Règles de sécurité : accès réservé à l'identifiant (UID) du compte famill
 
 - HTML, CSS et JavaScript sans framework ni étape de compilation (comme Chez Nounou, Diversif et AgendaPro).
 - Firebase JS SDK 10.12.2 depuis gstatic, chargé à part pour que la page s'affiche même si Firebase échoue.
-- Lecture du semainier Excel : SheetJS 0.18.5, lecteur repris d'AgendaPro **sans modification de logique**.
+- Lecture du semainier Excel : SheetJS 0.18.5 (copie dans `vendor/`), lecteur repris d'AgendaPro **sans modification de logique**.
 - API Claude : modèle `claude-sonnet-5-5`, `max_tokens` 1500, concaténer tous les blocs `type === 'text'` (le premier peut être un bloc de réflexion).
 - Workflows : Node 22, `actions/checkout@v5`, `actions/setup-node@v5`.
 - Firestore hors connexion renvoie son cache (parfois vide) **sans erreur** : ne jamais afficher un « 0 » sans savoir si la lecture vient du serveur. L'indicateur de fraîcheur couvre ce cas.
