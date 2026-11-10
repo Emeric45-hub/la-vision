@@ -409,7 +409,7 @@ body.sur-accueil .version { display: none; }
 .ac-brief { margin: 2px 0 0; font-size: 15px; line-height: 1.4; color: var(--encre); white-space: pre-line; }
 .ac-brief-quand { font-size: 12px; color: var(--discret); white-space: nowrap; }
 /* Briefing en ardoise (cahier des charges du 5/11) : fond gris-bleu foncé, texte clair */
-.ac .ac-briefing { background: linear-gradient(160deg, #3A4452 0%, #2B323D 100%); color: #F2F4F7; }
+.ac .ac-briefing { background: linear-gradient(160deg, #5A6676 0%, #485261 100%); color: #F7F8FA; }
 .ac .ac-briefing .ac-titre { color: rgba(255,255,255,.62); }
 .ac .ac-briefing .ac-rp-tete { background: transparent; }
 .ac .ac-briefing .ac-brief { color: #F2F4F7; }
