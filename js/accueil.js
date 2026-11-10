@@ -494,7 +494,7 @@ function formAjout(listes) {
     const v = t.value.trim();
     if (!v) return;
     try {
-      await envoyerAction({ type: "creer", t: v, l: S.ajoutListe, e: d.value || "" });
+      await envoyerAction({ type: "creer", t: v, l: S.ajoutListe, ...(d.value ? { e: d.value } : {}) });   // sans date : pas de champ « e »
       t.value = ""; d.value = ""; S.ajoutOuvert = false; t.blur(); rendre();
     } catch (er) { alerteEcriture(er); }
   };
