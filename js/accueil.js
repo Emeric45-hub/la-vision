@@ -252,7 +252,7 @@ function postit() {
 
 function carte(classe, titre, attente) {
   const c = el("section", "carte ac-carte " + classe);
-  c.append(el("h2", "ac-titre", titre), el("p", "ac-attente", attente));
+  c.append(el("h2", "ac-titre" + (classe === "ac-briefing" ? " grand" : ""), titre), el("p", "ac-attente", attente));
   return c;
 }
 
@@ -262,7 +262,7 @@ const LIEUX_E2 = [["ecole", "École"], ["alae", "ALAE"], ["nounou", "Nounou"], [
 
 function aujourdhuiCarte() {
   const c = el("section", "carte ac-carte ac-jour");
-  c.append(el("h2", "ac-titre", "Aujourd'hui"));
+  c.append(el("h2", "ac-titre grand", "Aujourd'hui"));
   const s = S.semaine, d = aujourdhui();
   if (!s || s.erreur) { c.append(el("p", "ac-attente", s ? `Lecture impossible (${s.erreur}).` : "")); return c; }
   const j = s.jours[d];
@@ -648,7 +648,7 @@ async function lireMeteo() {
 
 function meteoCarte() {
   const c = el("section", "carte ac-carte ac-meteo");
-  c.append(el("h2", "ac-titre", "Météo"));
+  c.append(el("h2", "ac-titre grand", "Météo"));
   if (!meteoConfiguree()) { c.append(el("p", "ac-attente", "Coordonnées à ajouter dans la configuration (famille.meteo).")); return c; }
   const m = S.meteo;
   if (!m || !m.data) { c.append(el("p", "ac-attente", m && m.erreur ? `Prévisions indisponibles (${m.erreur}).` : "Chargement…")); return c; }
