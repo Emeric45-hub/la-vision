@@ -115,7 +115,7 @@ function rendre() {
     bG.onclick = () => ouvrirGrille(nbPoints);
     actions.prepend(bG);
   }
-  tete.append(nav, etatMois, pts, ...(envoi ? [envoi] : []), actions);
+  tete.append(nav, etatMois, ...(nbPoints ? [pts] : []), ...(envoi ? [envoi] : []), actions);
 
   const corps = el("div", "pl-corps");
   if (S.mode === "horaires") corps.append(rendreHoraires());
