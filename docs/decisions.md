@@ -226,3 +226,11 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 ## 2026-11-10 — Lot 2, étape 8 : boutons
 
 - Barre de l'accueil : boutons de Raccourcis de l'appareil lus dans `famille.boutons = [{ libelle, icone, raccourci }]`, lancés par `shortcuts://run-shortcut?name=…` (le Raccourci doit exister sur l'appareil lui-même : l'iPad resté en iPadOS 17 ne reçoit plus les Raccourcis synchronisés). « 📖 Recettes » ouvre le PDF du plan repas dans l'app, sans Raccourci.
+
+## 2026-11-10 — Lot 3 : briefing
+
+- `tache/briefing.mjs` (à chaque passage de la tâche) : moment « matin » de 6h30 à 17h29 (journée en cours), « soir » à partir de 17h30 (soirée et lendemain) ; avant 6h30, le briefing du soir reste affiché.
+- Faits rassemblés par le code (`tache/briefing.js`) : planning du jour (calcul + corrections), parents, enfants, dépôt et récupération, événements avec lieux et notes, rappels du jour, cantine de midi (matin), plat prévu, météo. Claude (`claude-sonnet-5-5`, `max_tokens` 1500, tous les blocs `text` concaténés) les met en 3 à 5 phrases, 70 mots au plus, sans rien inventer.
+- Réécriture : nouveau moment ou nouveau jour ; sinon seulement si l'essentiel change (planning, enfants, événements), au plus une fois par heure. Rappels, courses, post-it et plats cochés ne déclenchent rien. Coût attendu ≈ 1 à 2 € par mois.
+- API indisponible : texte de secours construit par le code (« résumé automatique »).
+- `vision/briefing = { cle, moment, date, texte, ia, essentiel, le }`.

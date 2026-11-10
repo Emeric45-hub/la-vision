@@ -39,6 +39,8 @@ jobs:
         run: node tests/cantine.test.mjs
       - name: Plan repas (positions fictives)
         run: node tests/repas.test.mjs
+      - name: Briefing (famille fictive)
+        run: node tests/briefing.test.mjs
       - name: Dépendances de la tâche
         working-directory: tache
         run: npm install --no-audit --no-fund --ignore-scripts
