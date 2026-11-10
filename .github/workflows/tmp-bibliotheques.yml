@@ -1,0 +1,42 @@
+name: Bibliothèques locales (temporaire)
+
+# Passage unique : copie dans le dépôt les deux bibliothèques chargées jusque-là depuis un CDN,
+# et fige les versions des dépendances de la tâche. Ce fichier est retiré avant la fusion.
+on:
+  push:
+    branches: [bibliotheques-locales]
+
+permissions:
+  contents: write
+
+jobs:
+  copier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Télécharger
+        run: |
+          set -euo pipefail
+          mkdir -p vendor/pdfjs
+          curl -fsSL -o vendor/xlsx.full.min.js https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js
+          curl -fsSL -o vendor/pdfjs/pdf.min.mjs https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.min.mjs
+          curl -fsSL -o vendor/pdfjs/pdf.worker.min.mjs https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/pdf.worker.min.mjs
+          curl -fsSL -o vendor/pdfjs/LICENSE https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/LICENSE
+          (cd tache && npm install --package-lock-only --ignore-scripts --no-audit --no-fund)
+          # Contrôle : les fichiers copiés sont ceux du paquet npm publié
+          (cd tache && npm ci --ignore-scripts --no-audit --no-fund)
+          cmp vendor/pdfjs/pdf.min.mjs tache/node_modules/pdfjs-dist/legacy/build/pdf.min.mjs
+          cmp vendor/pdfjs/pdf.worker.min.mjs tache/node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs
+          wc -c vendor/xlsx.full.min.js vendor/pdfjs/*
+          sha384sum vendor/xlsx.full.min.js
+      - name: Enregistrer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vendor tache/package-lock.json
+          git commit -m "Bibliothèques copiées dans le dépôt, versions de la tâche figées"
+          git push
