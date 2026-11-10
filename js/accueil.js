@@ -10,6 +10,7 @@ import { prochaineAnnuelle, joursAvant } from "../tache/rebours.js";
 import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_METEO } from "./meteo.js";
 import { lundiDe } from "./nounou-calcul.js";
 import { postit as postitFamille, initPostit } from "./postit.js";
+import { pourEnfant } from "../tache/cantine.js";
 import { lire as lireRaccourci, repartir, evenementsDuJour, picto, libelleAnniversaire, appliquerActions, cleRappel } from "./raccourci.js";
 
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -36,6 +37,10 @@ export function initAccueil(ctx) {
   if (!S.stopRebours && C.db) {
     const { onSnapshot, doc } = C.F;
     S.stopRebours = onSnapshot(doc(C.db, "vision", "rebours"), snap => { S.rebours = snap.exists() ? snap.data() : {}; rendreSiVisible(); }, () => {});
+  }
+  if (!S.stopCantine && C.db) {   // menus de la cantine, lus une fois par jour par la tâche
+    const { onSnapshot, doc } = C.F;
+    S.stopCantine = onSnapshot(doc(C.db, "vision", "cantine"), snap => { S.cantine = snap.exists() ? snap.data() : {}; rendreSiVisible(); }, () => {});
   }
   if (!S.stopRaccourci && C.db) {   // rappels, calendrier local et anniversaires envoyés par le Raccourci iOS
     const { onSnapshot, doc } = C.F;
@@ -160,7 +165,7 @@ function rendre() {
   const cols = el("div", "ac-colonnes");
   const pile = el("div", "ac-pile");
   if (!S.nounou) S.nounou = el("div", "ac-nounou");
-  pile.append(S.nounou, carte("ac-soir", "Ce soir", "Étape 7."));
+  pile.append(S.nounou, soirCarte());
   const droite = el("div", "ac-droite");
   droite.append(rappelsCarte(), postit(), afaireCarte());
   cols.append(aujourdhuiCarte(), pile, droite);
@@ -326,6 +331,26 @@ async function changerE2(d, champs) {
 }
 function alerteEcriture(e) { S.erreurEcriture = e.code || e.name; rendre(); }
 
+
+/* ---------- Ce soir ---------- */
+// Repas de midi de l'enfant scolarisé selon son lieu du jour : école → cantine de l'école ;
+// ALAE / centre (mercredis, vacances) → accueil de loisirs ; ailleurs, pas de ligne.
+function soirCarte() {
+  const c = el("section", "carte ac-carte ac-soir");
+  c.append(el("h2", "ac-titre", "Ce soir"));
+  const d = aujourdhui(), j = S.semaine && S.semaine.jours && S.semaine.jours[d];
+  const lieu = j && j.aff && j.aff.e2;
+  const source = lieu === "ecole" ? "ecole" : (lieu === "alae" || lieu === "centre") ? "loisirs" : null;
+  if (source && S.cantine) {
+    const plats = pourEnfant((S.cantine[source] || {})[d]);
+    const b = el("div", "ac-cantine");
+    b.append(el("span", "ac-cantine-t", `Ce midi à la cantine (${C.fam.enfants.e2.prenom})`));
+    b.append(el("span", "ac-cantine-p", plats.length ? plats.join(" · ") : "Menu non publié."));
+    c.append(b);
+  }
+  c.append(el("p", "ac-attente", "Plats de la semaine : prochaine étape."));
+  return c;
+}
 
 /* ---------- Rappels (Raccourci iOS) ---------- */
 const JOURS_ABR = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];

@@ -208,3 +208,10 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - Un seul post-it partagé, document `vision/postit` : `{ traits: [{ c, e, g, p: "x,y;…" }], texte, le }`, coordonnées entières 0–1000 (indépendantes de l'écran), gomme = tracé en `destination-out`. Plafond de 30 000 points par sécurité (limite de taille d'un document).
 - Dessin au doigt et texte depuis tous les écrans : toucher le post-it ouvre l'éditeur (5 couleurs, 2 épaisseurs, gomme, annuler le dernier trait, tout effacer avec confirmation). Sur téléphone, onglet « Post-it ». Mise à jour en direct (lecture en continu), sans passer par le Raccourci.
 - Affichage : heure du dernier enregistrement en petit, pas de nom.
+
+## 2026-11-10 — Lot 2, étape 7 (1/2) : cantine
+
+- `tache/cantine.mjs` lit le site du prestataire une fois par jour (premier passage après 5 h, heure de Paris) avec le Chrome préinstallé sur les machines GitHub, piloté par `playwright-core` (pas de téléchargement de navigateur). Noms de commune et d'établissements dans `vision/config.famille.cantine = { commune, ecole, loisirs, convives }`.
+- `vision/cantine = { lu, ecole: { date: [plats] }, loisirs: { … } }`, deux semaines d'historique gardées. Une lecture ratée ne remplace rien et sera retentée au passage suivant.
+- Accueil, bloc « Ce soir » : « Ce midi à la cantine » selon le lieu du jour de l'enfant scolarisé (école → école ; ALAE / centre → accueil de loisirs ; ailleurs, rien). Alternative végétarienne retirée par une règle simple quand un plat avec viande ou poisson existe le même jour ; les cas ambigus restent affichés. Pas de « demain midi » (choix du 10/11).
+- Plats du soir (étape 7, 2/2) : liste dans l'ordre du PDF du plan repas, sans proposition ; le PDF est envoyé par le Raccourci et lu par la tâche (tableau de la page 1), sans Claude.
