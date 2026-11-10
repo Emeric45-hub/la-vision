@@ -493,3 +493,7 @@ body[class*="fond-"] .ac-jourc { background: rgba(var(--carte-rgb), .55); }
 .re-curseur { display: inline-flex; align-items: center; gap: 10px; }
 .re-curseur input { width: 160px; }
 .re-valeur { min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; color: var(--discret); }
+/* Safari ancien : le flou d'arrière-plan déborde des coins arrondis d'un bloc sans « overflow » ;
+   on le contient (la bande « Cette semaine » était le seul bloc concerné). */
+.carte { isolation: isolate; }
+.ac-semaine, .ac-haut .ac-carte, .barre-ecran .ac-pilule, .ac-barre .ac-pilule { overflow: hidden; }
