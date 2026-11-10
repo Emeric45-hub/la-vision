@@ -8,7 +8,7 @@ import { empreinte } from './outils.mjs';
 import { decaler } from './calendrier.mjs';
 import { moment, jourDuPlanning, faitsDuJour, essentiel, doitEcrire, cleMoment, consigne, secours } from './briefing.js';
 import { lire as lireRaccourci, repartir } from '../js/raccourci.js';
-import { url as urlMeteo, creneaux, SEUILS } from '../js/meteo.js';
+import { url as urlMeteo, creneaux, SEUILS, notesHabillage } from '../js/meteo.js';
 import { pourEnfant } from './cantine.js';
 
 const MODELE = 'claude-sonnet-5-5';
@@ -71,6 +71,11 @@ export async function executer() {
     } catch (e) { /* sans météo */ }
   }
 
+  // Notes d'habillage récurrentes (matin, jours d'école)
+  if (m === 'matin' && jA) {
+    const n = notesHabillage(fam.habillage, { jourSemaine: new Date(date + 'T12:00:00Z').getUTCDay(), heure, lieux: { e1: jA.aff && jA.aff.e1 ? 'nounou' : null, e2: jA.aff ? jA.aff.e2 : null } }, fam);
+    if (n.length) faits.habillage = n;
+  }
   const cle = cleMoment(m, date), emp = empreinte(essentiel(faits));
   const actuel = docs['vision/briefing'];
   if (!doitEcrire(actuel, emp, Date.now(), cle) && !process.env.FORCER) { console.log(`briefing : à jour (${m})`); return; }

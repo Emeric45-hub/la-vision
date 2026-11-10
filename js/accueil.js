@@ -7,7 +7,7 @@ import { etiquettes, lignesCase, personnes, filDuJour, ligneE2 } from "./texte-j
 import { monterNounou, rechargerNounou } from "./nounou.js";
 import { affiche } from "../tache/moteur.js";
 import { prochaineAnnuelle, joursAvant } from "../tache/rebours.js";
-import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_METEO } from "./meteo.js";
+import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_METEO, notesHabillage } from "./meteo.js";
 import { lundiDe } from "./nounou-calcul.js";
 import { postit as postitFamille, initPostit } from "./postit.js";
 import { pourEnfant } from "../tache/cantine.js";
@@ -687,6 +687,11 @@ function meteoCarte() {
   const x = creneauxMeteo(d, jour, demain, maintenant(), seuils);
   // Le conseil d'abord (le plus utile), puis les créneaux sur une ligne chacun.
   if (x.conseil) c.append(el("p", "ac-mt-conseil", x.conseil));
+  // Notes d'habillage récurrentes (ex. jour de motricité), selon le lieu du jour des enfants.
+  const jA = S.semaine && S.semaine.jours && S.semaine.jours[jour];
+  const lieux = { e1: jA && jA.aff && jA.aff.e1 ? "nounou" : null, e2: jA && jA.aff ? jA.aff.e2 : null };
+  for (const n of notesHabillage(C.fam.habillage, { jourSemaine: new Date(jour + "T12:00:00Z").getUTCDay(), heure: maintenant(), lieux }, C.fam))
+    c.append(el("p", "ac-mt-note", n));
   const liste = el("div", "ac-mt-cren");
   for (const k of x.creneaux) {
     const l = el("p", "ac-mt-l");

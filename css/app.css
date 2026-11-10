@@ -414,3 +414,4 @@ body.sur-accueil .version { display: none; }
 .ac .ac-briefing .ac-rp-tete { background: transparent; }
 .ac .ac-briefing .ac-brief { color: #F2F4F7; }
 .ac .ac-briefing .ac-brief-quand, .ac .ac-briefing .ac-attente { color: rgba(255,255,255,.55); }
+.ac-mt-note { margin: 4px 0 0; padding: 3px 10px; border-radius: 8px; background: var(--alerte-fond); color: var(--alerte); font-size: 12.5px; font-weight: 600; display: inline-block; }
