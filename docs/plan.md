@@ -32,7 +32,7 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 | 3 | Aujourd'hui : fil du jour, situation des parents, statut de l'enfant 2, calendriers abonnés ; barre commune | ✅ |
 | 4 | Météo et conseil d'habillage (température ressentie) | ✅ |
 | 5 | Compte à rebours | 🟡 |
-| 6 | Rappels, À faire, Courses (Raccourci définitif) | 🔄 envoi fait, réception à faire |
+| 6 | Rappels, À faire, Courses (Raccourci définitif) | 🔄 envoi fait ; actions côté app faites ; réception du Raccourci à vérifier |
 | 6b | Post-it (dessin sur grand écran, texte depuis le téléphone) | ⬜ |
 | 7 | Ce soir : cantine, plat du soir | ⬜ |
 | 8 | Boutons Raccourcis, essai à distance | ⬜ |

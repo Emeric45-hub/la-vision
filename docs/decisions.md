@@ -193,3 +193,11 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - Fraîcheur : alerte orange au-delà de 6 h de jour ; la « nuit » du Raccourci va de 21 h à 7 h (pas de passage), seuil 11 h ; bandeau rouge au-delà de 24 h.
 - Cocher, ajouter et courses : partie réception, étape suivante.
 - Correction du 10/11 : « À faire, plus tard » ne montre que les rappels ponctuels. Raccourcis ne transmettant pas la récurrence, les listes de rappels récurrents sont reconnues à leur nom (motif par défaut « récurrent(e)s », remplaçable par `famille.rappels.recurrents`). Un rappel récurrent n'apparaît que dans « Rappels du jour », le jour de son échéance ou en retard.
+
+## 2026-11-10 — Lot 2, étape 6 (2/2) : actions vers le Raccourci
+
+- Collection `vision/raccourci/actions` : `{ type: cocher | creer | courses, t, l, e (AAAA-MM-JJ), le }`. Le Raccourci lit la collection à chaque passage (avant l'envoi), applique chaque action dans Rappels, puis supprime la fiche (DELETE par son nom) : une action ajoutée pendant un passage n'est jamais perdue.
+- Cocher : le rappel se raye et reste 5 s ; un second toucher ou « Annuler » le rétablit sans rien écrire. Ensuite la ligne se replie et l'action est enregistrée ; tout rappel ayant une action « cocher » en attente est masqué sur tous les appareils.
+- Rappel créé dans l'app : affiché tout de suite (depuis sa fiche) ; le cocher avant le passage supprime simplement la fiche.
+- Ajout : listes proposées lues dans `famille.rappels.ajout` (sans configuration, pas de bouton). Courses : ajout seulement, champ qui reste ouvert.
+- L'accueil ne se reconstruit pas pendant une saisie (champ en cours de frappe).

@@ -9,7 +9,7 @@ import { affiche } from "../tache/moteur.js";
 import { prochaineAnnuelle, joursAvant } from "../tache/rebours.js";
 import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_METEO } from "./meteo.js";
 import { lundiDe } from "./nounou-calcul.js";
-import { lire as lireRaccourci, repartir, evenementsDuJour, picto, libelleAnniversaire } from "./raccourci.js";
+import { lire as lireRaccourci, repartir, evenementsDuJour, picto, libelleAnniversaire, appliquerActions, cleRappel } from "./raccourci.js";
 
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 const JOURS_COURTS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -41,6 +41,11 @@ export function initAccueil(ctx) {
     S.stopRaccourci = onSnapshot(doc(C.db, "vision", "raccourci"), { includeMetadataChanges: true }, snap => {
       if (snap.metadata.fromCache && !snap.exists()) return;   // cache vide : pas une absence de données
       S.raccourci = lireRaccourci(snap.exists() ? snap.data() : null);
+      rendreSiVisible();
+    }, () => {});
+    // Actions en attente du prochain passage (cocher, créer, courses)
+    S.stopActions = onSnapshot(C.F.collection(C.db, "vision", "raccourci", "actions"), snap => {
+      S.actions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       rendreSiVisible();
     }, () => {});
   }
@@ -115,6 +120,12 @@ const hm = d => d ? d.toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris", ho
 /* ---------- Rendu ---------- */
 function rendre() {
   if (!racine) return;
+  // Pas de reconstruction pendant une saisie : le champ perdrait son texte et le clavier.
+  const actif = document.activeElement;
+  if (actif && racine.contains(actif) && (actif.tagName === "INPUT" || actif.tagName === "TEXTAREA")) {
+    if (!actif.dataset.attente) { actif.dataset.attente = "1"; actif.addEventListener("blur", () => setTimeout(rendreSiVisible, 0), { once: true }); }
+    return;
+  }
   const tout = el("div", "ac");
   const src = S.serveur ? sources() : [];
   tout.append(barre(src));
@@ -331,28 +342,92 @@ function etatRappels(c) {
   if (!r) { c.append(el("p", "ac-attente", S.serveur ? "Chargement…" : "")); return null; }
   if (r.erreur === "vide") { c.append(el("p", "ac-attente", "En attente du premier passage du Raccourci de l'iPhone.")); return null; }
   if (r.erreur) { c.append(el("p", "message ko", "Données du Raccourci illisibles.")); return null; }
-  return repartir(r.rappels, aujourdhui(), C.fam && C.fam.rappels && C.fam.rappels.recurrents);
+  const liste = appliquerActions(r.rappels, S.actions || []).filter(x => !S.envoyes.has(cleRappel(x)));
+  return repartir(liste, aujourdhui(), C.fam && C.fam.rappels && C.fam.rappels.recurrents);
+}
+
+// Cocher : le rappel se raye et reste 5 s (un second toucher ou « Annuler » le rétablit),
+// puis la ligne se replie et l'action part pour le Raccourci.
+const DELAI_COCHE = 5000;
+S.coches = new Map(); S.envoyes = new Set();
+function basculer(x) {
+  const k = cleRappel(x);
+  if (S.coches.has(k)) { clearTimeout(S.coches.get(k).minuteur); S.coches.delete(k); rendre(); return; }
+  const minuteur = setTimeout(() => valider(k), DELAI_COCHE);
+  S.coches.set(k, { x, minuteur, le: Date.now() });
+  rendre();
+}
+function valider(k) {
+  const c = S.coches.get(k);
+  if (!c) return;
+  racine.querySelectorAll(".ac-rp").forEach(li => { if (li.dataset.cle === k) li.classList.add("replie"); });
+  setTimeout(async () => {
+    S.coches.delete(k); S.envoyes.add(k); rendre();
+    const { x } = c, { addDoc, deleteDoc, doc, collection, serverTimestamp } = C.F;
+    try {
+      // Rappel créé dans l'app et pas encore transmis : on retire simplement sa création.
+      if (x.action) await deleteDoc(doc(C.db, "vision", "raccourci", "actions", x.action));
+      else await addDoc(collection(C.db, "vision", "raccourci", "actions"), { type: "cocher", t: x.titre, l: x.liste, le: serverTimestamp() });
+    } catch (e) { S.envoyes.delete(k); alerteEcriture(e); }
+    setTimeout(() => { S.envoyes.delete(k); }, 15000);   // le temps que la lecture des actions le masque
+  }, 320);
+}
+function annulerDernier() {
+  const dernier = [...S.coches.entries()].sort((a, b) => b[1].le - a[1].le)[0];
+  if (dernier) { clearTimeout(dernier[1].minuteur); S.coches.delete(dernier[0]); rendre(); }
 }
 
 function ligneRappel(x, avecDate) {
-  const li = el("li", "ac-rp" + (x.retard ? " retard" : ""));
+  const k = cleRappel(x), coche = S.coches.has(k);
+  const li = el("li", "ac-rp" + (x.retard ? " retard" : "") + (coche ? " coche" : ""));
+  li.dataset.cle = k;
+  li.append(el("span", "ac-rp-case", coche ? "✓" : ""));
   const p = picto(x.liste);
   li.append(el("span", "ac-rp-picto", p || "•"));
   const corps = el("span", "ac-corps");
-  corps.append(el("span", "ac-t", x.titre));
+  const t = el("span", "ac-t");
+  t.append(el("span", "ac-tx", x.titre));   // le trait suit le texte, pas la colonne
+  corps.append(t);
   if (x.notes) corps.append(el("span", "ac-rp-notes", x.notes));
   li.append(corps);
   const quand = x.retard ? `depuis ${dateCourte(x.jour)}` : avecDate && x.jour ? dateCourte(x.jour) + (x.heure ? " " + h(x.heure) : "") : x.heure ? h(x.heure) : "";
   li.append(el("span", "ac-rp-quand", quand));
   li.title = x.liste;
+  li.setAttribute("role", "checkbox"); li.setAttribute("aria-checked", coche ? "true" : "false");
+  li.onclick = () => basculer(x);
   return li;
 }
 
+// « Annuler » dans l'en-tête du bloc tant qu'un de ses rappels vient d'être coché.
+function boutonAnnuler(liste) {
+  if (![...S.coches.values()].some(v => liste.some(x => cleRappel(x) === cleRappel(v.x)))) return null;
+  const b = el("button", "ac-annuler", "Annuler");
+  b.type = "button"; b.onclick = annulerDernier;
+  return b;
+}
+
+function teteCarte(titre, ...boutons) {
+  const t = el("div", "ac-rp-tete");
+  t.append(el("h2", "ac-titre", titre));
+  const g = el("div", "ac-rp-boutons");
+  boutons.filter(Boolean).forEach(b => g.append(b));
+  t.append(g);
+  return t;
+}
+
+const envoyerAction = donnees => C.F.addDoc(C.F.collection(C.db, "vision", "raccourci", "actions"), { ...donnees, le: C.F.serverTimestamp() });
+
 function rappelsCarte() {
   const c = el("section", "carte ac-carte ac-rappels");
-  c.append(el("h2", "ac-titre", "Rappels du jour"));
+  const b = el("button", "ac-mini", S.coursesOuvert ? "Fermer" : "🛒 Courses");
+  b.type = "button"; b.onclick = () => { S.coursesOuvert = !S.coursesOuvert; S.coursesMsg = null; rendre(); };
+  const tete = teteCarte("Rappels du jour", b);
+  c.append(tete);
+  if (S.coursesOuvert) c.append(formCourses());
   const r = etatRappels(c);
   if (!r) return c;
+  const a = boutonAnnuler(r.jour);
+  if (a) tete.lastChild.prepend(a);
   const l = el("ul", "ac-rp-liste");
   if (!r.jour.length) l.append(el("li", "ac-vide", "Rien pour aujourd'hui."));
   r.jour.forEach(x => l.append(ligneRappel(x, false)));
@@ -360,16 +435,71 @@ function rappelsCarte() {
   return c;
 }
 
+// Ajout à la liste des courses : le champ reste ouvert pour enchaîner les articles.
+function formCourses() {
+  const f = el("form", "ac-form");
+  const t = el("input", "note"); t.type = "text"; t.placeholder = "Article à ajouter aux courses"; t.maxLength = 80;
+  t.enterKeyHint = "send"; t.autocapitalize = "sentences";
+  const ok = el("button", "bouton petit-bouton", "Ajouter"); ok.type = "submit";
+  const msg = el("p", "ac-aide", S.coursesMsg || "Ajouté dans Rappels au prochain passage du Raccourci.");
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const v = t.value.trim();
+    if (!v) return;
+    try { await envoyerAction({ type: "courses", t: v }); t.value = ""; S.coursesMsg = `« ${v} » ajouté.`; msg.textContent = S.coursesMsg; }
+    catch (er) { msg.textContent = `Non enregistré (${er.code || er.name}).`; }
+    t.focus();
+  };
+  f.append(t, ok, msg);
+  return f;
+}
+
 function afaireCarte() {
   const c = el("section", "carte ac-carte ac-afaire");
-  c.append(el("h2", "ac-titre", "À faire, plus tard"));
+  const listes = (C.fam && C.fam.rappels && C.fam.rappels.ajout) || [];
+  let b = null;
+  if (listes.length) {
+    b = el("button", "ac-mini", S.ajoutOuvert ? "Fermer" : "+ Ajouter");
+    b.type = "button"; b.onclick = () => { S.ajoutOuvert = !S.ajoutOuvert; rendre(); };
+  }
+  const tete = teteCarte("À faire, plus tard", b);
+  c.append(tete);
+  if (S.ajoutOuvert && listes.length) c.append(formAjout(listes));
   const r = etatRappels(c);
   if (!r) return c;
+  const a = boutonAnnuler(r.plusTard);
+  if (a) tete.lastChild.prepend(a);
   const l = el("ul", "ac-rp-liste ac-rp-colonnes");
   if (!r.plusTard.length) l.append(el("li", "ac-vide", "Rien en attente."));
   r.plusTard.forEach(x => l.append(ligneRappel(x, true)));
   c.append(l);
   return c;
+}
+
+function formAjout(listes) {
+  const f = el("form", "ac-form ac-form-ajout");
+  if (!listes.includes(S.ajoutListe)) S.ajoutListe = listes[0];
+  const t = el("input", "note"); t.type = "text"; t.placeholder = "Nouveau rappel"; t.maxLength = 120; t.autocapitalize = "sentences";
+  const seg = el("div", "seg");
+  for (const nom of listes) {
+    const x = el("button", "seg-btn" + (nom === S.ajoutListe ? " actif" : ""), nom);
+    x.type = "button";
+    x.onclick = () => { S.ajoutListe = nom; seg.querySelectorAll(".seg-btn").forEach(y => y.classList.toggle("actif", y === x)); };
+    seg.append(x);
+  }
+  const d = el("input", "note"); d.type = "date"; d.min = aujourdhui(); d.title = "Échéance (facultative)";
+  const ok = el("button", "bouton petit-bouton", "Ajouter"); ok.type = "submit";
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const v = t.value.trim();
+    if (!v) return;
+    try {
+      await envoyerAction({ type: "creer", t: v, l: S.ajoutListe, e: d.value || "" });
+      t.value = ""; d.value = ""; S.ajoutOuvert = false; t.blur(); rendre();
+    } catch (er) { alerteEcriture(er); }
+  };
+  f.append(t, seg, d, ok);
+  return f;
 }
 
 /* ---------- Météo (Open-Meteo, lue directement par l'app) ---------- */
