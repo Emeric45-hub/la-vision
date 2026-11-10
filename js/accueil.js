@@ -225,7 +225,7 @@ function semaine() {
     if (!j) x.append(el("span", "ac-jl attenue", "Week-end"));
     else {
       etiquettes(j.calc, C.fam).forEach(t => x.append(el("span", "ac-jl ac-jetiq", t)));
-      lignesCase(j, C.fam).forEach(l => x.append(el("span", "ac-jl " + l.cls.split(" ").map(k => "ac-" + k).join(" "), l.txt)));
+      lignesCase(j, C.fam, true).forEach(l => x.append(el("span", "ac-jl " + l.cls.split(" ").map(k => "ac-" + k).join(" "), l.txt)));
       x.type = "button";
       x.onclick = () => C.ouvrir("planning", d);
     }
@@ -351,9 +351,9 @@ function etatRappels(c) {
   return repartir(liste, aujourdhui(), C.fam && C.fam.rappels && C.fam.rappels.recurrents);
 }
 
-// Cocher : le rappel se raye et reste 5 s (un second toucher ou « Annuler » le rétablit),
+// Cocher : le rappel se raye et reste 3 s (un second toucher ou « Annuler » le rétablit),
 // puis la ligne se replie et l'action part pour le Raccourci.
-const DELAI_COCHE = 5000;
+const DELAI_COCHE = 3000;
 S.coches = new Map(); S.envoyes = new Set();
 function basculer(x) {
   const k = cleRappel(x);

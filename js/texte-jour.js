@@ -32,7 +32,8 @@ export function ligneE2(aff, fam) {
 }
 
 // Lignes d'une case : [{ cls, txt }] (cls : e1, e2, mvt, note, attenue).
-export function lignesCase(j, fam) {
+// compact : dépôt et récupération sur une seule ligne, avec les initiales (bande de l'accueil).
+export function lignesCase(j, fam, compact = false) {
   const c = j && j.calc, aff = j && j.aff;
   if (!c || !aff) return [];
   const qui = q => q === "A" ? fam.A.prenom : q === "B" ? fam.B.prenom : "?";
@@ -40,8 +41,14 @@ export function lignesCase(j, fam) {
   if (aff.e1) out.push({ cls: "e1", txt: aff.creneauxE1.length ? `${n1} ${plages(aff.creneauxE1)}` : `${n1} ?` });
   else if (!c.ferie) out.push({ cls: "e1 attenue", txt: `${n1} avec nous` });
   if (!c.ferie) out.push({ cls: "e2", txt: ligneE2(aff, fam) });
-  if (aff.e1 && aff.depot) out.push({ cls: "mvt", txt: `Dépôt ${qui(aff.depot.qui)} ${h(aff.depot.heure)}` });
-  if (aff.e1 && aff.recup) out.push({ cls: "mvt", txt: `Récup. ${qui(aff.recup.qui)} ${h(aff.recup.heure)}` });
+  if (compact && aff.e1 && (aff.depot || aff.recup)) {
+    const ini = q => q === "A" ? fam.A.initiale : q === "B" ? fam.B.initiale : "?";
+    const m = x => x ? `${ini(x.qui)} ${h(x.heure)}` : "?";
+    out.push({ cls: "mvt", txt: `${m(aff.depot)} → ${m(aff.recup)}` });
+  } else {
+    if (aff.e1 && aff.depot) out.push({ cls: "mvt", txt: `Dépôt ${qui(aff.depot.qui)} ${h(aff.depot.heure)}` });
+    if (aff.e1 && aff.recup) out.push({ cls: "mvt", txt: `Récup. ${qui(aff.recup.qui)} ${h(aff.recup.heure)}` });
+  }
   if (aff.note) out.push({ cls: "note", txt: aff.note });
   return out;
 }
