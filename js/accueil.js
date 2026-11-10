@@ -331,7 +331,7 @@ function etatRappels(c) {
   if (!r) { c.append(el("p", "ac-attente", S.serveur ? "Chargement…" : "")); return null; }
   if (r.erreur === "vide") { c.append(el("p", "ac-attente", "En attente du premier passage du Raccourci de l'iPhone.")); return null; }
   if (r.erreur) { c.append(el("p", "message ko", "Données du Raccourci illisibles.")); return null; }
-  return repartir(r.rappels, aujourdhui());
+  return repartir(r.rappels, aujourdhui(), C.fam && C.fam.rappels && C.fam.rappels.recurrents);
 }
 
 function ligneRappel(x, avecDate) {

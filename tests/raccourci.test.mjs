@@ -10,6 +10,8 @@ const texte = JSON.stringify({
     { t: 'Rappel sans heure', l: 'Liste B', e: '2030-03-12T00:00:00+01:00', n: '' },
     { t: 'Rappel plus tard', l: 'Liste A', e: '2030-03-20T08:00:00+01:00', n: '' },
     { t: 'Rappel sans date', l: 'Liste A', e: '', n: '' },
+    { t: 'Récurrent à venir', l: 'Liste C (récurrents)', e: '2030-03-14T20:00:00+01:00', n: '' },
+    { t: 'Récurrent du jour', l: 'Liste C (récurrentes)', e: '2030-03-12T07:00:00+01:00', n: '' },
     { t: '', l: 'Liste A', e: '', n: '' }
   ],
   evenements: [
@@ -22,7 +24,7 @@ const texte = JSON.stringify({
 
 const r = lire({ texte });
 assert.equal(r.le.toISOString(), '2030-03-12T09:30:05.000Z');
-assert.equal(r.rappels.length, 5);
+assert.equal(r.rappels.length, 7);
 assert.equal(r.rappels.find(x => x.titre === 'Rappel sans heure').heure, null);
 assert.equal(r.rappels.find(x => x.titre === 'Rappel sans date').jour, null);
 assert.equal(r.rappels.find(x => x.titre === 'Rappel en retard').notes, 'note\nsur deux lignes');
@@ -31,8 +33,9 @@ assert.equal(r.anniversaires[0].date, '2030-04-01');
 assert.equal(r.evenements[1].journee, true);
 
 const { jour, plusTard } = repartir(r.rappels, '2030-03-12');
-assert.deepEqual(jour.map(x => x.titre), ['Rappel en retard', 'Rappel daté ce soir', 'Rappel sans heure']);
+assert.deepEqual(jour.map(x => x.titre), ['Rappel en retard', 'Récurrent du jour', 'Rappel daté ce soir', 'Rappel sans heure']);
 assert.equal(jour[0].retard, true);
+assert.deepEqual(repartir(r.rappels, '2030-03-12', 'Liste A').plusTard.map(x => x.titre), ['Récurrent à venir']);   // motif de configuration
 assert.deepEqual(plusTard.map(x => x.titre), ['Rappel plus tard', 'Rappel sans date']);
 
 assert.deepEqual(evenementsDuJour(r.evenements, '2030-03-12').map(e => e.titre), ['Rendez-vous', 'Sur deux jours']);
