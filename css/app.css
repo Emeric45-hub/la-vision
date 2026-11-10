@@ -372,3 +372,7 @@ body.sur-accueil .version { display: none; }
 .pi-page-postit { width: min(86vw, 420px); transform: rotate(-1.5deg); }
 .onglet { white-space: nowrap; }
 @media (max-width: 420px) { .onglet { font-size: 14px; } }
+/* Ce soir */
+.ac-cantine { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; margin-bottom: 8px; border-radius: 10px; background: #F2F2F7; }
+.ac-cantine-t { font-size: 12px; font-weight: 700; color: var(--discret); }
+.ac-cantine-p { font-size: 14px; line-height: 1.35; }
