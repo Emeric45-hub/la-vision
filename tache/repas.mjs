@@ -28,13 +28,14 @@ export async function executer() {
   const actuel = await fs.lire('vision/plats');
   if (actuel && actuel.empreinte === emp) { console.log('plan repas : inchangé'); return; }
   const octets = new Uint8Array(Buffer.from(repas.pdf, 'base64'));
+  const taille = octets.length;   // PDF.js vide le tableau après lecture
   let plan = null;
   try { plan = lirePlan(await pagesDuPdf(octets)); } catch (e) { plan = null; }
   const donnees = plan && plan.plats.length
     ? { empreinte: emp, nom: repas.nom || '', titre: plan.titre, plats: plan.plats, faits: [], lu: new Date().toISOString(), erreur: null }
     : { empreinte: emp, nom: repas.nom || '', titre: '', plats: [], faits: [], lu: new Date().toISOString(), erreur: 'tableau introuvable' };
   await fs.ecrire([{ chemin: 'vision/plats', donnees }]);
-  console.log(`plan repas : nouveau PDF (${Math.round(octets.length / 1024)} Ko), ${donnees.plats.length} plats${donnees.erreur ? ', tableau introuvable' : ''} ; ${Date.now() - t0} ms`);
+  console.log(`plan repas : nouveau PDF (${Math.round(taille / 1024)} Ko), ${donnees.plats.length} plats${donnees.erreur ? ', tableau introuvable' : ''} ; ${Date.now() - t0} ms`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

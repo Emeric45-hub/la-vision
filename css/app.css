@@ -214,7 +214,7 @@ body.sur-accueil .version { display: none; }
 .ac-nounou .nn-prevu { font-size: 12.5px; }
 .ac-nounou .nn-passes .seg-btn, .ac-nounou .nn-ajout { min-height: 30px; padding: 0 8px; font-size: 12.5px; }
 .ac-nounou .nn-pied { font-size: 12.5px; gap: 8px; padding-top: 6px; }
-.ac-nounou .nn-tete h2 { font-size: 16px; }
+.ac-nounou .nn-tete h2 { font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--discret); }
 .ac-nounou .nn-date { display: none; }
 .ac-nounou .nn-total { font-size: 17px; }
 .ac-droite { grid-column: span 2; display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px; min-width: 0; min-height: 0; }
@@ -226,7 +226,7 @@ body.sur-accueil .version { display: none; }
 .ac-droite > .ac-postit-case { container-type: size; overflow: visible; display: flex; align-items: center; justify-content: center; }
 .ac-postit { flex: none; width: min(100cqw, 100cqh, 220px); height: min(100cqw, 100cqh, 220px); transform: rotate(-2deg); }
 .ac-semaine { min-height: 0; padding: 8px 12px 10px; }
-.ac-semaine > .ac-titre { margin-bottom: 4px; font-size: 12px; }
+.ac-semaine > .ac-titre { margin-bottom: 4px; }
 .ac-jours { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
 .ac-jourc { display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 4px 7px; border: 1px solid transparent; border-radius: 10px;
   background: #F2F2F7; font: inherit; color: var(--encre); text-align: left; cursor: pointer; min-height: 0; }
@@ -317,7 +317,7 @@ body.sur-accueil .version { display: none; }
 
 /* ---------- Accueil : compte à rebours ---------- */
 .ac-rb-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
-.ac-rb-tete .ac-titre { position: static; margin: 0 0 2px; padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; letter-spacing: .02em; }
+.ac-rb-tete .ac-titre { position: static; margin: 0 0 2px; padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ac-rb-tete .ac-mini { min-height: 26px; padding: 0 8px; font-size: 12px; }
 .ac-rb-grand { margin: 0; display: flex; align-items: baseline; gap: 6px; }
 .ac-rb-n { font-size: 32px; font-weight: 300; letter-spacing: -0.02em; line-height: 1; }
@@ -389,3 +389,12 @@ body.sur-accueil .version { display: none; }
 .rc-fenetre { width: min(900px, 100%); height: calc(100dvh - 32px); padding: 16px 18px; }
 .rc-pages { flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 10px; background: #E9E9EE; border-radius: 10px; padding: 10px; }
 .rc-page { width: 100%; height: auto; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+.ac-plats-bas { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.ac-lien.discret { color: var(--discret); }
+.ac-midi-liste { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 17px; line-height: 1.3; }
+.ac-fenetre .ac-plats { max-height: 60vh; overflow: auto; }
+.ac-plat-haut { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%; }
+.ac-plat-haut .ac-lien { padding: 0; font-size: 12.5px; font-weight: 600; }
+/* Titres des blocs de l'accueil : deux tailles seulement, majuscules, gris (plus fort que « .carte h2 ») */
+.ac .ac-titre { font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--discret); }
+.ac .ac-titre.grand { font-size: 16px; letter-spacing: .05em; }

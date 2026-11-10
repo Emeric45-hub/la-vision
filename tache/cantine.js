@@ -29,7 +29,16 @@ export function lireMenus(texte) {
 // l'enfant (qui prend l'option avec viande). Un jour entièrement végétarien est gardé tel quel.
 const VEGE = /nuggets? de bl[ée]|v[ée]g[ée]ta|\bsoja\b|tofu|falafel|(steak|pan[ée]|galette) de (bl[ée]|l[ée]gumes|c[ée]r[ée]ales)/i;
 const VIANDE = /poulet|dinde|volaille|b(œ|oe)uf|veau|porc|jambon|lardon|saucisse|chipolata|merguez|knack|agneau|canard|lapin|steak hach|viande hach|hachis|bolognaise|poisson|colin|cabillaud|merlu|\blieu\b|hoki|saumon|thon|sardine|maquereau|calamar|\bmoules?\b|crevette|escalope|aiguillette|r[ôo]ti|cordon|bourguignon|blanquette|tajine|chili con carne/i;
+// Variantes d'un même plat séparées par « / » (« Gratin de …/lardons » et « Gratin de …/emmental ») :
+// seule la variante avec viande ou poisson est gardée.
 export function pourEnfant(plats) {
-  const liste = plats || [];
-  return liste.some(p => VIANDE.test(p) && !VEGE.test(p)) ? liste.filter(p => !VEGE.test(p)) : liste;
+  let liste = plats || [];
+  if (liste.some(p => VIANDE.test(p) && !VEGE.test(p))) liste = liste.filter(p => !VEGE.test(p));
+  const base = p => p.includes('/') ? p.slice(0, p.lastIndexOf('/')).trim().toLowerCase() : null;
+  return liste.filter(p => {
+    const b = base(p);
+    if (!b) return true;
+    const soeurs = liste.filter(q => base(q) === b);
+    return soeurs.length < 2 || !soeurs.some(q => VIANDE.test(q.slice(q.lastIndexOf('/')))) || VIANDE.test(p.slice(p.lastIndexOf('/')));
+  });
 }
