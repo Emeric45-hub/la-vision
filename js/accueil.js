@@ -46,6 +46,11 @@ export function initAccueil(ctx) {
     // Actions en attente du prochain passage (cocher, créer, courses)
     S.stopActions = onSnapshot(C.F.collection(C.db, "vision", "raccourci", "actions"), snap => {
       S.actions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Raccourcis s'arrête sur un champ absent : toute fiche reçoit ses quatre champs texte.
+      for (const a of S.actions) {
+        const manque = CHAMPS_ACTION.filter(k => typeof a[k] !== "string");
+        if (manque.length) C.F.updateDoc(C.F.doc(C.db, "vision", "raccourci", "actions", a.id), Object.fromEntries(manque.map(k => [k, ""]))).catch(() => {});
+      }
       rendreSiVisible();
     }, () => {});
   }
@@ -367,7 +372,7 @@ function valider(k) {
     try {
       // Rappel créé dans l'app et pas encore transmis : on retire simplement sa création.
       if (x.action) await deleteDoc(doc(C.db, "vision", "raccourci", "actions", x.action));
-      else await addDoc(collection(C.db, "vision", "raccourci", "actions"), { type: "cocher", t: x.titre, l: x.liste, le: serverTimestamp() });
+      else await envoyerAction({ type: "cocher", t: x.titre, l: x.liste || "" });
     } catch (e) { S.envoyes.delete(k); alerteEcriture(e); }
     setTimeout(() => { S.envoyes.delete(k); }, 15000);   // le temps que la lecture des actions le masque
   }, 320);
@@ -415,7 +420,10 @@ function teteCarte(titre, ...boutons) {
   return t;
 }
 
-const envoyerAction = donnees => C.F.addDoc(C.F.collection(C.db, "vision", "raccourci", "actions"), { ...donnees, le: C.F.serverTimestamp() });
+// Champs texte toujours présents (vides au besoin) : le Raccourci lit fields.<champ>.stringValue.
+const CHAMPS_ACTION = ["type", "t", "l", "e"];
+const envoyerAction = donnees => C.F.addDoc(C.F.collection(C.db, "vision", "raccourci", "actions"),
+  { type: "", t: "", l: "", e: "", ...donnees, le: C.F.serverTimestamp() });
 
 function rappelsCarte() {
   const c = el("section", "carte ac-carte ac-rappels");
@@ -494,7 +502,7 @@ function formAjout(listes) {
     const v = t.value.trim();
     if (!v) return;
     try {
-      await envoyerAction({ type: "creer", t: v, l: S.ajoutListe, ...(d.value ? { e: d.value } : {}) });   // sans date : pas de champ « e »
+      await envoyerAction({ type: "creer", t: v, l: S.ajoutListe, e: d.value || "" });
       t.value = ""; d.value = ""; S.ajoutOuvert = false; t.blur(); rendre();
     } catch (er) { alerteEcriture(er); }
   };
