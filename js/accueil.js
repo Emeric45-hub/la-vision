@@ -11,6 +11,7 @@ import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_M
 import { lundiDe } from "./nounou-calcul.js";
 import { postit as postitFamille, initPostit } from "./postit.js";
 import { pourEnfant } from "../tache/cantine.js";
+import { ambiance, appliquerFond } from "./fond.js";
 import { ouvrirRecette } from "./recette.js";
 import { lire as lireRaccourci, repartir, evenementsDuJour, picto, libelleAnniversaire, appliquerActions, cleRappel } from "./raccourci.js";
 
@@ -665,6 +666,9 @@ async function lireMeteo() {
     S.meteo = { data: await r.json(), lu: new Date().toISOString(), erreur: null };
     try { localStorage.setItem("vision-meteo", JSON.stringify(S.meteo)); } catch (e) { /* sans stockage */ }
   } catch (e) { S.meteo = { ...(S.meteo || {}), erreur: e.message || e.name }; }
+  // Fond de l'écran : météo marquée, sinon la saison (sans météo : la saison).
+  const code = S.meteo && S.meteo.data && S.meteo.data.current ? S.meteo.data.current.weather_code : null;
+  appliquerFond(ambiance(code, aujourdhui()));
   rendreSiVisible();
 }
 
