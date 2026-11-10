@@ -215,3 +215,9 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - `vision/cantine = { lu, ecole: { date: [plats] }, loisirs: { … } }`, deux semaines d'historique gardées. Une lecture ratée ne remplace rien et sera retentée au passage suivant.
 - Accueil, bloc « Ce soir » : « Ce midi à la cantine » selon le lieu du jour de l'enfant scolarisé (école → école ; ALAE / centre → accueil de loisirs ; ailleurs, rien). Alternative végétarienne retirée par une règle simple quand un plat avec viande ou poisson existe le même jour ; les cas ambigus restent affichés. Pas de « demain midi » (choix du 10/11).
 - Plats du soir (étape 7, 2/2) : liste dans l'ordre du PDF du plan repas, sans proposition ; le PDF est envoyé par le Raccourci et lu par la tâche (tableau de la page 1), sans Claude.
+
+## 2026-11-10 — Lot 2, étape 7 (2/2) : plats du soir
+
+- Le Raccourci iOS ajoute à son passage le dernier PDF du plan repas (dossier iCloud partagé, filtré sur le début du nom, le plus récent) : `vision/repas = { nom, pdf (octets) }`. Document à part : l'accueil ne le télécharge qu'à l'ouverture d'une recette.
+- `tache/repas.mjs` : quand l'empreinte du PDF change, lecture du tableau de la page 1 avec PDF.js (positions du texte, colonnes Jour · Repas · Protéine · Temps · Pour, plat sur deux lignes rattaché à la ligne du jour la plus proche) et de la première ligne de chaque page de recette (« Jour — Titre ») pour connaître sa page. Écrit `vision/plats = { empreinte, nom, titre, plats, faits: [] }`. Sans Claude. Tableau introuvable : `erreur` et liste vide, signalé dans l'app.
+- Accueil, « Ce soir » : plats restants dans l'ordre du plan, le premier marqué « Prévu », sans proposition ni règle de protéine (choix du 10/11). Toucher un plat ouvre le PDF dans une grande fenêtre (PDF.js, rendu page par page, ouvert à la page de la recette) avec « On l'a fait ce soir » (ajout à `faits`) ; « Rétablir » annule le dernier.

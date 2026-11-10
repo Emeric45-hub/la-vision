@@ -3,6 +3,7 @@
   "type": "module",
   "dependencies": {
     "ical.js": "2.2.1",
+    "pdfjs-dist": "6.2.108",
     "playwright-core": "1.55.0"
   }
 }

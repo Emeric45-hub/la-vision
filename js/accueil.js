@@ -11,6 +11,7 @@ import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_M
 import { lundiDe } from "./nounou-calcul.js";
 import { postit as postitFamille, initPostit } from "./postit.js";
 import { pourEnfant } from "../tache/cantine.js";
+import { ouvrirRecette } from "./recette.js";
 import { lire as lireRaccourci, repartir, evenementsDuJour, picto, libelleAnniversaire, appliquerActions, cleRappel } from "./raccourci.js";
 
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -41,6 +42,7 @@ export function initAccueil(ctx) {
   if (!S.stopCantine && C.db) {   // menus de la cantine, lus une fois par jour par la tâche
     const { onSnapshot, doc } = C.F;
     S.stopCantine = onSnapshot(doc(C.db, "vision", "cantine"), snap => { S.cantine = snap.exists() ? snap.data() : {}; rendreSiVisible(); }, () => {});
+    S.stopPlats = onSnapshot(doc(C.db, "vision", "plats"), snap => { S.plats = snap.exists() ? snap.data() : {}; rendreSiVisible(); }, () => {});
   }
   if (!S.stopRaccourci && C.db) {   // rappels, calendrier local et anniversaires envoyés par le Raccourci iOS
     const { onSnapshot, doc } = C.F;
@@ -348,8 +350,38 @@ function soirCarte() {
     b.append(el("span", "ac-cantine-p", plats.length ? plats.join(" · ") : "Menu non publié."));
     c.append(b);
   }
-  c.append(el("p", "ac-attente", "Plats de la semaine : prochaine étape."));
+  c.append(platsDuSoir());
   return c;
+}
+
+// Plats de la semaine qui restent, dans l'ordre du plan ; le premier est celui prévu.
+// Toucher un plat ouvre sa recette (PDF) avec « On l'a fait ce soir ».
+function platsDuSoir() {
+  const b = el("div", "ac-plats");
+  const P = S.plats;
+  if (!P) return b;
+  if (!P.plats) { b.append(el("p", "ac-attente", "Le plan repas arrivera par le Raccourci de l'iPhone.")); return b; }
+  if (P.erreur) { b.append(el("p", "message ko", "Plan repas reçu, mais son tableau est illisible.")); return b; }
+  const faits = P.faits || [];
+  const reste = P.plats.filter(p => !faits.includes(p.id));
+  const { doc, updateDoc, arrayUnion, arrayRemove } = C.F;
+  const ref = doc(C.db, "vision", "plats");
+  if (!reste.length) b.append(el("p", "ac-attente", "Tous les plats de la semaine sont faits."));
+  reste.forEach((p, i) => {
+    const x = el("button", "ac-plat" + (i === 0 ? " prevu" : ""));
+    x.type = "button";
+    const haut = el("span", "ac-plat-j", i === 0 ? `Prévu · ${p.jour}` : p.jour);
+    x.append(haut, el("span", "ac-plat-t", p.repas), el("span", "ac-plat-d", [p.proteine, p.temps].filter(Boolean).join(" · ")));
+    x.onclick = () => ouvrirRecette(C, p, () => updateDoc(ref, { faits: arrayUnion(p.id) }));
+    b.append(x);
+  });
+  if (faits.length) {
+    const dernier = P.plats.find(p => p.id === faits[faits.length - 1]);
+    const r = el("button", "ac-lien", `Rétablir « ${dernier ? dernier.repas : "le dernier"} »`);
+    r.type = "button"; r.onclick = () => updateDoc(ref, { faits: arrayRemove(faits[faits.length - 1]) }).catch(alerteEcriture);
+    b.append(r);
+  }
+  return b;
 }
 
 /* ---------- Rappels (Raccourci iOS) ---------- */
