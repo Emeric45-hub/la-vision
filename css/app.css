@@ -400,3 +400,8 @@ body.sur-accueil .version { display: none; }
 .ac .ac-titre.grand { font-size: 16px; letter-spacing: .05em; }
 .ac-plat-haut .ac-plat-j { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .ac-raccourci { text-decoration: none; }
+/* Barre de l'accueil sur une seule ligne */
+.ac-barre { flex-wrap: nowrap; }
+.ac-barre .ac-pilule { white-space: nowrap; padding: 0 12px; }
+.ac-barre .ac-boutons { gap: 6px; }
+.ac-icone svg { display: block; color: var(--encre); }

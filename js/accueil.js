@@ -14,6 +14,8 @@ import { pourEnfant } from "../tache/cantine.js";
 import { ouvrirRecette } from "./recette.js";
 import { lire as lireRaccourci, repartir, evenementsDuJour, picto, libelleAnniversaire, appliquerActions, cleRappel } from "./raccourci.js";
 
+// Roue dentée (dessin vectoriel : même taille et même netteté sur tous les appareils).
+const ROUE = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 const JOURS_COURTS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
@@ -204,11 +206,11 @@ function barre(src) {
   // Raccourcis de l'appareil (applications Maison, caméras…) : famille.boutons = [{ libelle, icone, raccourci }].
   // Lancés par l'adresse shortcuts:// (le Raccourci doit exister sur l'appareil qui affiche l'accueil).
   for (const x of (C && C.fam && C.fam.boutons) || []) {
-    const b = el("a", "ac-pilule ac-raccourci", `${x.icone ? x.icone + " " : ""}${x.libelle}`);
+    const b = el("a", "ac-pilule ac-raccourci", x.libelle);
     b.href = "shortcuts://run-shortcut?name=" + encodeURIComponent(x.raccourci);
     boutons.append(b);
   }
-  const rec = el("button", "ac-pilule", "📖 Recettes");
+  const rec = el("button", "ac-pilule", "Recettes");
   rec.type = "button"; rec.onclick = () => ouvrirRecette(C, null);
   boutons.append(rec);
   const ms = S.moisSuivant;
@@ -216,13 +218,15 @@ function barre(src) {
     const nom = MOIS[Number(ms.cle.slice(5)) - 1];
     // Un envoi n'a de sens qu'après validation (un essai d'envoi sur un brouillon ne compte pas).
     const etatMois = !ms.valideLe ? "à préparer" : ms.envoi ? "envoyé" : "validé";
-    const p = el("button", "ac-pilule", `Planning de ${nom}`);
+    const p = el("button", "ac-pilule", "Planning");
+    p.title = `Planning de ${nom}`;
     p.type = "button";
     p.append(el("span", "ac-pastille " + (ms.valideLe ? "ok" : "alerte"), etatMois));
     p.onclick = () => C.ouvrir("planning", ms.cle + "-01");
     boutons.append(p);
   }
-  const r = el("button", "ac-pilule ac-icone", "⚙︎");
+  const r = el("button", "ac-pilule ac-icone");
+  r.innerHTML = ROUE;
   r.type = "button"; r.setAttribute("aria-label", "Réglages");
   r.onclick = () => C.ouvrir("reglages");
   boutons.append(r);
