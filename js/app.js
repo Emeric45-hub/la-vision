@@ -143,6 +143,7 @@ async function chargerTout() {
     etat.config = cfg.exists() ? cfg.data() : null;
     afficherConfig();
     afficherSemainier(et.exists() ? et.data().semainier : null);
+    afficherSauvegarde(et.exists() ? et.data().sauvegarde : null);
     initPlanning({ F: etat.F, db: etat.db, fam: etat.config && etat.config.famille });
     if (!$("vue-planning").hidden) afficherPlanning();
     const ctx = { F: etat.F, db: etat.db, fam: etat.config && etat.config.famille };
@@ -178,13 +179,52 @@ $("cfg-enregistrer").addEventListener("click", async () => {
   if (!obj || typeof obj !== "object" || Array.isArray(obj)) return message("cfg-message", "Le texte doit être un objet JSON { … }.", false);
   const { doc, setDoc, serverTimestamp } = etat.F;
   try {
+    // L'ancienne version est gardée (les 5 dernières) : un mauvais collage se rattrape.
+    let garde = true;
+    try { await garderAncienne(obj); } catch (e) { garde = false; }
     await setDoc(doc(etat.db, "vision", "config"), { ...obj, majLe: serverTimestamp() });
-    message("cfg-message", "Configuration enregistrée.", true);
+    message("cfg-message", "Configuration enregistrée." + (garde ? "" : " (Version précédente non gardée.)"), true);
     chargerTout();
   } catch (e) {
     message("cfg-message", "Échec de l'enregistrement (" + (e.code || e.name) + ").", false);
   }
 });
+
+// Versions précédentes de la configuration : vision/config_historique = { versions: [{ le, texte }] },
+// la plus récente d'abord. Rien n'est ajouté si le texte enregistré est identique à l'actuel.
+const HISTORIQUE = 5;
+async function garderAncienne(nouvelle) {
+  const { majLe, ...actuelle } = etat.config || {};
+  if (!etat.config || canon(actuelle) === canon(nouvelle)) return;
+  const { doc, getDocFromServer, setDoc } = etat.F;
+  const ref = doc(etat.db, "vision", "config_historique");
+  const snap = await getDocFromServer(ref);
+  const versions = (snap.exists() && snap.data().versions) || [];
+  versions.unshift({ le: new Date().toISOString(), texte: JSON.stringify(actuelle) });
+  await setDoc(ref, { versions: versions.slice(0, HISTORIQUE) });
+}
+$("cfg-precedente").addEventListener("click", async () => {
+  const { doc, getDocFromServer } = etat.F || {};
+  if (!etat.db) return;
+  try {
+    const snap = await getDocFromServer(doc(etat.db, "vision", "config_historique"));
+    const v = snap.exists() && (snap.data().versions || [])[0];
+    if (!v) return message("cfg-message", "Aucune version précédente gardée.", false);
+    $("cfg-texte").value = JSON.stringify(JSON.parse(v.texte), null, 2);
+    message("cfg-message", `Version remplacée le ${new Date(v.le).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" })} chargée ci-dessus : relis, puis « Enregistrer la configuration ».`, true);
+  } catch (e) {
+    message("cfg-message", "Lecture impossible (" + (e.code || e.name) + ").", false);
+  }
+});
+
+/* ---------- Sauvegarde ---------- */
+function afficherSauvegarde(s) {
+  const e = $("sauv-etat");
+  if (!s || !s.le) { e.textContent = "Aucune sauvegarde pour l'instant."; e.className = "discret"; return; }
+  const jours = Math.floor((Date.now() - s.le.toDate().getTime()) / 864e5);
+  e.textContent = `Dernière sauvegarde : ${quand(s.le)} · ${s.documents} documents.` + (jours > 15 ? ` Aucune depuis ${jours} jours : vérifier la tâche planifiée.` : "");
+  e.className = jours > 15 ? "message ko" : "discret";
+}
 
 /* ---------- Semainier ---------- */
 let lus = null;   // jours lus dans le fichier choisi, en attente d'enregistrement

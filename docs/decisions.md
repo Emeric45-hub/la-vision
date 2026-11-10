@@ -271,3 +271,10 @@ Quatrième choix dans la saisie des horaires de B (avec Off et Vacances) : `sais
 ## 2026-11-10 — Alerte « absent ? » sur les événements « journée entière »
 
 L'alerte « long événement : parent absent ? » couvre aussi les événements « journée entière » sur au moins deux jours. Pas d'alerte quand le parent est en congé ou en jour non travaillé (séjour, voyage). Pas de statut « Absent » automatique pour A : la correction du jour reste manuelle.
+
+## 2026-11-10 — Sauvegarde
+
+- Le plan gratuit de Firebase n'a pas de sauvegarde automatique. La tâche planifiée exporte une fois par semaine (`tache/sauvegarde.mjs`) les documents saisis à la main : collections de la racine, leurs documents et leurs sous-collections (deux niveaux, ce qui couvre les trois apps du projet). Exclus : ce qui se relit ou se recalcule (`vision/agenda`, `semainier`, `cantine`, `plats`, `briefing`, `raccourci`) et le PDF du plan repas.
+- Format : `{ fait, documents: { chemin: champs bruts Firestore } }` (valeurs typées, restaurables telles quelles par l'API REST). Le fichier est déposé comme pièce jointe du passage dans le dépôt privé (conservée 90 jours) ; il ne passe jamais par ce dépôt. Après dépôt, `vision/etat.sauvegarde = { le, documents }` ; l'écran Réglages affiche la date et alerte au-delà de 15 jours.
+- Restauration : à la main (pas de bouton), en réécrivant les documents du fichier.
+- Configuration : à chaque enregistrement qui la modifie, l'ancienne version est gardée dans `vision/config_historique = { versions: [{ le, texte }] }` (5 dernières) ; « Reprendre la version précédente » la recharge dans la zone de texte.

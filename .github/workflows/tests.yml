@@ -45,6 +45,8 @@ jobs:
         run: node tests/fond.test.mjs
       - name: Férié et gardes (famille fictive)
         run: node tests/ferie.test.mjs
+      - name: Sauvegarde (base fictive)
+        run: node tests/sauvegarde.test.mjs
       - name: Dépendances de la tâche
         working-directory: tache
         run: npm install --no-audit --no-fund --ignore-scripts

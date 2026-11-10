@@ -78,6 +78,29 @@ export async function connecter(sa) {
       }
       return res;
     },
+    // Noms des collections placées sous un document (ou à la racine si le chemin est vide).
+    async collections(cheminDoc = '') {
+      const noms = []; let jeton = null;
+      do {
+        const r = await appel(`${racine}${cheminDoc ? '/' + cheminDoc : ''}:listCollectionIds`,
+          { method: 'POST', body: JSON.stringify({ pageSize: 100, ...(jeton ? { pageToken: jeton } : {}) }) });
+        noms.push(...((r && r.collectionIds) || []));
+        jeton = r && r.nextPageToken;
+      } while (jeton);
+      return noms;
+    },
+    // Tous les documents d'une collection, au format brut de Firestore (valeurs typées, pour une
+    // restauration fidèle) : [{ chemin, champs | null }]. Un document « absent » (qui n'existe que
+    // par ses sous-collections) est renvoyé avec champs = null.
+    async lister(cheminCollection) {
+      const docs = []; let jeton = null;
+      do {
+        const r = await appel(`${racine}/${cheminCollection}?pageSize=300&showMissing=true${jeton ? '&pageToken=' + encodeURIComponent(jeton) : ''}`);
+        for (const d of (r && r.documents) || []) docs.push({ chemin: d.name.slice(racine.length + 1), champs: d.createTime ? (d.fields || {}) : null });
+        jeton = r && r.nextPageToken;
+      } while (jeton);
+      return docs;
+    },
     // Applique des écritures par lots de 400 (limite Firestore : 500).
     // ecritures = [{ chemin, donnees, champsModifies?, siAbsent? }] ; champsModifies limite l'écriture à ces champs ;
     // siAbsent fait échouer le lot si le document existe déjà.
