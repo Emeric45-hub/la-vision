@@ -47,6 +47,10 @@ export function initAccueil(ctx) {
     const { onSnapshot, doc } = C.F;
     S.stopRebours = onSnapshot(doc(C.db, "vision", "rebours"), snap => { S.rebours = snap.exists() ? snap.data() : {}; rendreSiVisible(); }, () => {});
   }
+  if (!S.stopBriefing && C.db) {   // briefing rédigé par la tâche à 6h30 et 17h30
+    const { onSnapshot, doc } = C.F;
+    S.stopBriefing = onSnapshot(doc(C.db, "vision", "briefing"), snap => { S.briefing = snap.exists() ? snap.data() : {}; rendreSiVisible(); }, () => {});
+  }
   if (!S.stopCantine && C.db) {   // menus de la cantine, lus une fois par jour par la tâche
     const { onSnapshot, doc } = C.F;
     S.stopCantine = onSnapshot(doc(C.db, "vision", "cantine"), snap => { S.cantine = snap.exists() ? snap.data() : {}; rendreSiVisible(); }, () => {});
@@ -167,7 +171,7 @@ function rendre() {
   }
 
   const haut = el("div", "ac-haut");
-  haut.append(carte("ac-briefing", "Briefing", "Arrive avec le lot 3."),
+  haut.append(briefingCarte(),
     meteoCarte(),
     reboursCarte());
   tout.append(haut);
@@ -355,6 +359,23 @@ async function changerE2(d, champs) {
 }
 function alerteEcriture(e) { S.erreurEcriture = e.code || e.name; rendre(); }
 
+
+/* ---------- Briefing ---------- */
+function briefingCarte() {
+  const c = el("section", "carte ac-carte ac-briefing");
+  const B = S.briefing;
+  const tete = el("div", "ac-rp-tete");
+  tete.append(el("h2", "ac-titre grand", "Briefing"));
+  if (B && B.texte && B.le && B.le.toDate) {
+    const quand = (B.moment === "soir" ? "Soir" : "Matin") + " · " + hm(B.le.toDate()).replace(":", "h") + (B.ia === false ? " · résumé automatique" : "");
+    tete.append(el("span", "ac-brief-quand", quand));
+  }
+  c.append(tete);
+  if (!B) { c.append(el("p", "ac-attente", "")); return c; }
+  if (!B.texte) { c.append(el("p", "ac-attente", "Le premier briefing arrivera à 6h30 ou 17h30.")); return c; }
+  c.append(el("p", "ac-brief", B.texte));
+  return c;
+}
 
 /* ---------- Ce soir ---------- */
 // Repas de midi de l'enfant scolarisé selon son lieu du jour : école → cantine de l'école ;
