@@ -109,7 +109,9 @@ function calculerBase(entree, cfg) {
   if (sA.gardeSoir && sB.type === 'garde') points.push(`${pA} et ${pB} de garde le même jour`);
 
   // Jour férié, congés de l'assistante maternelle
-  if (ferie) { points.length = 0; pourquoi.push(`Férié : ${ferie}`); res.e2 = { mode: 'maison', creneaux: [] }; return res; }
+  // Férié : nounou fermée, enfants à la maison ; seul le point « les deux de garde » est gardé
+  // (prévoir une garde des enfants, notée dans l'agenda).
+  if (ferie) { const deux = points.filter(p => p.includes('de garde le même jour')); points.length = 0; points.push(...deux); pourquoi.push(`Férié : ${ferie}`); res.e2 = { mode: 'maison', creneaux: [] }; return res; }
   const ecole = !vacances && E.jours.includes(js);
   const mercrediScolaire = !vacances && js === E.mercredi.jour;
   if (!nounouOuverte) {

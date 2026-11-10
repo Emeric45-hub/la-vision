@@ -43,6 +43,8 @@ jobs:
         run: node tests/briefing.test.mjs
       - name: Fond (météo ou saison)
         run: node tests/fond.test.mjs
+      - name: Férié et gardes (famille fictive)
+        run: node tests/ferie.test.mjs
       - name: Dépendances de la tâche
         working-directory: tache
         run: npm install --no-audit --no-fund --ignore-scripts

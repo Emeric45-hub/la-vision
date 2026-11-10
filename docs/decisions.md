@@ -259,3 +259,7 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 ## 2026-11-10 — Points à vérifier traités
 
 - Un point à vérifier est considéré comme traité quand le jour a été corrigé à la main ou que le mois est validé : plus de pastille ni de décompte ; il reste visible, barré, dans le détail du jour. Un écart entre le calcul actuel et le calcul validé reste toujours signalé.
+
+## 2026-11-10 — Férié et gardes
+
+- Un jour férié, une garde l'emporte toujours : étiquettes « Férié, Garde … » et situation « Garde ce soir » / « Garde (24 h) » (avant : « Férié » masquait la garde). Les deux parents de garde un férié : le point à vérifier est gardé (garde des enfants à prévoir, notée dans l'agenda). Nounou fermée, enfants à la maison.
