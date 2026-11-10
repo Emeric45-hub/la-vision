@@ -23,3 +23,10 @@ const aucun = jour([], []);
 assert.deepEqual(etiquettes(aucun, fam), ['Armistice']);
 assert.deepEqual(aucun.points, []);
 console.log('férié : tous les scénarios passent');
+
+// Absente un jour férié : « Absente » l'emporte sur « Férié »
+{
+  const r = calculerJour({ date: '2030-01-01', sem: { evenements: [] }, agenda: { A: [], B: [], ferie: 'Jour de l\'an' }, agendaVeille: { A: [], B: [] }, saisieB: { type: 'absent' } }, fam);
+  assert.equal(personnes(r, fam)[1].texte, 'Absente');
+  assert.ok(etiquettes(r, fam).some(t => t.endsWith('absente')));
+}

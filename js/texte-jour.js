@@ -19,6 +19,7 @@ export function etiquettes(calc, fam) {
   else if (calc.B.statut === "lendemain") out.push(`Repos ${B}`);
   else if (calc.B.statut === "repos") out.push(`${B} off`);
   else if (calc.B.statut === "conge") out.push(`${B} en vacances`);
+  else if (calc.B.statut === "absent") out.push(`${B} absente`);
   if (calc.vacances) out.push("Vacances");
   return out;
 }
@@ -69,7 +70,7 @@ export function personnes(calc, fam) {
   else if (A.statut === "fmc") ta = "Formation";
   else ta = "Planning inconnu";
   res.push({ qui: fam.A.prenom, texte: ta });
-  const tb = calc.ferie && !["garde", "lendemain", "conge"].includes(B.statut) ? "Férié" : { garde: "Garde (24 h)", lendemain: "Repos de garde", repos: "Off", conge: "En vacances",
+  const tb = calc.ferie && !["garde", "lendemain", "conge", "absent"].includes(B.statut) ? "Férié" : { garde: "Garde (24 h)", lendemain: "Repos de garde", repos: "Off", conge: "En vacances", absent: "Absente",
     travail: `Cabinet ${h(B.debut)}–${h(B.fin)}`, a_saisir: "Horaires à saisir" }[B.statut] || "?";
   res.push({ qui: fam.B.prenom, texte: tb });
   return res;

@@ -269,7 +269,7 @@ function signaler(t) {
 /* ---------- Horaires du parent B ---------- */
 function rendreHoraires() {
   const liste = el("div", "hor-liste");
-  liste.append(el("p", "discret", `Début et fin de cabinet, ou Off / Vacances. Enregistré à chaque changement. Les gardes viennent de l'agenda de ${C.fam.B.prenom}.`));
+  liste.append(el("p", "discret", `Début et fin de cabinet, ou Off / Vacances / Absente (pas à la maison). Enregistré à chaque changement. Les gardes viennent de l'agenda de ${C.fam.B.prenom}.`));
   for (const d of Object.keys(S.jours).sort()) {
     const j = S.jours[d], c = j.calc;
     const ligne = el("div", "hor-ligne" + (j.passe ? " passe" : ""));
@@ -284,13 +284,13 @@ function rendreHoraires() {
     const debut = heureInput(s && s.type === "travail" ? s.debut : "", () => sauver(), "Début");
     const fin = heureInput(s && s.type === "travail" ? s.fin : "", () => sauver(), "Fin");
     const type = s ? s.type : (c.B.statut === "repos" || c.B.statut === "conge" ? c.B.statut : null);
-    const choix = segment([["repos", "Off"], ["conge", "Vacances"]], type === "repos" || type === "conge" ? type : null, v => sauver(v));
+    const choix = segment([["repos", "Off"], ["conge", "Vacances"], ["absent", "Absente"]], ["repos", "conge", "absent"].includes(type) ? type : null, v => sauver(v));
     const effacer = el("button", "bouton secondaire petit-bouton", "Effacer"); effacer.onclick = () => sauver("effacer");
     const etat = el("span", "hor-etat", !s && (type === "repos" || type === "conge") ? "agenda" : "");
     async function sauver(v) {
       const { deleteField } = C.F;
       let saisie;
-      if (v === "repos" || v === "conge") saisie = { type: v };
+      if (v === "repos" || v === "conge" || v === "absent") saisie = { type: v };
       else if (v === "effacer") saisie = null;
       else if (debut.value && fin.value) saisie = { type: "travail", debut: debut.value, fin: fin.value };
       else return;

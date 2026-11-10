@@ -61,7 +61,7 @@ export function statutB(date, agendaB, agendaVeilleB, saisie, cfg) {
   const s = saisie || (noteAgenda(cfg.B.conge) ? { type: 'conge' } : noteAgenda(cfg.B.repos) ? { type: 'repos' } : {});
   const type = garde ? 'garde' : lendemain ? 'lendemain'
     : s.type === 'travail' && s.debut && s.fin ? 'travail'
-    : s.type === 'repos' ? 'repos' : s.type === 'conge' ? 'conge' : 'a_saisir';
+    : s.type === 'repos' ? 'repos' : s.type === 'conge' ? 'conge' : s.type === 'absent' ? 'absent' : 'a_saisir';
   return { type, debut: type === 'travail' ? s.debut : null, fin: type === 'travail' ? s.fin : null };
 }
 
@@ -125,6 +125,7 @@ function calculerBase(entree, cfg) {
   if (mercrediScolaire) {
     let qui;
     if (sA.aLaMaison) qui = 'A';
+    else if (sB.type === 'absent') { qui = 'A'; points.push(`Mercredi : ${pB} absente et ${pA} au travail : qui garde ?`); }
     else if (sB.type !== 'travail' && sB.type !== 'garde') qui = 'B';
     else { qui = 'B'; points.push(`Mercredi : ${pA} et ${pB} travaillent tous les deux ?`); }
     if (sB.type === 'lendemain' && qui === 'B') points.push(`Mercredi lendemain de garde de ${pB} : qui dépose à ${affiche(E.mercredi.e1[0])} ?`);
@@ -155,6 +156,10 @@ function calculerBase(entree, cfg) {
     else { depot = { qui: 'A', heure: cfg.A.depotTot }; pourquoi.push(`Lendemain de garde de ${pB} : ${pA} dépose les deux enfants à ${affiche(depot.heure)} en partant`); }
   } else if (sA.aLaMaison && !sA.lendemain) {
     depot = { qui: 'A', heure: cfg.A.conge.depot }; pourquoi.push(`${pA} en congé : il dépose à ${affiche(depot.heure)}`);
+  } else if (sB.type === 'absent') {
+    // Absente de la maison (déplacement, congrès…) : l'autre parent dépose en partant.
+    if (sA.lendemain) { depot = { qui: null, heure: null }; points.push(`${pB} absente et ${pA} lendemain de garde : qui dépose ?`); }
+    else { depot = { qui: 'A', heure: cfg.A.depotTot }; pourquoi.push(`${pB} absente : ${pA} dépose à ${affiche(depot.heure)} en partant`); }
   } else if (sB.type === 'garde') {
     depot = { qui: 'B', heure: cfg.B.jourGarde.depot }; pourquoi.push(`${pB} de garde : elle dépose à ${affiche(depot.heure)}`);
   } else if (sB.type === 'travail') {
@@ -179,9 +184,10 @@ function calculerBase(entree, cfg) {
 
   if (sB.type === 'lendemain') {
     recup = { qui: 'B', heure: cfg.B.lendemainGarde.recup }; pourquoi.push(`Lendemain de garde de ${pB} : elle récupère à ${affiche(recup.heure)}`);
-  } else if (sB.type === 'garde') {
-    if (retourA) { recup = { qui: 'A', heure: retourA }; pourquoi.push(sA.aLaMaison ? `${pA} en congé : il récupère à ${affiche(retourA)}` : `${pB} de garde : ${pA} récupère en rentrant, ${affiche(retourA)}`); }
-    else { recup = { qui: null, heure: null }; points.push(`${pB} de garde et ${pA} indisponible le soir : qui récupère ?`); }
+  } else if (sB.type === 'garde' || sB.type === 'absent') {
+    const motif = sB.type === 'garde' ? `${pB} de garde` : `${pB} absente`;
+    if (retourA) { recup = { qui: 'A', heure: retourA }; pourquoi.push(sA.aLaMaison ? `${pA} en congé : il récupère à ${affiche(retourA)}` : `${motif} : ${pA} récupère en rentrant, ${affiche(retourA)}`); }
+    else { recup = { qui: null, heure: null }; points.push(`${motif} et ${pA} indisponible le soir : qui récupère ?`); }
   } else if (sB.type === 'repos') {
     recup = { qui: 'B', heure: null };
   } else if (sA.lendemain && !sA.gardeSoir) {
@@ -274,6 +280,7 @@ function alertes(res, entree, cfg) {
     }
   }
   for (const [qui, evs] of [['A', ag.A || []], ['B', ag.B || []]]) {
+    if (qui === 'B' && res.B && res.B.statut === 'absent') continue;   // absence déjà saisie : question réglée
     for (const e of evs) {
       if (e.journee || connu(e.titre)) continue;
       if (minutes(e.fin) - minutes(e.debut) < 12 * 60) continue;
