@@ -276,6 +276,16 @@ body.sur-accueil .version { display: none; }
 .ac-lieu { font-size: 12px; color: var(--discret); }
 .ac-notes { margin-top: 3px; padding: 4px 8px; border-radius: 8px; background: var(--alerte-fond); color: var(--alerte); font-size: 12.5px; white-space: pre-line; }
 .ac-vide { font-size: 14px; color: var(--discret); }
+/* Rappels (Raccourci iOS) */
+.ac-rp-liste { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.ac-rp-colonnes { display: block; columns: 2; column-gap: 22px; }
+.ac-rp-colonnes > li { break-inside: avoid; margin-bottom: 7px; }
+.ac-rp { display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: baseline; font-size: 14px; }
+.ac-rp-picto { font-size: 13px; text-align: center; }
+.ac-rp .ac-t { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ac-rp-notes { font-size: 12px; color: var(--discret); white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ac-rp-quand { font-size: 12.5px; color: var(--discret); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ac-rp.retard .ac-rp-quand { color: var(--alerte); font-weight: 600; }
 
 /* ---------- Accueil : défilement à l'intérieur des blocs ---------- */
 .ac-carte > .ac-titre { position: sticky; top: -12px; margin: -12px -14px 6px; padding: 12px 14px 4px; background: var(--carte); z-index: 1; }

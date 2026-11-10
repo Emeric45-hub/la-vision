@@ -184,3 +184,11 @@ Constat : après une mise à jour, Safari (iPhone) a affiché le nouveau numéro
 - La tâche repère, sur 400 jours, le premier jour de chaque période de vacances ou congés posés par un parent (titre contenant « congé(s) » ou « vacances », hors « scolaires » et congés de l'assistante maternelle) et de chaque période de vacances scolaires ; écrit `vision/rebours.calcules` seulement s'ils ont changé (`tache/rebours.js`, testé).
 - Dans `vision/rebours` aussi : `manuels` = [{ id, titre, date, annuel }] (ajoutés dans l'app) et `choix` (clé de l'événement affiché ; absent = prochaines vacances posées). Noël est ajouté par l'app. Les anniversaires viendront du Raccourci (étape 6) ; d'ici là, ajout à la main avec « chaque année ».
 - Carte : nombre de jours, libellé, date, puis les deux autres événements les plus proches ; « Choisir » ouvre la liste, l'ajout et la suppression des événements ajoutés à la main.
+
+## 2026-11-10 — Lot 2, étape 6 (1/2) : envoi du Raccourci iOS
+
+- Un seul Raccourci remplace les trois Raccourcis de test : connexion (une fois), envoi, puis réception (à venir).
+- Envoi : document `vision/raccourci`, champ `texte` = JSON `{ le, rappels: [{t,l,e,n}], evenements: [{t,d,f,j,n}], anniversaires: [{t,d}] }`, dates ISO 8601 avec décalage. Construit par des actions « Dictionnaire » (échappement fait par iOS) plutôt qu'un texte à séparateurs.
+- App (`js/raccourci.js`) : rappels dont l'échéance est aujourd'hui ou dépassée → « Rappels du jour » ; les autres → « À faire, plus tard ». Événements du calendrier local ajoutés au fil du jour (sans doublon). Anniversaires proposés dans le compte à rebours.
+- Fraîcheur : alerte orange au-delà de 6 h de jour ; la « nuit » du Raccourci va de 21 h à 7 h (pas de passage), seuil 11 h ; bandeau rouge au-delà de 24 h.
+- Cocher, ajouter et courses : partie réception, étape suivante.

@@ -9,6 +9,7 @@ import { affiche } from "../tache/moteur.js";
 import { prochaineAnnuelle, joursAvant } from "../tache/rebours.js";
 import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_METEO } from "./meteo.js";
 import { lundiDe } from "./nounou-calcul.js";
+import { lire as lireRaccourci, repartir, evenementsDuJour, picto, libelleAnniversaire } from "./raccourci.js";
 
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 const JOURS_COURTS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -34,6 +35,14 @@ export function initAccueil(ctx) {
   if (!S.stopRebours && C.db) {
     const { onSnapshot, doc } = C.F;
     S.stopRebours = onSnapshot(doc(C.db, "vision", "rebours"), snap => { S.rebours = snap.exists() ? snap.data() : {}; rendreSiVisible(); }, () => {});
+  }
+  if (!S.stopRaccourci && C.db) {   // rappels, calendrier local et anniversaires envoyés par le Raccourci iOS
+    const { onSnapshot, doc } = C.F;
+    S.stopRaccourci = onSnapshot(doc(C.db, "vision", "raccourci"), { includeMetadataChanges: true }, snap => {
+      if (snap.metadata.fromCache && !snap.exists()) return;   // cache vide : pas une absence de données
+      S.raccourci = lireRaccourci(snap.exists() ? snap.data() : null);
+      rendreSiVisible();
+    }, () => {});
   }
   lireMeteo();
   if (!S.minuteurMeteo) S.minuteurMeteo = setInterval(lireMeteo, 30 * 60000);
@@ -92,11 +101,12 @@ async function charger() {
 }
 
 /* ---------- Fraîcheur des sources ---------- */
-const NOMS = { agendas: "Agendas", meteo: "Météo" };
+const NOMS = { agendas: "Agendas", meteo: "Météo", rappels: "Rappels" };
 const enDate = ts => ts && ts.toDate ? ts.toDate() : ts ? new Date(ts) : null;
 function sources() {
   const ag = S.etat && S.etat.agendas;
   const res = [{ cle: "agendas", ...niveau("agendas", enDate(ag && ag.lu), new Date(), maintenant()), lu: enDate(ag && ag.lu) }];
+  if (S.raccourci) { const lu = S.raccourci.le || null; res.push({ cle: "rappels", ...niveau("rappels", lu, new Date(), maintenant()), lu }); }
   if (meteoConfiguree()) res.push({ cle: "meteo", ...niveau("meteo", S.meteo && S.meteo.lu ? new Date(S.meteo.lu) : null, new Date(), maintenant()), lu: S.meteo && S.meteo.lu ? new Date(S.meteo.lu) : null });
   return res;
 }
@@ -117,6 +127,12 @@ function rendre() {
       : `La tâche planifiée n'a pas lu les agendas depuis ${depuis(s.minutes)} (dernier passage à ${hm(s.lu)}) : vérifier cron-job.org.`));
   }
 
+  for (const s of src.filter(x => x.niveau === "rouge" && x.cle === "rappels")) {
+    tout.append(el("p", "ac-bandeau", s.minutes == null
+      ? "Le Raccourci de l'iPhone n'a encore rien envoyé (rappels, calendrier de l'iPhone, anniversaires)."
+      : `Le Raccourci de l'iPhone n'a rien envoyé depuis ${depuis(s.minutes)} : rappels non à jour. Vérifier ses automatisations.`));
+  }
+
   const haut = el("div", "ac-haut");
   haut.append(carte("ac-briefing", "Briefing", "Arrive avec le lot 3."),
     meteoCarte(),
@@ -128,9 +144,7 @@ function rendre() {
   if (!S.nounou) S.nounou = el("div", "ac-nounou");
   pile.append(S.nounou, carte("ac-soir", "Ce soir", "Étape 7."));
   const droite = el("div", "ac-droite");
-  droite.append(carte("ac-rappels", "Rappels du jour", "Étape 6."),
-    postit(),
-    carte("ac-afaire", "À faire, plus tard", "Étape 6."));
+  droite.append(rappelsCarte(), postit(), afaireCarte());
   cols.append(aujourdhuiCarte(), pile, droite);
   tout.append(cols);
   tout.append(semaine());
@@ -238,7 +252,7 @@ function aujourdhuiCarte() {
   // Statut de l'enfant scolarisé, modifiable quand la journée dévie
   if (j && j.aff && !j.calc.ferie) c.append(statutE2(d, j));
   // Fil du jour
-  const fil = filDuJour(s.src.agenda[d], j, C.fam, d);
+  const fil = filDuJour(agendaAvecIphone(s.src.agenda[d], d), j, C.fam, d);
   const liste = el("ol", "ac-fil");
   if (!fil.length) liste.append(el("li", "ac-vide", "Rien de prévu."));
   for (const x of fil) {
@@ -297,6 +311,67 @@ async function changerE2(d, champs) {
 function alerteEcriture(e) { S.erreurEcriture = e.code || e.name; rendre(); }
 
 
+/* ---------- Rappels (Raccourci iOS) ---------- */
+const JOURS_ABR = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+const MOIS_ABR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+// « sam. 28 » dans le mois en cours, « sam. 5 déc. » au-delà.
+const dateCourte = d => `${JOURS_ABR[new Date(d + "T12:00:00Z").getUTCDay()]} ${Number(d.slice(8))}${d.slice(0, 7) !== aujourdhui().slice(0, 7) ? " " + MOIS_ABR[Number(d.slice(5, 7)) - 1] : ""}`;
+
+// Événements du calendrier de l'iPhone ajoutés au calendrier commun (sans doublon).
+function agendaAvecIphone(agendaJour, d) {
+  const r = S.raccourci;
+  if (!r || r.erreur) return agendaJour;
+  const base = agendaJour || {}, deja = new Set((base.C || []).map(e => e.titre + e.debut.slice(0, 16)));
+  const ajout = evenementsDuJour(r.evenements, d).filter(e => !deja.has(e.titre + e.debut));
+  return ajout.length ? { ...base, C: [...(base.C || []), ...ajout] } : agendaJour;
+}
+
+function etatRappels(c) {
+  const r = S.raccourci;
+  if (!r) { c.append(el("p", "ac-attente", S.serveur ? "Chargement…" : "")); return null; }
+  if (r.erreur === "vide") { c.append(el("p", "ac-attente", "En attente du premier passage du Raccourci de l'iPhone.")); return null; }
+  if (r.erreur) { c.append(el("p", "message ko", "Données du Raccourci illisibles.")); return null; }
+  return repartir(r.rappels, aujourdhui());
+}
+
+function ligneRappel(x, avecDate) {
+  const li = el("li", "ac-rp" + (x.retard ? " retard" : ""));
+  const p = picto(x.liste);
+  li.append(el("span", "ac-rp-picto", p || "•"));
+  const corps = el("span", "ac-corps");
+  corps.append(el("span", "ac-t", x.titre));
+  if (x.notes) corps.append(el("span", "ac-rp-notes", x.notes));
+  li.append(corps);
+  const quand = x.retard ? `depuis ${dateCourte(x.jour)}` : avecDate && x.jour ? dateCourte(x.jour) + (x.heure ? " " + h(x.heure) : "") : x.heure ? h(x.heure) : "";
+  li.append(el("span", "ac-rp-quand", quand));
+  li.title = x.liste;
+  return li;
+}
+
+function rappelsCarte() {
+  const c = el("section", "carte ac-carte ac-rappels");
+  c.append(el("h2", "ac-titre", "Rappels du jour"));
+  const r = etatRappels(c);
+  if (!r) return c;
+  const l = el("ul", "ac-rp-liste");
+  if (!r.jour.length) l.append(el("li", "ac-vide", "Rien pour aujourd'hui."));
+  r.jour.forEach(x => l.append(ligneRappel(x, false)));
+  c.append(l);
+  return c;
+}
+
+function afaireCarte() {
+  const c = el("section", "carte ac-carte ac-afaire");
+  c.append(el("h2", "ac-titre", "À faire, plus tard"));
+  const r = etatRappels(c);
+  if (!r) return c;
+  const l = el("ul", "ac-rp-liste ac-rp-colonnes");
+  if (!r.plusTard.length) l.append(el("li", "ac-vide", "Rien en attente."));
+  r.plusTard.forEach(x => l.append(ligneRappel(x, true)));
+  c.append(l);
+  return c;
+}
+
 /* ---------- Météo (Open-Meteo, lue directement par l'app) ---------- */
 const meteoConfiguree = () => !!(C && C.fam && C.fam.meteo && C.fam.meteo.lat != null && C.fam.meteo.lon != null);
 async function lireMeteo() {
@@ -353,6 +428,8 @@ function candidats() {
   (cal.posees || []).forEach((x, i) => res.push({ cle: "p:" + x.date, titre: x.titre, date: x.date, type: "posees", premiere: i === 0 }));
   (cal.scolaires || []).forEach(x => res.push({ cle: "s:" + x.date, titre: x.titre, date: x.date, type: "scolaires" }));
   res.push({ cle: "noel", titre: "Noël", date: prochaineAnnuelle("12-25", j), type: "fixe" });
+  const ip = S.raccourci && !S.raccourci.erreur ? S.raccourci.anniversaires : [];
+  ip.forEach(a => res.push({ cle: "a:" + a.titre, titre: libelleAnniversaire(a.titre), date: a.date, type: "anniversaire" }));
   (r.manuels || []).forEach(m => res.push({ cle: "m:" + m.id, titre: m.titre, date: m.annuel ? prochaineAnnuelle(m.date.slice(5), j) : m.date, type: "manuel", id: m.id, annuel: !!m.annuel }));
   return res.filter(x => x.date >= j).sort((a, b) => a.date.localeCompare(b.date));
 }

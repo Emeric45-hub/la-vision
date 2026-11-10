@@ -13,6 +13,9 @@ assert.equal(niveau('agendas', null, m, '13:00').niveau, 'rouge');
 assert.equal(niveau('rappels', il(300), m, '13:00').niveau, 'ok');
 assert.equal(niveau('rappels', il(400), m, '13:00').niveau, 'orange');
 assert.equal(niveau('agendas', il(30), m, '13:00').minutes, 30);
+assert.equal(niveau('rappels', il(630), m, '06:59').niveau, 'ok');      // 20h30 → 6h59 : nuit du Raccourci
+assert.equal(niveau('rappels', il(630), m, '07:00').niveau, 'orange');  // passage de 6h30 manqué
+assert.equal(niveau('rappels', il(150), m, '23:00').niveau, 'ok');
 assert.equal(estNuit('23:10'), true); assert.equal(estNuit('05:59'), true); assert.equal(estNuit('06:00'), false);
 assert.equal(depuis(45), '45 min'); assert.equal(depuis(200), '3 h 20'); assert.equal(depuis(120), '2 h'); assert.equal(depuis(3000), '2 j');
 assert.equal(depuis(null), 'jamais');

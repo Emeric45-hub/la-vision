@@ -31,6 +31,8 @@ jobs:
         run: node tests/meteo.test.mjs
       - name: Compte à rebours
         run: node tests/rebours.test.mjs
+      - name: Données du Raccourci iOS (fictives)
+        run: node tests/raccourci.test.mjs
       - name: Dépendances de la tâche
         working-directory: tache
         run: npm install --no-audit --no-fund --ignore-scripts
