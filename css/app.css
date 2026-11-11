@@ -496,7 +496,10 @@ body[class*="fond-"] .ac-jourc { background: rgba(var(--carte-rgb), .55); }
 /* Safari ancien : le flou d'arrière-plan déborde des coins arrondis d'un bloc sans « overflow » ;
    on le contient (la bande « Cette semaine » était le seul bloc concerné). */
 .carte { isolation: isolate; }
-.ac-semaine, .ac-haut .ac-carte, .barre-ecran .ac-pilule, .ac-barre .ac-pilule { overflow: hidden; }
+.ac-semaine, .barre-ecran .ac-pilule, .ac-barre .ac-pilule { overflow: hidden; }
+/* Blocs du haut (briefing, météo, compte à rebours) : rognés sur les côtés, mais le surplus défile
+   à l'intérieur du bloc sans entraîner la page. */
+.ac-haut .ac-carte { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 /* Compte à rebours : même bandeau de titre que les autres blocs */
 .ac-rebours > .ac-rb-tete { position: sticky; top: -12px; z-index: 1; margin: -12px -14px 6px; padding: 12px 14px 4px; background: var(--carte); }
 body[class*="fond-"] .ac-rebours > .ac-rb-tete { background: rgba(var(--carte-rgb), var(--opacite-carte)); }
