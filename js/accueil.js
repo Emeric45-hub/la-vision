@@ -7,7 +7,7 @@ import { etiquettes, lignesCase, personnes, filDuJour, ligneE2 } from "./texte-j
 import { monterNounou, rechargerNounou } from "./nounou.js";
 import { affiche } from "../tache/moteur.js";
 import { prochaineAnnuelle, joursAvant } from "../tache/rebours.js";
-import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_METEO, notesHabillage } from "./meteo.js";
+import { url as urlMeteo, decrire, creneaux as creneauxMeteo, SEUILS as SEUILS_METEO, notesHabillage, heures as heuresMeteo, jours as joursMeteo, pictoHeure, JOURS_PREVUS } from "./meteo.js";
 import { lundiDe } from "./nounou-calcul.js";
 import { postit as postitFamille, initPostit } from "./postit.js";
 import { pourEnfant } from "../tache/cantine.js";
@@ -687,6 +687,11 @@ function meteoCarte() {
   if (!meteoConfiguree()) { c.append(el("p", "ac-attente", "Coordonnées à ajouter dans la configuration (famille.meteo).")); return c; }
   const m = S.meteo;
   if (!m || !m.data) { c.append(el("p", "ac-attente", m && m.erreur ? `Prévisions indisponibles (${m.erreur}).` : "Chargement…")); return c; }
+  // Tout le bloc ouvre le détail (heure par heure, 7 jours).
+  c.classList.add("ac-ouvrable");
+  c.setAttribute("role", "button"); c.tabIndex = 0; c.setAttribute("aria-label", "Météo : ouvrir les prévisions détaillées");
+  c.onclick = fenetreMeteo;
+  c.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fenetreMeteo(); } };
   const d = m.data, cur = d.current || {};
   const jour = aujourdhui(), demain = decaler(jour, 1);
   const desc = decrire(cur.weather_code);
@@ -715,6 +720,72 @@ function meteoCarte() {
   c.append(liste);
   if (m.erreur) c.append(el("p", "ac-aide", `Dernière mise à jour à ${hm(new Date(m.lu))}.`));
   return c;
+}
+
+// Détail de la météo : les 48 prochaines heures (bande qui défile de côté), puis les 7 jours.
+const jourCourt = d => `${JOURS_COURTS[new Date(d + "T12:00:00Z").getUTCDay()]} ${Number(d.slice(8))}`;
+function fenetreMeteo() {
+  if (document.querySelector(".mt-fenetre") || !S.meteo || !S.meteo.data) return;
+  const { f, fermer } = fenetre("Météo");
+  f.classList.add("mt-fenetre");
+  const corps = el("div", "mt-corps");
+  const pied = el("div", "ac-fenetre-pied");
+  const maj = el("span", "mt-maj");
+  const non = el("button", "bouton", "Fermer"); non.type = "button"; non.onclick = fermer;
+  pied.append(maj, non);
+  f.append(corps, pied);
+  f.onsubmit = e => e.preventDefault();
+
+  const remplir = () => {
+    const m = S.meteo, d = m.data, jour = aujourdhui(), demain = decaler(jour, 1);
+    corps.textContent = "";
+    maj.textContent = m.lu ? `Prévisions de ${hm(new Date(m.lu))}${m.erreur ? " (mise à jour impossible)" : ""}` : "";
+
+    // Heure par heure
+    const hs = heuresMeteo(d, `${jour}T${maintenant()}`, 48);
+    corps.append(el("h3", "mt-titre", "Heure par heure"));
+    if (!hs.length) corps.append(el("p", "ac-attente", "Prévisions horaires indisponibles."));
+    else {
+      const bande = el("div", "mt-heures");
+      hs.forEach((h, i) => {
+        if (i > 0 && h.heure === 0) bande.append(el("div", "mt-jour-sep", h.jour === demain ? "Demain" : jourCourt(h.jour)));
+        const x = el("div", "mt-h" + (h.nuit ? " nuit" : ""));
+        x.title = decrire(h.code).texte;
+        x.append(
+          el("span", "mt-h-heure", i === 0 ? "Maint." : `${h.heure}h`),
+          el("span", "mt-h-icone", pictoHeure(h.code, h.nuit)),
+          el("span", "mt-h-temp", `${h.temp}°`),
+          el("span", "mt-h-ress", `ress. ${h.ressenti}°`),
+          el("span", "mt-h-pluie" + (h.pluie >= 50 ? " fort" : ""), h.pluie >= 20 ? `☔ ${h.pluie} %` : "")
+        );
+        bande.append(x);
+      });
+      corps.append(bande);
+    }
+
+    // Jour par jour
+    const js = joursMeteo(d, jour);
+    corps.append(el("h3", "mt-titre", js.length > 2 ? `Les ${js.length} prochains jours` : "Jour par jour"));
+    const liste = el("div", "mt-jours");
+    for (const j of js) {
+      const l = el("div", "mt-j");
+      const desc = j.code == null ? null : decrire(j.code);
+      l.append(
+        el("span", "mt-j-nom", j.date === jour ? "Aujourd'hui" : j.date === demain ? "Demain" : `${JOURS_LONGS[new Date(j.date + "T12:00:00Z").getUTCDay()]} ${Number(j.date.slice(8))}`),
+        el("span", "mt-j-icone", desc ? desc.icone : ""),
+        el("span", "mt-j-texte", desc ? desc.texte : ""),
+        el("span", "mt-j-pluie" + (j.pluie >= 50 ? " fort" : ""), j.pluie != null && j.pluie >= 20 ? `☔ ${j.pluie} %` : ""),
+        el("span", "mt-j-temp", `${j.min}° / ${j.max}°`)
+      );
+      liste.append(l);
+    }
+    corps.append(liste);
+  };
+  remplir();
+  // Prévision gardée d'un ancien format (2 jours) ou vieille de plus d'une demi-heure : on relit.
+  const d = S.meteo.data.daily;
+  const vieille = !S.meteo.lu || Date.now() - new Date(S.meteo.lu).getTime() > 30 * 60000;
+  if (vieille || !d || !d.time || d.time.length < JOURS_PREVUS) lireMeteo().then(() => { if (f.isConnected && S.meteo && S.meteo.data) remplir(); });
 }
 
 /* ---------- Compte à rebours ---------- */

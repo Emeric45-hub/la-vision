@@ -285,3 +285,7 @@ L'alerte « long événement : parent absent ? » couvre aussi les événements 
 - `tache/package-lock.json` fige les versions des dépendances de la tâche, y compris indirectes.
 - Briefing du soir : un changement de la journée en cours (« ceSoir ») justifie aussi une réécriture (au plus une par heure).
 - Non faits, volontairement : corrections simultanées du même jour sur deux appareils (la dernière écriture l'emporte), date du dernier PDF de repas (les PDF font moins de 200 Ko pour une limite de 1 Mio).
+
+## 2026-11-15 — Fenêtre de détail de la météo
+
+Un toucher sur le bloc Météo ouvre une fenêtre centrale : les 48 prochaines heures (bande qui défile de côté : température, ressenti, risque de pluie à partir de 20 %, pictogramme de nuit entre le coucher et le lever du soleil), puis les 7 prochains jours (minimum, maximum, risque de pluie). La requête Open-Meteo passe de 2 à 7 jours et ajoute le code météo et le risque de pluie par jour ; le briefing utilise la même requête sans changement. Une prévision gardée sur l'appareil à l'ancien format (2 jours) ou vieille de plus de 30 minutes est relue à l'ouverture.
