@@ -504,3 +504,38 @@ body[class*="fond-"] .ac-jourc { background: rgba(var(--carte-rgb), .55); }
 .ac-rebours > .ac-rb-tete { position: sticky; top: -12px; z-index: 1; margin: -12px -14px 6px; padding: 12px 14px 4px; background: var(--carte); }
 body[class*="fond-"] .ac-rebours > .ac-rb-tete { background: rgba(var(--carte-rgb), var(--opacite-carte)); }
 .point.traite { opacity: .5; text-decoration: line-through; text-decoration-thickness: 1px; }
+
+/* Météo : bloc qui ouvre le détail, et fenêtre de détail (heure par heure, 7 jours) */
+.ac-ouvrable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.ac-ouvrable:active { filter: brightness(.97); }
+.ac-fenetre.mt-fenetre { width: min(680px, 100%); max-height: calc(100dvh - 12vh - 32px); }
+.mt-corps { min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 8px; }
+.mt-titre { margin: 4px 0 0; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--discret); }
+.mt-heures { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; padding: 2px 0 10px; flex: none; }
+.mt-h { flex: 0 0 62px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px; border-radius: 12px; background: rgba(120, 130, 150, .10); }
+.mt-h.nuit { background: rgba(60, 70, 100, .20); }
+.mt-h-heure { font-size: 12.5px; color: var(--discret); font-weight: 600; }
+.mt-h-icone { font-size: 24px; line-height: 1.2; }
+.mt-h-temp { font-size: 18px; font-weight: 600; }
+.mt-h-ress { font-size: 11px; color: var(--discret); white-space: nowrap; }
+.mt-h-pluie { font-size: 11px; min-height: 14px; color: var(--discret); white-space: nowrap; }
+.mt-h-pluie.fort, .mt-j-pluie.fort { color: #2368CF; font-weight: 700; }
+body.nuit .mt-h-pluie.fort, body.nuit .mt-j-pluie.fort { color: #8AB4F8; }
+.mt-jour-sep { flex: none; align-self: stretch; display: flex; align-items: center; padding: 0 4px; font-size: 12px; font-weight: 700; color: var(--discret);
+  writing-mode: vertical-rl; transform: rotate(180deg); border-right: 1px solid rgba(120, 130, 150, .35); }
+.mt-jours { display: flex; flex-direction: column; }
+.mt-j { display: grid; grid-template-columns: minmax(0, 1.5fr) 30px minmax(0, 1.2fr) 70px 84px; align-items: center; gap: 8px; padding: 9px 2px; border-top: 1px solid rgba(120, 130, 150, .22); font-size: 15px; }
+.mt-j:first-child { border-top: 0; }
+.mt-j-nom { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-j-nom::first-letter { text-transform: uppercase; }
+.mt-j-icone { font-size: 20px; text-align: center; }
+.mt-j-texte { color: var(--discret); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-j-pluie { font-size: 12.5px; color: var(--discret); text-align: right; white-space: nowrap; }
+.mt-j-temp { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+.mt-maj { margin-right: auto; align-self: center; font-size: 12.5px; color: var(--discret); }
+@media (max-width: 520px) {
+  .ac-fenetre-fond:has(.mt-fenetre) { padding: 5vh 10px 10px; }
+  .ac-fenetre.mt-fenetre { max-height: calc(100dvh - 5vh - 20px); padding: 16px 14px; }
+  .mt-j { grid-template-columns: minmax(0, 1fr) 26px 62px 76px; font-size: 14.5px; }
+  .mt-j-texte { display: none; }
+}
