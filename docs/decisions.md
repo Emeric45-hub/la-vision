@@ -289,3 +289,7 @@ L'alerte « long événement : parent absent ? » couvre aussi les événements 
 ## 2026-11-15 — Fenêtre de détail de la météo
 
 Un toucher sur le bloc Météo ouvre une fenêtre centrale : les 48 prochaines heures (bande qui défile de côté : température, ressenti, risque de pluie à partir de 20 %, pictogramme de nuit entre le coucher et le lever du soleil), puis les 7 prochains jours (minimum, maximum, risque de pluie). La requête Open-Meteo passe de 2 à 7 jours et ajoute le code météo et le risque de pluie par jour ; le briefing utilise la même requête sans changement. Une prévision gardée sur l'appareil à l'ancien format (2 jours) ou vieille de plus de 30 minutes est relue à l'ouverture.
+
+## 2026-11-17 — Plan repas : page de la recette retrouvée par le nom du plat
+
+La mise en page du titre des recettes varie d'un PDF à l'autre (« Jour — Titre », ou « Repas n — Jour » puis le nom du plat en dessous). `pageRecette` cherche donc, à partir de la page 2 : d'abord le nom du plat au début d'une des six premières lignes, puis le jour comme segment de la première ligne, puis le jour dans une première ligne à séparateur ; sinon page 1. `LECTEUR` (numéro de version du lecteur, écrit dans `vision/plats.lecteur`) : l'augmenter fait relire le PDF déjà reçu au passage suivant, en gardant les plats cochés « faits ». Le journal compte les plats qui ont leur page de recette.
