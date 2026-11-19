@@ -164,3 +164,5 @@ textarea { width: 100%; margin: 16px 0 12px; padding: 14px; border: 2px solid va
 .titre-section.sans-marge { margin-top: 0; }
 .groupe { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 17px; font-weight: 600; }
 .lien-discret { align-self: center; min-height: 44px; margin-top: 28px; padding: 0 12px; border: 0; background: transparent; color: var(--second); font: inherit; font-size: 15px; text-decoration: underline; cursor: pointer; }
+.apercu { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.ligne-coche.compacte[aria-pressed="false"] .apercu { opacity: 0.75; }
