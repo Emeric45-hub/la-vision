@@ -325,3 +325,12 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 - Les saisies se font dans un `<dialog>` posé en haut de l'écran, pour rester au-dessus du clavier ; il n'est pas redessiné à l'arrivée de données.
 - `js/gestes.js` utilise les Pointer Events avec `touch-action: pan-y` : le défilement vertical reste au navigateur. Le toucher qui termine un geste est avalé une seule fois (drapeau remis à zéro au toucher suivant) ; une première version ignorait tous les touchers pendant un délai fixe et faisait rater un toucher légitime fait juste après.
 - Limite connue : le balayage part du contenu de la ligne, pas du bord gauche de l'écran, qui reste réservé au retour du système.
+
+## 2026-11-19 — Valises : retours du premier essai sur téléphone
+
+- « Seulement cette fois » est coché d'emblée, pour un objet comme pour un sac : la liste principale ne doit pas grossir par oubli. La décision précédente (liste principale par défaut) est annulée.
+- Ajouter un objet ne passe plus par une fenêtre : la ligne « Ajouter un objet » devient un champ au bout de la liste. « Retour » ajoute et garde la ligne ouverte ; une ligne vide ou « Terminé » la referme ; quitter le sac enregistre ce qui était tapé.
+- La ligne de saisie est un enfant direct de l'écran et n'est jamais retirée du document tant qu'elle a le curseur (`poser` remplace seulement ce qui l'entoure) : la redessiner fermerait le clavier à chaque donnée reçue. `garderVisible` la maintient au-dessus du clavier.
+- Retirer un sac d'un départ = balayage vers la gauche sur sa ligne dans l'écran du départ (le lien en bas du sac disparaît). Le sac retiré, même créé « seulement cette fois », reste proposé sous « Ajouter un sac ».
+- La fenêtre « Ajouter un sac » est un panneau détaché des bords, avec un contour en thème sombre : sur fond noir, ses limites ne se voyaient pas.
+- Le fond rouge du balayage n'est peint que pendant le glissement (il dépassait d'un pixel aux coins arrondis des cartes).
