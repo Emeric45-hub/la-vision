@@ -350,7 +350,10 @@ function vueNouveau() {
       h("div", { class: "carte" }, ...g.sacs.map(s => h("button", {
         type: "button", class: "ligne-coche compacte", "aria-pressed": String(s.coche),
         onclick: () => { b.bascules[s.id] = !s.coche; afficher(false); }
-      }, coche(s.coche), h("span", { class: "coche-nom" }, s.nom))))
+      }, coche(s.coche), h("span", { class: "ligne-texte" },
+        h("span", { class: "coche-nom" }, s.nom),
+        // Un faux sac « hors sac » ne dit rien par son nom : on montre ce qu'il contient pour les partants.
+        s.apart ? h("span", { class: "ligne-sous apercu" }, objetsDuDepart(liste, { personnes: [...b.personnes] }, s.id).map(o => o.nom).join(", ") || "Rien pour ces personnes") : null))))
     ]);
 
   async function creer(e) {
