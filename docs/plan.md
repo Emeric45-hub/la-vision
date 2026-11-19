@@ -51,7 +51,7 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 | 3a | Gestes dans un départ : retrait par balayage, ajout d'objet ou de sac, tout cocher par appui long | ✅ 2026-11-19, validé sur téléphone ; saisie d'un objet sur la ligne et balayage des sacs ajoutés ensuite |
 | 3b | Retour, fin de départ, modèles, suppression par tiroir à l'accueil | ✅ 2026-11-19 (tiroir à valider sur téléphone) |
 | 4 | Liste principale : sacs, objets, ordre, sac occasionnel ; choix de l'apparence | ✅ 2026-11-19 (personnes non modifiables dans l'app) |
-| 5 | Entrée depuis l'en-tête du tableau de bord (téléphone) | ⬜ |
+| 5 | Entrée depuis l'en-tête du tableau de bord (téléphone) | ✅ 2026-11-19 |
 | 6 | Météo de la destination | ⬜ |
 
 ## Nettoyage final

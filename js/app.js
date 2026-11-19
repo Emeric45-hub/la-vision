@@ -1,6 +1,6 @@
 // La Vision — coquille de l'app : connexion, onglets, configuration, import du semainier.
 // Firebase est chargé à part : si son chargement échoue, la page reste utilisable et le dit.
-import { boutonsRaccourcis, boutonIcone, ICONES } from "./outils.js";
+import { boutonsRaccourcis, boutonIcone, lienIcone, ICONES } from "./outils.js";
 import { lireClasseur } from "./semainier.js";
 import { initPlanning, afficherPlanning } from "./planning.js";
 import { initNounou, afficherNounou } from "./nounou.js";
@@ -154,9 +154,11 @@ async function chargerTout() {
     initAccueil({ ...ctx, ouvrir });
     if (!$("vue-accueil").hidden) afficherAccueil();
     barreEcran(vueActuelle);   // icônes des Raccourcis, lues dans la configuration
-    // Téléphone : icônes Maison, Caméras (Raccourcis de l'appareil) et Recettes dans l'en-tête.
+    // Téléphone : icônes Maison, Caméras (Raccourcis de l'appareil), Recettes et Valises dans l'en-tête.
+    // « de=vision » demande à Valises d'afficher un lien de retour vers ce tableau de bord.
     $("tel-icones").replaceChildren(...boutonsRaccourcis(etat.config && etat.config.famille),
-      boutonIcone(ICONES.menu, "Recettes", () => ouvrirRecette(ctx, null)));
+      boutonIcone(ICONES.menu, "Recettes", () => ouvrirRecette(ctx, null)),
+      lienIcone(ICONES.valise, "Valises", "valises/?de=vision"));
     sync("À jour · " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), "ok");
   } catch (e) {
     sync("Serveur injoignable (" + (e.code || e.name) + ") : rien n'est affiché plutôt qu'un faux vide.", "ko");
