@@ -6,6 +6,7 @@
   --accent: #18245E; --sur-accent: #FFFFFF; --lien: #18245E;
   --ok: #1F7A5C; --ko: #B3261E; --anneau: #6F78A6;
   --pret-fond: #1F7A5C; --sur-pret: #FFFFFF;
+  --retrait: #B3261E; --sur-retrait: #FFFFFF; --voile: rgba(24, 36, 94, 0.35);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -14,6 +15,7 @@
     --accent: #AFC0FF; --sur-accent: #0B0C10; --lien: #C3CFFF;
     --ok: #5CCBA3; --ko: #FFB4AB; --anneau: #7D84A3;
     --pret-fond: #3DB58B; --sur-pret: #04140E;
+    --retrait: #93000A; --sur-retrait: #FFDAD6; --voile: rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -166,3 +168,55 @@ textarea { width: 100%; margin: 16px 0 12px; padding: 14px; border: 2px solid va
 .lien-discret { align-self: center; min-height: 44px; margin-top: 28px; padding: 0 12px; border: 0; background: transparent; color: var(--second); font: inherit; font-size: 15px; text-decoration: underline; cursor: pointer; }
 .apercu { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .ligne-coche.compacte[aria-pressed="false"] .apercu { opacity: 0.75; }
+
+/* ---------- Gestes dans un départ ---------- */
+.bouton { gap: 8px; }
+.ligne-sac { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+button.ligne-sac { width: 100%; border: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.astuce { margin-top: 10px; text-align: center; }
+
+/* Ligne qu'on balaie vers la gauche pour la retirer */
+.glissiere { position: relative; overflow: hidden; background: var(--retrait); }
+.glissiere + .glissiere, .glissiere + .ligne-coche { border-top: 1px solid var(--filet); }
+.glissiere-fond { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; color: var(--sur-retrait); font-size: 16px; font-weight: 600; }
+.glissiere .ligne-coche { position: relative; background: var(--carte); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .glissiere .ligne-coche { transition: transform 0.18s ease-out; }
+  .glissiere .ligne-coche.glisse { transition: none; }
+}
+.ligne-coche.ajout { color: var(--lien); }
+.ligne-coche.ajout .coche-nom { font-size: 19px; font-weight: 600; }
+.cercle.plus { border-color: transparent; color: var(--lien); }
+
+/* Objets retirés de ce départ */
+.retires { margin-top: 6px; }
+.retires summary { min-height: 44px; display: flex; align-items: center; color: var(--second); font-size: 16px; font-weight: 500; cursor: pointer; }
+.ligne-retire { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 6px 12px 6px 16px; color: var(--second); }
+.ligne-retire + .ligne-retire { border-top: 1px solid var(--filet); }
+.petit-bouton { flex: none; min-height: 44px; padding: 0 14px; border: 2px solid var(--anneau); border-radius: 14px; background: transparent; color: var(--encre); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+/* Annonce brève, avec « Annuler » */
+.annonce { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 104px); z-index: 20; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 16px; background: var(--encre); color: var(--fond); font-size: 15px; box-shadow: 0 6px 20px var(--voile); }
+.annonce button { flex: none; min-height: 32px; padding: 0 4px; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+
+/* Feuille de saisie : en haut de l'écran, pour que le clavier ne la recouvre jamais */
+.feuille { inset: 0 0 auto 0; width: 100%; max-width: 100%; max-height: 88dvh; margin: 0; padding: calc(env(safe-area-inset-top) + 16px) 20px 22px; border: 0; border-radius: 0 0 24px 24px; background: var(--fond); color: var(--encre); overflow-y: auto; }
+.feuille::backdrop { background: var(--voile); }
+.feuille-tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.feuille-fermer { min-height: 44px; padding: 0 0 0 12px; border: 0; background: transparent; color: var(--lien); font: inherit; font-weight: 600; cursor: pointer; }
+.feuille-corps { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.feuille h3 { margin: 8px 0 0; font-size: 20px; line-height: 26px; }
+.feuille .personnes { margin-top: 0; }
+.carte.creuse { margin-top: 0; }
+
+/* Interrupteur */
+.inter { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 56px; cursor: pointer; }
+.inter-case { flex: none; appearance: none; -webkit-appearance: none; position: relative; width: 52px; height: 32px; margin: 0; border-radius: 16px; background: var(--anneau); cursor: pointer; }
+.inter-case::before { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; }
+.inter-case:checked { background: var(--pret-fond); }
+.inter-case:checked::before { left: 23px; }
+
+/* Choix d'un pictogramme */
+.pictos { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.tuile.choix { width: auto; height: 48px; border: 2px solid transparent; color: var(--encre); cursor: pointer; }
+.tuile.choix[aria-pressed="true"] { border-color: var(--accent); background: var(--carte); }

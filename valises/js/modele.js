@@ -133,9 +133,12 @@ export function sacsDuDepart(liste, depart, clePersonne) {
     .map(id => {
       const objets = objetsDuDepart(liste, depart, id);
       const fait = objets.filter(o => o.coche).length;
-      return { id, ...liste.sacs[id], fait, total: objets.length, pret: objets.length > 0 && fait === objets.length };
+      // Un sac reste affiché s'il a des objets à préparer, des objets retirés à pouvoir remettre, ou s'il est
+      // réellement vide (sac tout neuf) ; il n'est omis que si tout son contenu concerne des absents.
+      const garde = objets.length > 0 || retiresDuSac(liste, depart, id).length > 0 || objetsDe(liste, id).length === 0;
+      return { id, ...liste.sacs[id], fait, total: objets.length, pret: objets.length > 0 && fait === objets.length, garde };
     })
-    .filter(s => s.total > 0)
+    .filter(s => s.garde)
     .sort((a, b) => (rang[a.proprio] - rang[b.proprio]) || (a.ordre - b.ordre));
 }
 
@@ -146,9 +149,9 @@ export function proprietairesDuDepart(liste, depart) {
     .filter(p => p.commun || qui.has(p.cle))
     .map(p => {
       const sacs = sacsDuDepart(liste, depart, p.cle);
-      return { ...p, fait: sacs.reduce((n, s) => n + s.fait, 0), total: sacs.reduce((n, s) => n + s.total, 0) };
+      return { ...p, fait: sacs.reduce((n, s) => n + s.fait, 0), total: sacs.reduce((n, s) => n + s.total, 0), sacs: sacs.length };
     })
-    .filter(p => p.total > 0);
+    .filter(p => p.sacs > 0);
 }
 
 export function avancement(liste, depart) {
@@ -210,4 +213,56 @@ export function periode(debut, fin) {
 export function departsTries(departs) {
   return Object.entries(departs || {}).map(([id, d]) => ({ id, ...d }))
     .sort((a, b) => (a.debut || "9999").localeCompare(b.debut || "9999") || a.nom.localeCompare(b.nom, "fr"));
+}
+
+/* ---------- Gestes dans un départ ----------
+   Ajouts « seulement cette fois » : le départ porte ses propres objets (`ponctuels`) et sacs
+   (`sacsPonctuels`), au même format que la liste principale. Les écrans d'un départ travaillent
+   sur la liste principale complétée par ces ajouts. */
+export function listeDuDepart(liste, depart) {
+  return {
+    personnes: liste.personnes,
+    sacs: { ...liste.sacs, ...(depart.sacsPonctuels || {}) },
+    objets: { ...liste.objets, ...(depart.ponctuels || {}) }
+  };
+}
+
+// Objets retirés de ce départ dans un sac (ceux qu'on peut remettre).
+export function retiresDuSac(liste, depart, idSac) {
+  const qui = partants(depart);
+  return objetsDe(liste, idSac)
+    .filter(o => depart.retires && depart.retires[o.id] && (!o.pour || qui.has(o.pour)))
+    .map(o => ({ id: o.id, nom: o.nom }));
+}
+
+// Sacs existants qu'on pourrait encore ajouter à ce départ (ceux des partants et du commun).
+export function sacsAbsents(liste, depart) {
+  const pris = new Set(depart.sacs || []);
+  return sacsProposes(liste, depart.personnes || []).filter(s => !pris.has(s.id));
+}
+
+const suivant = (table, filtre) => Object.values(table || {}).filter(filtre).reduce((m, x) => Math.max(m, x.ordre + 1), 0);
+
+// Nouvel objet à la fin d'un sac. `id` est fourni par l'appelant (identifiant unique).
+export function creerObjet(liste, idSac, nom, id) {
+  const propre = texte(nom);
+  if (!propre) return { ok: false, erreur: "Donne un nom à l'objet." };
+  if (!liste.sacs[idSac]) return { ok: false, erreur: "Ce sac n'existe plus." };
+  return { ok: true, id, objet: { nom: propre, sac: idSac, ordre: suivant(liste.objets, o => o.sac === idSac) } };
+}
+
+// Nouveau sac à la fin de ceux de son propriétaire.
+export function creerSac(liste, saisie, id) {
+  const nom = texte(saisie.nom);
+  if (!nom) return { ok: false, erreur: "Donne un nom au sac." };
+  if (!liste.personnes[saisie.proprio]) return { ok: false, erreur: "Choisis à qui est ce sac." };
+  return {
+    ok: true, id,
+    sac: { nom, proprio: saisie.proprio, icone: texte(saisie.icone) || "sac", ordre: suivant(liste.sacs, x => x.proprio === saisie.proprio), office: true, apart: false }
+  };
+}
+
+// Tout cocher (ou tout décocher) un sac : liste des objets dont l'état doit changer.
+export function aBasculer(liste, depart, idSac, cocher) {
+  return objetsDuDepart(liste, depart, idSac).filter(o => o.coche !== cocher).map(o => o.id);
 }

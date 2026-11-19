@@ -4,9 +4,11 @@
 import {
   preparerImport, personnesTriees, sacsDe, objetsDe, compter, pluriel,
   objetsDuDepart, sacsDuDepart, proprietairesDuDepart, avancement, voisins,
-  sacsProposes, nouveauDepart, periode, departsTries
+  sacsProposes, nouveauDepart, periode, departsTries,
+  listeDuDepart, retiresDuSac, sacsAbsents, creerObjet, creerSac, aBasculer
 } from "./modele.js";
-import { picto } from "./icones.js";
+import { picto, ICONES } from "./icones.js";
+import { balayable, appuiLong } from "./gestes.js";
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 // Même projet que le tableau de bord : tout vit sous le document protégé « vision/valises ».
@@ -24,6 +26,7 @@ const etat = {
   choix: {},           // propriétaire affiché, par départ
   mode: "personne",    // écran du départ : par personne ou par sac
   brouillon: null,     // saisie en cours d'un nouveau départ
+  retiresOuverts: {},  // section « Retirés » dépliée, par sac
   essai: null, version: ""
 };
 
@@ -138,9 +141,63 @@ async function ecrire(action, quoi) {
   catch (e) { sync(quoi + " non enregistré (" + (e.code || e.name) + "). Vérifie la connexion.", "ko"); }
 }
 
+const majDepart = (idDepart, champs) => ecrire(() => etat.F.updateDoc(refDepart(idDepart), champs), "Changement");
+const identifiant = prefixe => prefixe + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
 function cocher(idDepart, idObjet, valeur) {
-  const { updateDoc, deleteField } = etat.F;
-  ecrire(() => updateDoc(refDepart(idDepart), { ["coches." + idObjet]: valeur ? true : deleteField() }), "Changement");
+  majDepart(idDepart, { ["coches." + idObjet]: valeur ? true : etat.F.deleteField() });
+}
+
+function basculer(idDepart, ids, valeur) {
+  const champs = {};
+  ids.forEach(i => { champs["coches." + i] = valeur ? true : etat.F.deleteField(); });
+  majDepart(idDepart, champs);
+}
+
+function retirerObjet(idDepart, o) {
+  majDepart(idDepart, { ["retires." + o.id]: true, ["coches." + o.id]: etat.F.deleteField() });
+  annonce("« " + o.nom + " » retiré de ce départ", () => remettreObjet(idDepart, o.id, o.coche));
+}
+
+function remettreObjet(idDepart, idObjet, coche) {
+  const champs = { ["retires." + idObjet]: etat.F.deleteField() };
+  if (coche) champs["coches." + idObjet] = true;
+  majDepart(idDepart, champs);
+}
+
+/* ---------- Annonce brève avec « Annuler », et feuille de saisie ---------- */
+let finAnnonce = null;
+function annonce(texte, annuler) {
+  const el = $("annonce");
+  clearTimeout(finAnnonce);
+  el.replaceChildren(h("span", null, texte));
+  if (annuler) el.append(h("button", { type: "button", onclick: () => { el.hidden = true; annuler(); } }, "Annuler"));
+  el.hidden = false;
+  finAnnonce = setTimeout(() => { el.hidden = true; }, 6000);
+}
+
+// Fenêtre de saisie posée au-dessus de l'écran : elle n'est pas redessinée quand des données arrivent.
+function ouvrirFeuille(titre, contenu) {
+  const f = $("saisie");
+  f.replaceChildren(
+    h("div", { class: "feuille-tete" },
+      h("h2", null, titre),
+      h("button", { type: "button", class: "feuille-fermer", onclick: fermerFeuille }, "Fermer")),
+    ...contenu.filter(e => e != null && e !== false));
+  $("annonce").hidden = true;
+  if (f.showModal) { if (!f.open) f.showModal(); } else f.setAttribute("open", "");
+}
+function fermerFeuille() {
+  const f = $("saisie");
+  if (f.close && f.open) f.close(); else f.removeAttribute("open");
+}
+$("saisie").addEventListener("click", e => { if (e.target === $("saisie")) fermerFeuille(); });
+
+// Interrupteur « Seulement cette fois ».
+function interrupteur(texte, sous) {
+  const boite = h("input", { type: "checkbox", class: "inter-case" });
+  return { boite, el: h("label", { class: "inter" },
+    h("span", { class: "ligne-texte" }, h("span", null, texte), h("span", { class: "ligne-sous" }, sous)), boite) };
 }
 
 /* ---------- Navigation (par l'adresse, pour que le geste retour de l'iPhone fonctionne) ---------- */
@@ -403,24 +460,35 @@ function vueNouveau() {
 
 /* ---------- Écran du départ ---------- */
 function vueDepart(id, depart) {
-  const liste = etat.liste;
+  const liste = listeDuDepart(etat.liste, depart);
   const props = proprietairesDuDepart(liste, depart);
   const av = avancement(liste, depart);
   const sous = [depart.destination, periode(depart.debut, depart.fin)].filter(Boolean).join(", ");
   const lien = s => "#depart/" + encodeURIComponent(id) + "/" + encodeURIComponent(s.id);
+  const majuscule = t => t.charAt(0).toUpperCase() + t.slice(1);
+
+  // Appui long : tout cocher (ou tout décocher si le sac est prêt), avec annulation.
+  function toutCocher(s) {
+    const cocherTout = !s.pret;
+    const ids = aBasculer(liste, depart, s.id, cocherTout);
+    if (!ids.length) return;
+    basculer(id, ids, cocherTout);
+    annonce("« " + s.nom + " » : tout est " + (cocherTout ? "coché" : "décoché"), () => basculer(id, ids, !cocherTout));
+  }
 
   // Un faux sac « hors sac » ne dit rien par son nom : tant qu'il n'est pas prêt, sa ligne liste ce qu'il contient.
   const ligne = (s, detail) => {
-    const compte = s.pret ? (detail ? "prêt" : "Prêt") : s.fait + " sur " + s.total;
-    const contenu = s.apart && !s.pret ? " : " + objetsDuDepart(liste, depart, s.id).map(o => o.nom).join(", ") : "";
-    return h("a", { class: "ligne-sac", href: lien(s) },
+    const compte = s.total === 0 ? (detail ? "vide" : "Vide") : s.pret ? (detail ? "prêt" : "Prêt") : s.fait + " sur " + s.total;
+    const contenu = s.apart && !s.pret && s.total ? " : " + objetsDuDepart(liste, depart, s.id).map(o => o.nom).join(", ") : "";
+    const el = h("a", { class: "ligne-sac", href: lien(s) },
       h("span", { class: "tuile" + (s.pret ? " pret" : "") }, s.pret ? picto("coche", 26, 2.6) : picto(s.icone)),
       h("span", { class: "ligne-texte" },
         h("span", { class: "ligne-nom" }, s.nom),
         h("span", { class: "ligne-sous" + (s.pret ? " pret" : "") + (contenu ? " apercu" : "") }, (detail ? detail + ", " : "") + compte + contenu)),
       picto("chevron", 22, 2));
+    appuiLong(el, () => toutCocher(s));
+    return el;
   };
-  const majuscule = t => t.charAt(0).toUpperCase() + t.slice(1);
 
   const bascule = h("div", { class: "bascule", role: "group", "aria-label": "Présentation" },
     ...[["personne", "Par personne"], ["sac", "Par sac"]].map(([m, texte]) => h("button", {
@@ -429,7 +497,7 @@ function vueDepart(id, depart) {
 
   let corps;
   if (!props.length) {
-    corps = [h("p", { class: "second sous-titre" }, "Ce départ ne contient plus aucun objet à préparer.")];
+    corps = [h("p", { class: "second sous-titre" }, "Ce départ ne contient aucun sac.")];
   } else if (etat.mode === "sac") {
     const sacs = sacsDuDepart(liste, depart).sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
     corps = [h("div", { class: "carte espace" }, ...sacs.map(s => ligne(s, liste.personnes[s.proprio].nom)))];
@@ -464,31 +532,56 @@ function vueDepart(id, depart) {
     barre(av.fait, av.total),
     bascule,
     ...corps,
+    props.length ? h("p", { class: "second petit astuce" }, "Appui long sur un sac pour tout cocher.") : null,
+    h("button", { type: "button", class: "bouton secondaire espace", onclick: () => feuilleSac(id, depart) }, picto("plus", 20, 2.4), h("span", null, "Ajouter un sac")),
     h("button", { type: "button", class: "lien-discret", onclick: supprimer }, "Supprimer ce départ")
   ];
 }
 
 /* ---------- Mode valise : un sac à la fois ---------- */
 function vueValise(id, depart, idSac) {
-  const liste = etat.liste;
+  const liste = listeDuDepart(etat.liste, depart);
   const sac = sacsDuDepart(liste, depart).find(s => s.id === idSac);
   if (!sac) return vueDepart(id, depart);
   const proprio = liste.personnes[sac.proprio];
   const objets = objetsDuDepart(liste, depart, idSac);
+  const retires = retiresDuSac(liste, depart, idSac);
   const v = voisins(liste, depart, idSac);
   const base = "#depart/" + encodeURIComponent(id);
   const vers = s => base + "/" + encodeURIComponent(s);
+
+  const lignes = objets.map(o => {
+    const bouton = h("button", {
+      type: "button", class: "ligne-coche", "aria-pressed": String(o.coche),
+      onclick: () => cocher(id, o.id, !o.coche)
+    }, coche(o.coche), h("span", { class: "coche-nom" }, o.nom));
+    balayable(bouton, () => retirerObjet(id, o));
+    return h("div", { class: "glissiere" }, h("span", { class: "glissiere-fond", "aria-hidden": "true" }, "Retirer"), bouton);
+  });
+
+  function retirerSac() {
+    majDepart(id, { sacs: etat.F.arrayRemove(idSac) });
+    annonce("« " + sac.nom + " » retiré de ce départ", () => majDepart(id, { sacs: etat.F.arrayUnion(idSac) }));
+    quitter(base);
+  }
 
   return [
     h("div", { class: "barre" },
       lienRetour(depart.nom, base),
       h("span", { class: "puce" }, disque(proprio, "petit"), h("span", null, proprio.nom))),
     h("h1", null, sac.nom),
-    barre(sac.fait, sac.total),
-    h("div", { class: "carte espace" }, ...objets.map(o => h("button", {
-      type: "button", class: "ligne-coche", "aria-pressed": String(o.coche),
-      onclick: () => cocher(id, o.id, !o.coche)
-    }, coche(o.coche), h("span", { class: "coche-nom" }, o.nom)))),
+    sac.total ? barre(sac.fait, sac.total) : h("p", { class: "second sous-titre" }, "Aucun objet à préparer dans ce sac."),
+    h("div", { class: "carte espace" },
+      ...lignes,
+      h("button", { type: "button", class: "ligne-coche ajout", onclick: () => feuilleObjet(id, depart, idSac) },
+        h("span", { class: "cercle plus" }, picto("plus", 18, 2.6)), h("span", { class: "coche-nom" }, "Ajouter un objet"))),
+    objets.length ? h("p", { class: "second petit astuce" }, "Balaye un objet vers la gauche pour le retirer de ce départ.") : null,
+    retires.length ? h("details", { class: "retires", open: !!etat.retiresOuverts[idSac], ontoggle: e => { etat.retiresOuverts[idSac] = e.target.open; } },
+      h("summary", null, "Retirés de ce départ (" + retires.length + ")"),
+      h("div", { class: "carte" }, ...retires.map(o => h("div", { class: "ligne-retire" },
+        h("span", { class: "coche-nom" }, o.nom),
+        h("button", { type: "button", class: "petit-bouton", onclick: () => remettreObjet(id, o.id, false) }, "Remettre"))))) : null,
+    h("button", { type: "button", class: "lien-discret", onclick: retirerSac }, "Retirer ce sac du départ"),
     h("div", { class: "reserve" }),
     h("div", { class: "pied deux" },
       v.precedent
@@ -498,6 +591,107 @@ function vueValise(id, depart, idSac) {
         ? h("a", { class: "bouton", href: vers(v.suivant), "data-nav": "remplacer" }, h("span", null, "Sac suivant"), picto("chevron", 20, 2.2))
         : h("a", { class: "bouton", href: base, "data-nav": "retour" }, "Revenir au départ"))
   ];
+}
+
+/* ---------- Ajouter un objet ---------- */
+function feuilleObjet(id, depart, idSac) {
+  // Un sac ajouté « seulement cette fois » n'existe pas dans la liste principale : ses objets non plus.
+  const sacPonctuel = !!(depart.sacsPonctuels && depart.sacsPonctuels[idSac]);
+  const nom = h("input", { type: "text", class: "champ", "aria-label": "Nom de l'objet", placeholder: "Nom de l'objet", autocomplete: "off", enterkeyhint: "done" });
+  const fois = interrupteur("Seulement cette fois", "Sinon l'objet rejoint la liste principale.");
+  const message = h("p", { class: "message", role: "status" });
+
+  function ajouter(e) {
+    e.preventDefault();
+    const idObjet = identifiant("o");
+    const ponctuel = sacPonctuel || fois.boite.checked;
+    const r = creerObjet(listeDuDepart(etat.liste, etat.departs[id] || depart), idSac, nom.value, idObjet);
+    if (!r.ok) { message.textContent = r.erreur; return; }
+    if (ponctuel) majDepart(id, { ["ponctuels." + idObjet]: { ...r.objet, ordre: Date.now() } });
+    else ecrire(() => etat.F.updateDoc(refListe(), { ["objets." + idObjet]: r.objet }), "Objet");
+    message.textContent = "« " + r.objet.nom + " » ajouté.";
+    nom.value = ""; nom.focus();
+  }
+
+  ouvrirFeuille("Ajouter un objet", [
+    h("form", { class: "feuille-corps", onsubmit: ajouter },
+      nom,
+      sacPonctuel ? null : fois.el,
+      h("button", { type: "submit", class: "bouton" }, "Ajouter"),
+      message)
+  ]);
+  nom.focus();
+}
+
+/* ---------- Ajouter un sac ---------- */
+const PICTOS_SAC = ["sac", "valise", "sacados", "trousse", "bandouliere", "nuit", "repas", "piscine", "papiers", "chaussures", "masque", "apart"];
+
+function feuilleSac(id, depart) {
+  const liste = etat.liste;
+  const absents = sacsAbsents(liste, depart);
+  const qui = personnesTriees(liste).filter(p => p.commun || (depart.personnes || []).includes(p.cle));
+  const saisie = { proprio: etat.mode === "personne" && qui.some(p => p.cle === etat.choix[id]) ? etat.choix[id] : qui[0].cle, icone: "sac" };
+  const nom = h("input", { type: "text", class: "champ", "aria-label": "Nom du sac", placeholder: "Nom du nouveau sac", autocomplete: "off", enterkeyhint: "done" });
+  const fois = interrupteur("Seulement cette fois", "Sinon le sac rejoint la liste principale.");
+  const message = h("p", { class: "message", role: "alert" });
+
+  const choixProprio = h("div", { class: "personnes" });
+  const choixPicto = h("div", { class: "pictos" });
+  function dessiner() {
+    choixProprio.replaceChildren(...qui.map(p => h("button", {
+      type: "button", class: "personne choix", "aria-pressed": String(p.cle === saisie.proprio),
+      onclick: () => { saisie.proprio = p.cle; dessiner(); }
+    }, disque(p), h("span", { class: "personne-nom" }, p.nom))));
+    choixPicto.replaceChildren(...PICTOS_SAC.filter(n => ICONES[n]).map(n => h("button", {
+      type: "button", class: "tuile choix", "aria-pressed": String(n === saisie.icone), "aria-label": "Pictogramme " + n,
+      onclick: () => { saisie.icone = n; dessiner(); }
+    }, picto(n))));
+  }
+  dessiner();
+
+  function reprendre(s, ligne) {
+    majDepart(id, { sacs: etat.F.arrayUnion(s.id) });
+    ligne.remove();
+    annonce("« " + s.nom + " » ajouté au départ");
+  }
+
+  function creer(e) {
+    e.preventDefault();
+    const idSac = identifiant("s");
+    const r = creerSac(liste, { nom: nom.value, proprio: saisie.proprio, icone: saisie.icone }, idSac);
+    if (!r.ok) { message.textContent = r.erreur; return; }
+    if (fois.boite.checked) {
+      majDepart(id, { ["sacsPonctuels." + idSac]: { ...r.sac, ordre: Date.now() }, sacs: etat.F.arrayUnion(idSac) });
+    } else {
+      ecrire(() => etat.F.updateDoc(refListe(), { ["sacs." + idSac]: r.sac }), "Sac");
+      majDepart(id, { sacs: etat.F.arrayUnion(idSac) });
+    }
+    etat.choix[id] = saisie.proprio;
+    fermerFeuille();
+    annonce("« " + r.sac.nom + " » créé. Ouvre-le pour y ajouter des objets.");
+  }
+
+  ouvrirFeuille("Ajouter un sac", [
+    absents.length ? h("div", { class: "feuille-corps" },
+      h("p", { class: "second" }, "Sacs de la liste qui ne sont pas dans ce départ :"),
+      h("div", { class: "carte creuse" }, ...absents.map(s => {
+        const ligne = h("button", { type: "button", class: "ligne-sac", onclick: () => reprendre(s, ligne) },
+          h("span", { class: "tuile" }, picto(s.icone)),
+          h("span", { class: "ligne-texte" },
+            h("span", { class: "ligne-nom" }, s.nom),
+            h("span", { class: "ligne-sous" }, liste.personnes[s.proprio].nom)),
+          picto("plus", 22, 2.2));
+        return ligne;
+      }))) : null,
+    h("form", { class: "feuille-corps", onsubmit: creer },
+      h("h3", null, "Nouveau sac"),
+      nom,
+      choixProprio,
+      choixPicto,
+      fois.el,
+      h("button", { type: "submit", class: "bouton" }, "Créer le sac"),
+      message)
+  ]);
 }
 
 /* ---------- Import de la liste ---------- */

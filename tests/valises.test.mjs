@@ -88,14 +88,14 @@ assert.equal(cree.ok, true);
 assert.deepEqual(cree.depart, { nom: 'Essai', personnes: ['adulte1'], sacs: ['s2', 's3', 's4'], coches: {}, retires: {}, destination: 'Ailleurs', debut: '2030-03-07', fin: '2030-03-09' });
 assert.equal('fin' in nouveauDepart(liste, { nom: 'x', debut: '2030-03-07', fin: '2030-03-07', personnes: ['adulte1'], sacs: ['s2'] }).depart, false);
 
-// Un adulte seul : l'objet nominatif de l'enfant absent est masqué, le sac commun vide est omis.
+// Un adulte seul : l'objet nominatif de l'enfant absent est masqué ; le sac commun réellement vide reste affiché.
 const seul = { ...cree.depart, coches: { o3: true } }; // o3 = Gourde (s2)
 assert.deepEqual(objetsDuDepart(liste, seul, 's3').map(o => o.nom), ['Clés']);
-assert.deepEqual(sacsDuDepart(liste, seul).map(s => [s.id, s.fait, s.total, s.pret]), [['s2', 1, 1, true], ['s3', 0, 1, false]]);
+assert.deepEqual(sacsDuDepart(liste, seul).map(s => [s.id, s.fait, s.total, s.pret]), [['s2', 1, 1, true], ['s3', 0, 1, false], ['s4', 0, 0, false]]);
 assert.deepEqual(proprietairesDuDepart(liste, seul).map(p => [p.cle, p.fait, p.total]), [['adulte1', 1, 1], ['commun', 0, 1]]);
 assert.deepEqual(avancement(liste, seul), { fait: 1, total: 2 });
 assert.deepEqual(voisins(liste, seul, 's2'), { precedent: null, suivant: 's3' });
-assert.deepEqual(voisins(liste, seul, 's3'), { precedent: 's2', suivant: null });
+assert.deepEqual(voisins(liste, seul, 's3'), { precedent: 's2', suivant: 's4' });
 assert.deepEqual(voisins(liste, seul, 's1'), { precedent: null, suivant: null });
 
 // Toute la famille : l'objet nominatif revient ; un objet retiré disparaît du compte.
@@ -114,3 +114,50 @@ assert.equal(periode('2030-11-01', '2030-11-03'), '1er au 3 novembre');
 assert.equal(periode('', '2030-11-03'), '');
 assert.deepEqual(departsTries({ a: { nom: 'Zèbre' }, b: { nom: 'Été', debut: '2030-07-01' }, c: { nom: 'Avril', debut: '2030-04-01' }, d: { nom: 'Abri' } }).map(d => d.id), ['c', 'b', 'd', 'a']);
 console.log('valises, départs : tous les scénarios passent');
+
+// ---------- Gestes dans un départ ----------
+import { listeDuDepart, retiresDuSac, sacsAbsents, creerObjet, creerSac, aBasculer } from '../valises/js/modele.js';
+
+// Un sac dont tout le contenu concerne un absent est omis ; il revient si la personne part.
+const nominatif = preparerImport(JSON.stringify({
+  personnes: source.personnes,
+  sacs: [{ proprio: 'commun', nom: 'Documents', objets: [{ nom: 'Carte fictive', pour: 'enfant1' }] }, { proprio: 'adulte1', nom: 'Sac', objets: ['Gourde'] }]
+})).liste;
+assert.deepEqual(sacsDuDepart(nominatif, { personnes: ['adulte1'], sacs: ['s1', 's2'] }).map(s => s.id), ['s2']);
+assert.deepEqual(sacsDuDepart(nominatif, { personnes: ['enfant1', 'adulte1'], sacs: ['s1', 's2'] }).map(s => s.id), ['s2', 's1']);
+
+// Retirer tous les objets d'un sac ne le fait pas disparaître : on doit pouvoir les remettre.
+const vide = { nom: 'V', personnes: ['enfant1'], sacs: ['s1'], coches: {}, retires: { o1: true, o2: true } };
+assert.deepEqual(sacsDuDepart(liste, vide).map(s => [s.id, s.total, s.pret]), [['s1', 0, false]]);
+assert.deepEqual(retiresDuSac(liste, vide, 's1').map(o => o.nom), ['Brosse', 'Savon']);
+assert.deepEqual(retiresDuSac(liste, tous, 's3').map(o => o.id), ['o5']);
+assert.deepEqual(proprietairesDuDepart(liste, vide).map(p => [p.cle, p.total]), [['enfant1', 0]]);
+
+// Sacs qu'on peut encore ajouter.
+assert.deepEqual(sacsAbsents(liste, seul).map(s => s.id), []);
+assert.deepEqual(sacsAbsents(liste, { personnes: ['adulte1'], sacs: ['s3'] }).map(s => s.id), ['s2', 's4']);
+
+// Création d'un objet et d'un sac.
+assert.equal(creerObjet(liste, 's1', '  ', 'x').ok, false);
+assert.equal(creerObjet(liste, 'inconnu', 'Peigne', 'x').ok, false);
+assert.deepEqual(creerObjet(liste, 's1', ' Peigne ', 'oX'), { ok: true, id: 'oX', objet: { nom: 'Peigne', sac: 's1', ordre: 2 } });
+assert.equal(creerObjet(liste, 's4', 'Ballon', 'oY').objet.ordre, 0);
+assert.equal(creerSac(liste, { nom: '', proprio: 'adulte1' }, 'x').ok, false);
+assert.equal(creerSac(liste, { nom: 'Sac', proprio: 'personne' }, 'x').ok, false);
+assert.deepEqual(creerSac(liste, { nom: ' Glacière ', proprio: 'commun', icone: 'repas' }, 'sX'),
+  { ok: true, id: 'sX', sac: { nom: 'Glacière', proprio: 'commun', icone: 'repas', ordre: 4, office: true, apart: false } });
+
+// Ajouts « seulement cette fois » : vus dans le départ, absents de la liste principale.
+const ponctuel = { nom: 'P', personnes: ['enfant1'], sacs: ['s1', 'sP'], coches: { oP: true },
+  ponctuels: { oP: { nom: 'Lampe', sac: 's1', ordre: 99 }, oQ: { nom: 'Jeu', sac: 'sP', ordre: 0 } },
+  sacsPonctuels: { sP: { nom: 'Sac en plus', proprio: 'enfant1', icone: 'sac', ordre: 50, office: true, apart: false } } };
+const L = listeDuDepart(liste, ponctuel);
+assert.deepEqual(objetsDuDepart(L, ponctuel, 's1').map(o => [o.nom, o.coche]), [['Brosse', false], ['Savon', false], ['Lampe', true]]);
+assert.deepEqual(sacsDuDepart(L, ponctuel).map(s => s.nom), ['Trousse', 'Sac en plus']);
+assert.equal('oP' in liste.objets, false);
+assert.deepEqual(avancement(L, ponctuel), { fait: 1, total: 4 });
+
+// Tout cocher, tout décocher.
+assert.deepEqual(aBasculer(L, ponctuel, 's1', true), ['o1', 'o2']);
+assert.deepEqual(aBasculer(L, ponctuel, 's1', false), ['oP']);
+console.log('valises, gestes : tous les scénarios passent');

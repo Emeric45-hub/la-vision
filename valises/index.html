@@ -20,6 +20,8 @@
 <body>
 <p class="etat" id="etat" role="status">Démarrage…</p>
 <main id="ecran"></main>
+<div id="annonce" class="annonce" role="status" hidden></div>
+<dialog id="saisie" class="feuille" aria-label="Saisie"></dialog>
 
 <div id="connexion" class="connexion" role="dialog" aria-modal="true" aria-labelledby="cx-titre" hidden>
   <form id="cx-form" novalidate>
@@ -37,7 +39,7 @@
 // « ?v=<version publiée> » (version.json à la racine du site). Tout nouveau module
 // doit être ajouté à cette liste.
 (function () {
-  var MODULES = ["js/app.js", "js/modele.js", "js/icones.js"];
+  var MODULES = ["js/app.js", "js/modele.js", "js/icones.js", "js/gestes.js"];
   function lancer(v) {
     var q = "?v=" + encodeURIComponent(v), base = new URL(".", location.href), imports = {};
     MODULES.forEach(function (m) { imports[new URL(m, base).href] = new URL(m + q, base).href; });
