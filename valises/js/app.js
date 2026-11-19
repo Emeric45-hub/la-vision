@@ -6,7 +6,8 @@ import {
   objetsDuDepart, sacsDuDepart, proprietairesDuDepart, avancement, voisins,
   sacsProposes, nouveauDepart, periode, departsTries,
   listeDuDepart, retiresDuSac, sacsAbsents, creerObjet, creerSac, aBasculer,
-  modelesTries, modeleDe, modeleDeMemeNom, partantsDuModele
+  modelesTries, modeleDe, modeleDeMemeNom, partantsDuModele,
+  deplacerObjet, deplacerSac, personnesPour, modifierObjet, modifierSac, contenuDuSac
 } from "./modele.js";
 import { picto, ICONES } from "./icones.js";
 import { balayable, appuiLong, tiroir } from "./gestes.js";
@@ -29,7 +30,9 @@ const etat = {
   brouillon: null,     // saisie en cours d'un nouveau départ
   retiresOuverts: {},  // section « Retirés » dépliée, par sac
   saisie: null,        // ligne « nouvel objet » ouverte dans un sac d'un départ
-  tiroir: null,        // départ ou modèle dont le bouton « Supprimer » est découvert, à l'accueil
+  tiroir: null,        // ligne dont le bouton « Supprimer » est découvert
+  ordre: false,        // liste principale : flèches pour changer l'ordre
+  reglagesOuverts: false,
   essai: null, version: ""
 };
 
@@ -168,6 +171,64 @@ function remettreObjet(idDepart, idObjet, coche) {
   majDepart(idDepart, champs);
 }
 
+/* ---------- Apparence : celle du téléphone, ou un choix gardé sur cet appareil ---------- */
+const CLE_THEME = "valises-theme";
+function themeChoisi() {
+  try { const t = localStorage.getItem(CLE_THEME); return t === "light" || t === "dark" ? t : ""; }
+  catch (e) { return ""; }
+}
+function poserTheme(t) {
+  const racine = document.documentElement;
+  if (t) racine.dataset.theme = t; else delete racine.dataset.theme;
+  // Couleur de la barre du navigateur : deux balises, une par thème du téléphone.
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => {
+    const sombre = t ? t === "dark" : (m.getAttribute("media") || "").includes("dark");
+    m.setAttribute("content", sombre ? "#000000" : "#F1F3FA");
+  });
+}
+function choisirTheme(t) {
+  try { if (t) localStorage.setItem(CLE_THEME, t); else localStorage.removeItem(CLE_THEME); }
+  catch (e) { /* stockage refusé : le choix vaut jusqu'à la fermeture */ }
+  poserTheme(t);
+}
+poserTheme(themeChoisi());
+
+/* ---------- Écritures dans la liste principale ---------- */
+const majListe = (champs, quoi) => ecrire(() => etat.F.updateDoc(refListe(), champs), quoi || "Changement");
+// { id: valeur } devient { "table.id.champ": valeur } ; null veut dire « supprimer le champ ».
+const champsDe = (table, prefixe, suffixe) => Object.fromEntries(Object.entries(table)
+  .map(([id, v]) => [prefixe + id + (suffixe || ""), v === null ? etat.F.deleteField() : v]));
+
+function supprimerObjetListe(o) {
+  const { id, ...donnees } = o;
+  majListe({ ["objets." + id]: etat.F.deleteField() }, "Suppression");
+  annonce("« " + o.nom + " » supprimé de la liste", () => majListe({ ["objets." + id]: donnees }, "Rétablissement"));
+}
+
+// Supprime un sac et tout ce qu'il contient ; « Annuler » rétablit l'ensemble.
+function supprimerSacListe(idSac) {
+  const c = contenuDuSac(etat.liste, idSac);
+  if (!c) return;
+  const n = Object.keys(c.objets).length;
+  majListe({ ["sacs." + idSac]: etat.F.deleteField(), ...champsDe(Object.fromEntries(Object.keys(c.objets).map(i => [i, null])), "objets.") }, "Suppression");
+  annonce("« " + c.sac.nom + " » supprimé" + (n ? ", avec " + pluriel(n, "objet") : ""),
+    () => majListe({ ["sacs." + idSac]: c.sac, ...champsDe(c.objets, "objets.") }, "Rétablissement"));
+}
+
+// Balayer vers la gauche découvre « Supprimer » ; rien n'est supprimé avant un toucher sur ce bouton.
+function avecSuppression(cle, el, libelle, action, classe) {
+  tiroir(el, 104, etat.tiroir === cle, o => { etat.tiroir = o ? cle : etat.tiroir === cle ? null : etat.tiroir; });
+  return h("div", { class: "glissiere tiroir" + (classe ? " " + classe : "") },
+    h("button", { type: "button", class: "glissiere-fond action", "aria-label": libelle,
+      onclick: () => { etat.tiroir = null; action(); afficher(false); } }, "Supprimer"),
+    el);
+}
+
+// Deux flèches pour monter ou descendre une ligne d'un cran.
+const fleches = (i, n, action) => h("span", { class: "fleches" },
+  h("button", { type: "button", class: "fleche", "aria-label": "Monter", disabled: i === 0, onclick: () => action(-1) }, picto("haut", 22, 2.2)),
+  h("button", { type: "button", class: "fleche", "aria-label": "Descendre", disabled: i === n - 1, onclick: () => action(1) }, picto("bas", 22, 2.2)));
+
 // Supprime un départ ou un modèle ; « Annuler » le réécrit tel qu'il était.
 function supprimerDepart(id, texte) {
   const d = etat.departs[id];
@@ -272,10 +333,11 @@ function afficher(enHaut) {
   // Quitter le sac où l'on saisissait un objet enregistre ce qui était tapé, comme un appui sur « Terminé ».
   // À faire avant de lire le départ : l'écriture peut le mettre à jour aussitôt.
   const sa = etat.saisie;
-  if (sa && !(r.nom === "depart" && r.a === sa.depart && r.b === sa.sac)) { etat.saisie = null; sa.valider(); }
+  const ici = sa && (sa.depart ? r.nom === "depart" && r.a === sa.depart && r.b === sa.sac : r.nom === "sac" && r.a === sa.sac);
+  if (sa && !ici) { etat.saisie = null; sa.valider(); }
   const trouve = r.nom === "depart" ? etat.departs[r.a] : null;
   const depart = trouve && !trouve.modele ? trouve : null;
-  if (enHaut) etat.tiroir = null;
+  if (enHaut) { etat.tiroir = null; etat.ordre = false; }
   let vue;
   if (!etat.lue) vue = [h("h1", null, "Valises")];
   else if (r.nom === "import") vue = vueImport();
@@ -327,8 +389,13 @@ function coche(active) {
   return h("span", { class: "cercle" + (active ? " actif" : "") }, picto("coche", 18, 3));
 }
 
-const reglages = () => h("details", { class: "reglages" },
+const reglages = () => h("details", { class: "reglages", open: etat.reglagesOuverts, ontoggle: e => { etat.reglagesOuverts = e.target.open; } },
   h("summary", null, "Réglages"),
+  h("p", { class: "second petit" }, "Apparence, sur cet appareil"),
+  h("div", { class: "bascule trois", role: "group", "aria-label": "Apparence" },
+    ...[["", "Automatique"], ["light", "Clair"], ["dark", "Sombre"]].map(([t, nom]) => h("button", {
+      type: "button", "aria-pressed": String(themeChoisi() === t), onclick: () => { choisirTheme(t); afficher(false); }
+    }, nom))),
   h("a", { class: "bouton secondaire", href: "#import" }, "Remplacer la liste"),
   h("button", { type: "button", class: "bouton secondaire", onclick: () => etat.F.signOut(etat.auth) }, "Se déconnecter de cet appareil"),
   h("p", { class: "second petit" }, etat.version));
@@ -350,14 +417,8 @@ function vueAccueil() {
   const modeles = modelesTries(etat.departs);
   const total = compter(liste);
 
-  // Balayer vers la gauche découvre « Supprimer » ; rien n'est supprimé avant un toucher sur ce bouton.
-  const avecTiroir = (id, el, quoi) => {
-    tiroir(el, 104, etat.tiroir === id, o => { etat.tiroir = o ? id : etat.tiroir === id ? null : etat.tiroir; });
-    return h("div", { class: "glissiere tiroir" + (quoi === "depart" ? " seule" : "") },
-      h("button", { type: "button", class: "glissiere-fond action", "aria-label": "Supprimer " + etat.departs[id].nom,
-        onclick: () => { etat.tiroir = null; supprimerDepart(id); afficher(false); } }, "Supprimer"),
-      el);
-  };
+  const avecTiroir = (id, el, quoi) =>
+    avecSuppression(id, el, "Supprimer " + etat.departs[id].nom, () => supprimerDepart(id), quoi === "depart" ? "seule" : "");
 
   return [
     h("h1", null, "Valises"),
@@ -394,6 +455,7 @@ function vueListe() {
   const personnes = personnesTriees(liste);
   if (!personnes.some(p => p.cle === etat.personne)) etat.personne = personnes[0] && personnes[0].cle;
   const choisie = personnes.find(p => p.cle === etat.personne);
+  const ordre = etat.ordre;
 
   const choix = h("div", { class: "personnes", role: "group", "aria-label": "Propriétaire" },
     ...personnes.map(p => h("button", {
@@ -402,6 +464,21 @@ function vueListe() {
     }, disque(p), h("span", { class: "personne-nom" }, p.nom))));
 
   const sacs = sacsDe(liste, etat.personne);
+  const ligne = (s, i) => {
+    const n = objetsDe(liste, s.id).length;
+    const tuile = h("span", { class: "tuile" }, picto(s.icone));
+    const texte = h("span", { class: "ligne-texte" },
+      h("span", { class: "ligne-nom" }, s.nom),
+      h("span", { class: "ligne-sous" }, pluriel(n, "objet") + (s.office ? "" : ", occasionnel")));
+    if (ordre) {
+      return h("div", { class: "ligne-sac" }, tuile, texte,
+        fleches(i, sacs.length, sens => majListe(champsDe(deplacerSac(etat.liste, s.id, sens), "sacs.", ".ordre"), "Ordre")));
+    }
+    return avecSuppression("sac:" + s.id,
+      h("a", { class: "ligne-sac", href: "#sac/" + encodeURIComponent(s.id), draggable: "false" }, tuile, texte, picto("chevron", 22, 2)),
+      "Supprimer " + s.nom, () => supprimerSacListe(s.id));
+  };
+
   return [
     h("div", { class: "barre" }, lienRetour("Valises", "#")),
     h("h1", null, "Liste principale"),
@@ -410,17 +487,19 @@ function vueListe() {
       h("h2", null, choisie.nom),
       h("span", { class: "second" }, pluriel(sacs.length, "sac"))),
     sacs.length
-      ? h("div", { class: "carte" }, ...sacs.map(s => {
-        const n = objetsDe(liste, s.id).length;
-        return h("a", { class: "ligne-sac", href: "#sac/" + encodeURIComponent(s.id) },
-          h("span", { class: "tuile" }, picto(s.icone)),
-          h("span", { class: "ligne-texte" },
-            h("span", { class: "ligne-nom" }, s.nom),
-            h("span", { class: "ligne-sous" }, pluriel(n, "objet") + (s.office ? "" : ", occasionnel"))),
-          picto("chevron", 22, 2));
-      }))
-      : h("p", { class: "second" }, "Aucun sac pour " + choisie.nom + ".")
+      ? h("div", { class: "carte" }, ...sacs.map(ligne))
+      : h("p", { class: "second" }, "Aucun sac pour " + choisie.nom + "."),
+    sacs.length && !ordre ? h("p", { class: "second petit astuce" }, "Touche un sac pour voir ses objets, balaye-le vers la gauche pour le supprimer.") : null,
+    barreEdition(ordre, sacs.length > 1,
+      h("button", { type: "button", class: "bouton secondaire", onclick: () => feuilleSacListe(null, etat.personne) }, picto("plus", 20, 2.4), h("span", null, "Ajouter un sac")))
   ];
+}
+
+// Sous une liste modifiable : l'action principale et « Changer l'ordre », ou « Terminé » pendant le rangement.
+function barreEdition(ordre, plusieurs, action) {
+  if (ordre) return h("button", { type: "button", class: "bouton fin-depart", onclick: () => { etat.ordre = false; afficher(false); } }, "Terminé");
+  return h("div", { class: "deux fin-depart" }, action,
+    plusieurs ? h("button", { type: "button", class: "bouton secondaire", onclick: () => { etat.ordre = true; etat.tiroir = null; afficher(false); } }, "Changer l'ordre") : null);
 }
 
 function vueSac(id) {
@@ -428,21 +507,130 @@ function vueSac(id) {
   const sac = liste.sacs[id];
   const proprio = liste.personnes[sac.proprio];
   const objets = objetsDe(liste, id);
+  const ordre = etat.ordre;
+  const sa = etat.saisie && !etat.saisie.depart && etat.saisie.sac === id ? etat.saisie : null;
+  function ouvrirSaisie() {
+    etat.saisie = saisieObjet(null, id);
+    afficher(false);
+    etat.saisie.champ.focus();   // dans le geste même, sinon l'iPhone n'ouvre pas le clavier
+  }
+
+  const lignes = objets.map((o, i) => {
+    const pour = o.pour && liste.personnes[o.pour];
+    const contenu = [h("span", { class: "objet-nom" }, o.nom), pour ? h("span", { class: "ligne-sous" }, "Seulement si " + pour.nom + " part") : null];
+    if (ordre) {
+      return h("div", { class: "ligne-objet rangee" }, h("span", { class: "ligne-texte" }, ...contenu),
+        fleches(i, objets.length, sens => majListe(champsDe(deplacerObjet(etat.liste, o.id, sens), "objets.", ".ordre"), "Ordre")));
+    }
+    return avecSuppression("objet:" + o.id,
+      h("button", { type: "button", class: "ligne-objet", onclick: () => feuilleObjetListe(o) }, ...contenu),
+      "Supprimer " + o.nom, () => supprimerObjetListe(o));
+  });
+
   return [
     h("div", { class: "barre" },
       lienRetour("Liste", "#liste"),
       h("span", { class: "puce" }, disque(proprio, "petit"), h("span", null, proprio.nom))),
     h("h1", null, sac.nom),
     h("p", { class: "second sous-titre" }, pluriel(objets.length, "objet") + (sac.office ? "" : ", sac occasionnel")),
-    objets.length
-      ? h("ul", { class: "carte objets" }, ...objets.map(o => {
-        const pour = o.pour && liste.personnes[o.pour];
-        return h("li", { class: "ligne-objet" },
-          h("span", { class: "objet-nom" }, o.nom),
-          pour ? h("span", { class: "ligne-sous" }, "Seulement si " + pour.nom + " part") : null);
-      }))
-      : h("p", { class: "second" }, "Ce sac est vide.")
+    lignes.length || !sa ? h("div", { class: "carte espace" + (sa ? " suite" : "") },
+      ...lignes,
+      sa || ordre ? null : h("button", { type: "button", class: "ligne-coche ajout", onclick: ouvrirSaisie },
+        h("span", { class: "cercle plus" }, picto("plus", 18, 2.6)), h("span", { class: "coche-nom" }, "Ajouter un objet"))) : null,
+    sa ? sa.noeud : null,
+    objets.length && !ordre ? h("p", { class: "second petit astuce" }, "Touche un objet pour le modifier, balaye-le vers la gauche pour le supprimer.") : null,
+    barreEdition(ordre, objets.length > 1,
+      h("button", { type: "button", class: "bouton secondaire", onclick: () => feuilleSacListe(id) }, "Modifier le sac"))
   ];
+}
+
+/* ---------- Liste principale : modifier un objet ---------- */
+function feuilleObjetListe(o) {
+  const qui = personnesPour(etat.liste, o.sac);
+  const nom = h("input", { type: "text", class: "champ", "aria-label": "Nom de l'objet", autocomplete: "off", enterkeyhint: "done", value: o.nom });
+  // Dans un sac commun, un objet peut n'être à emporter que si une personne part (son passeport, son manteau).
+  const pour = qui.length ? h("select", { class: "champ", "aria-label": "À emporter" },
+    h("option", { value: "" }, "À chaque départ"),
+    ...qui.map(p => h("option", { value: p.cle }, "Seulement si " + p.nom + " part"))) : null;
+  if (pour) pour.value = o.pour && qui.some(p => p.cle === o.pour) ? o.pour : "";
+  const message = h("p", { class: "message", role: "alert" });
+
+  function enregistrer(e) {
+    e.preventDefault();
+    const r = modifierObjet(etat.liste, o.id, { nom: nom.value, pour: pour ? pour.value : "" });
+    if (!r.ok) { message.textContent = r.erreur; return; }
+    majListe(champsDe({ nom: r.champs.nom, pour: r.champs.pour }, "objets." + o.id + "."), "Objet");
+    fermerFeuille();
+  }
+
+  ouvrirFeuille("Modifier l'objet", [
+    h("form", { class: "feuille-corps", onsubmit: enregistrer },
+      nom,
+      pour ? h("label", { class: "etiquette sans-marge" }, "À emporter", pour) : null,
+      h("button", { type: "submit", class: "bouton" }, "Enregistrer"),
+      message)
+  ]);
+}
+
+/* ---------- Liste principale : créer ou modifier un sac ---------- */
+function feuilleSacListe(idSac, proprioParDefaut) {
+  const liste = etat.liste;
+  const sac = idSac ? liste.sacs[idSac] : null;
+  const saisie = { proprio: sac ? sac.proprio : proprioParDefaut, icone: sac ? sac.icone : "sac" };
+  const nom = h("input", { type: "text", class: "champ", "aria-label": "Nom du sac", placeholder: "Nom du sac", autocomplete: "off", enterkeyhint: "done", value: sac ? sac.nom : "" });
+  const office = interrupteur("Proposé à chaque départ", "Décoché : sac occasionnel, à cocher soi-même quand on crée un départ.", sac ? sac.office !== false : true);
+  const message = h("p", { class: "message", role: "alert" });
+  const choix = choixSac(personnesTriees(liste), saisie);
+
+  function enregistrer(e) {
+    e.preventDefault();
+    if (sac) {
+      const r = modifierSac(etat.liste, idSac, { nom: nom.value, icone: saisie.icone, proprio: saisie.proprio, office: office.boite.checked });
+      if (!r.ok) { message.textContent = r.erreur; return; }
+      majListe({ ...champsDe(r.champs, "sacs." + idSac + "."), ...champsDe(Object.fromEntries(r.sansPour.map(i => [i, null])), "objets.", ".pour") }, "Sac");
+    } else {
+      const id = identifiant("s");
+      const r = creerSac(etat.liste, { nom: nom.value, proprio: saisie.proprio, icone: saisie.icone }, id);
+      if (!r.ok) { message.textContent = r.erreur; return; }
+      majListe({ ["sacs." + id]: { ...r.sac, office: office.boite.checked } }, "Sac");
+      etat.personne = saisie.proprio;
+    }
+    fermerFeuille();
+  }
+  function supprimer() {
+    fermerFeuille();
+    supprimerSacListe(idSac);
+    quitter("#liste");
+  }
+
+  ouvrirFeuille(sac ? "Modifier le sac" : "Nouveau sac", [
+    h("form", { class: "feuille-corps", onsubmit: enregistrer },
+      nom,
+      choix.proprio,
+      choix.picto,
+      office.el,
+      h("button", { type: "submit", class: "bouton" }, sac ? "Enregistrer" : "Créer le sac"),
+      message,
+      sac ? h("button", { type: "button", class: "lien-discret sans-marge", onclick: supprimer }, "Supprimer ce sac et ses objets") : null)
+  ]);
+}
+
+// Choix du propriétaire et du pictogramme d'un sac, communs aux deux fenêtres de sac.
+function choixSac(qui, saisie) {
+  const proprio = h("div", { class: "personnes" });
+  const pictos = h("div", { class: "pictos" });
+  function dessiner() {
+    proprio.replaceChildren(...qui.map(p => h("button", {
+      type: "button", class: "personne choix", "aria-pressed": String(p.cle === saisie.proprio),
+      onclick: () => { saisie.proprio = p.cle; dessiner(); }
+    }, disque(p), h("span", { class: "personne-nom" }, p.nom))));
+    pictos.replaceChildren(...PICTOS_SAC.filter(n => ICONES[n]).map(n => h("button", {
+      type: "button", class: "tuile choix", "aria-pressed": String(n === saisie.icone), "aria-label": "Pictogramme " + n,
+      onclick: () => { saisie.icone = n; dessiner(); }
+    }, picto(n))));
+  }
+  dessiner();
+  return { proprio, picto: pictos };
 }
 
 /* ---------- Nouveau départ ---------- */
@@ -672,9 +860,10 @@ function vueValise(id, depart, idSac) {
 
 /* ---------- Ajouter un objet : une ligne de saisie au bout de la liste ---------- */
 // La ligne reste ouverte pour saisir plusieurs objets à la suite : « retour » ajoute, une ligne vide ou « Terminé » referme.
+// Sans départ (`id` vide), on est dans la liste principale : pas d'interrupteur, l'objet y entre directement.
 function saisieObjet(id, idSac) {
   // Un sac ajouté « seulement cette fois » n'existe pas dans la liste principale : ses objets non plus.
-  const depart = etat.departs[id] || {};
+  const depart = (id && etat.departs[id]) || {};
   const sacPonctuel = !!(depart.sacsPonctuels && depart.sacsPonctuels[idSac]);
   const champ = h("input", { type: "text", class: "saisie-champ", "aria-label": "Nom de l'objet", placeholder: "Nouvel objet", autocomplete: "off", enterkeyhint: "done" });
   const boite = h("input", { type: "checkbox", class: "inter-case petite", "aria-label": "Seulement cette fois" });
@@ -688,14 +877,14 @@ function saisieObjet(id, idSac) {
   // Ajoute ce qui est tapé. Renvoie false si le nom est refusé (le message dit pourquoi).
   function valider() {
     if (!champ.value.trim()) return true;
-    const d = etat.departs[id];
-    if (!d) return true;
+    const d = id ? etat.departs[id] : null;
+    if (id && !d) return true;
     const idObjet = identifiant("o");
-    const r = creerObjet(listeDuDepart(etat.liste, d), idSac, champ.value, idObjet);
+    const r = creerObjet(d ? listeDuDepart(etat.liste, d) : etat.liste, idSac, champ.value, idObjet);
     if (!r.ok) { message.textContent = r.erreur; return false; }
     message.textContent = "";
     champ.value = "";
-    if (sacPonctuel || boite.checked) majDepart(id, { ["ponctuels." + idObjet]: { ...r.objet, ordre: Date.now() } });
+    if (id && (sacPonctuel || boite.checked)) majDepart(id, { ["ponctuels." + idObjet]: { ...r.objet, ordre: Date.now() } });
     else ecrire(() => etat.F.updateDoc(refListe(), { ["objets." + idObjet]: r.objet }), "Objet");
     return true;
   }
@@ -710,12 +899,13 @@ function saisieObjet(id, idSac) {
   },
     h("div", { class: "saisie-ligne" }, h("span", { class: "cercle pointille", "aria-hidden": "true" }), champ),
     h("div", { class: "saisie-options" },
-      sacPonctuel ? h("span", { class: "saisie-texte" }, "Pour ce départ uniquement") : h("label", { class: "saisie-fois" }, boite,
-        h("span", { class: "saisie-texte" }, "Seulement cette fois")),
+      !id ? h("span", { class: "saisie-aide sans-marge" }, "« Retour » ajoute et passe au suivant.")
+        : sacPonctuel ? h("span", { class: "saisie-texte" }, "Pour ce départ uniquement") : h("label", { class: "saisie-fois" }, boite,
+          h("span", { class: "saisie-texte" }, "Seulement cette fois")),
       h("button", { type: "button", class: "petit-bouton", onclick: () => { if (valider()) fermer(); } }, "Terminé")),
-    sacPonctuel ? null : aide,
+    sacPonctuel || !id ? null : aide,
     message);
-  const moi = { depart: id, sac: idSac, noeud, champ, valider };
+  const moi = { depart: id || null, sac: idSac, noeud, champ, valider };
   return moi;
 }
 
@@ -731,19 +921,8 @@ function feuilleSac(id, depart) {
   const fois = interrupteur("Seulement cette fois", "Décoché, le sac rejoint la liste principale.");
   const message = h("p", { class: "message", role: "alert" });
 
-  const choixProprio = h("div", { class: "personnes" });
-  const choixPicto = h("div", { class: "pictos" });
-  function dessiner() {
-    choixProprio.replaceChildren(...qui.map(p => h("button", {
-      type: "button", class: "personne choix", "aria-pressed": String(p.cle === saisie.proprio),
-      onclick: () => { saisie.proprio = p.cle; dessiner(); }
-    }, disque(p), h("span", { class: "personne-nom" }, p.nom))));
-    choixPicto.replaceChildren(...PICTOS_SAC.filter(n => ICONES[n]).map(n => h("button", {
-      type: "button", class: "tuile choix", "aria-pressed": String(n === saisie.icone), "aria-label": "Pictogramme " + n,
-      onclick: () => { saisie.icone = n; dessiner(); }
-    }, picto(n))));
-  }
-  dessiner();
+  const choix = choixSac(qui, saisie);
+  const choixProprio = choix.proprio, choixPicto = choix.picto;
 
   function reprendre(s, ligne) {
     majDepart(id, { sacs: etat.F.arrayUnion(s.id) });

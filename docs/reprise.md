@@ -8,7 +8,7 @@ Lot 1 : étapes 0 à 8 faites, mise à jour automatique de l'app en place, netto
 
 Lot 2 (accueil) : étapes 1 à 6 faites (2026-11-10). Le Raccourci iOS (sur un iPhone, 5 passages par jour) applique les actions de `vision/raccourci/actions` puis envoie rappels, calendrier local et anniversaires dans `vision/raccourci`. Prochain : 6b, post-it.
 
-Valises (2026-11-19) : étapes 1 à 3 faites (socle, liste principale, départs, gestes, retour, fin de départ, modèles) ; synchronisation et gestes validés sur téléphone, sauf le tiroir de suppression de l'accueil, à confirmer. Prochain : étape 4 (édition de la liste principale, dont renommer et supprimer un sac), puis l'entrée depuis l'en-tête du tableau de bord.
+Valises (2026-11-19) : étapes 1 à 4 faites (socle, départs, gestes, retour, modèles, édition de la liste principale, choix de l'apparence). Gestes validés sur téléphone jusqu'à l'étape 3 ; l'étape 4 reste à essayer. Prochain : l'entrée depuis l'en-tête du tableau de bord (téléphone), puis la météo de la destination.
 
 ## Contenu du dépôt
 

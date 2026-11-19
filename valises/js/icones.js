@@ -16,7 +16,9 @@ export const ICONES = {
   chevron: "M9 6l6 6-6 6",
   retour: "M15 6l-6 6 6 6",
   coche: "M5 12.5l4.5 4.5L19 7.5",
-  plus: "M12 5v14 M5 12h14"
+  plus: "M12 5v14 M5 12h14",
+  haut: "M6 15l6-6 6 6",
+  bas: "M6 9l6 6 6-6"
 };
 
 const NS = "http://www.w3.org/2000/svg";
