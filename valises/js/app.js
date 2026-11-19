@@ -7,7 +7,8 @@ import {
   sacsProposes, nouveauDepart, periode, departsTries,
   listeDuDepart, retiresDuSac, sacsAbsents, creerObjet, creerSac, aBasculer,
   modelesTries, modeleDe, modeleDeMemeNom, partantsDuModele,
-  deplacerObjet, deplacerSac, personnesPour, modifierObjet, modifierSac, contenuDuSac
+  deplacerObjet, deplacerSac, personnesPour, modifierObjet, modifierSac, contenuDuSac,
+  TEMPS, SEUILS_METEO, lieuValide, modifierDepart, fenetreMeteo, resumeMeteo, objetsMeteo
 } from "./modele.js";
 import { picto, ICONES } from "./icones.js";
 import { balayable, appuiLong, tiroir } from "./gestes.js";
@@ -192,6 +193,118 @@ function choisirTheme(t) {
   poserTheme(t);
 }
 poserTheme(themeChoisi());
+
+/* ---------- Météo de la destination (Open-Meteo, sans clé) ---------- */
+const NOMS_TEMPS = { froid: "Froid", pluie: "Pluie", soleil: "Soleil", chaleur: SEUILS_METEO.chaleur + "° et plus" };
+const ANNONCES = { froid: "Froid annoncé", pluie: "Pluie annoncée", soleil: "Soleil annoncé", chaleur: "Chaleur annoncée" };
+const aujourdhui = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+
+// Prévisions par lieu et par période, gardées une heure (cinq minutes après un échec).
+const meteo = {};
+function previsions(lieu, f) {
+  const cle = [lieu.lat, lieu.lon, f.debut, f.fin].join("|");
+  const m = meteo[cle];
+  if (m && (m.enCours || Date.now() - m.quand < (m.erreur ? 300000 : 3600000))) return m;
+  const neuf = meteo[cle] = { enCours: true, quand: Date.now(), resume: m ? m.resume : null, erreur: false };
+  fetch("https://api.open-meteo.com/v1/forecast?latitude=" + lieu.lat + "&longitude=" + lieu.lon +
+    "&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_min,precipitation_probability_max,weather_code" +
+    "&timezone=auto&start_date=" + f.debut + "&end_date=" + f.fin)
+    .then(r => (r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status))))
+    .then(j => { neuf.resume = resumeMeteo(j && j.daily); neuf.erreur = !neuf.resume; })
+    .catch(() => { neuf.erreur = true; })
+    .finally(() => { neuf.enCours = false; neuf.quand = Date.now(); rafraichir(); });
+  return neuf;
+}
+
+// Temps annoncés pour un départ ([] tant qu'on ne sait pas) : sert à signaler les objets concernés.
+function tempsAnnonces(depart) {
+  const f = fenetreMeteo(depart, aujourdhui());
+  const lieu = lieuValide(depart.lieu);
+  if (!f || !lieu) return [];
+  const p = previsions(lieu, f);
+  return p.resume ? p.resume.temps : [];
+}
+
+// « Objet A, Objet B (4) » : un nom par objet, avec le nombre quand plusieurs personnes ont le même.
+function nomsGroupes(objets) {
+  const n = {};
+  objets.forEach(o => { n[o.nom] = (n[o.nom] || 0) + 1; });
+  return Object.entries(n).map(([nom, k]) => nom + (k > 1 ? " (" + k + ")" : "")).join(", ");
+}
+
+// Bloc météo de l'écran du départ. Absent si le départ n'a pas de date ou s'il est hors des prévisions.
+function blocMeteo(id, depart, liste) {
+  const f = fenetreMeteo(depart, aujourdhui());
+  if (!f) return null;
+  const lieu = lieuValide(depart.lieu);
+  if (!lieu) {
+    return h("button", { type: "button", class: "carte bloc meteo", onclick: () => feuilleDepart(id, depart) },
+      h("span", { class: "meteo-titre" }, "Météo"),
+      h("span", { class: "meteo-objets" }, "Indique la ville de destination pour voir le temps prévu."));
+  }
+  const p = previsions(lieu, f);
+  const titre = h("span", { class: "meteo-titre" }, "Météo à " + lieu.nom + (f.partiel ? ", premiers jours" : ""));
+  if (!p.resume) {
+    return h("div", { class: "carte bloc meteo" }, titre,
+      h("span", { class: "second" }, p.enCours ? "Chargement de la prévision…" : "Prévision indisponible pour le moment."));
+  }
+  const r = p.resume;
+  const temps = r.min + "° à " + r.max + "°" +
+    (r.temps.includes("froid") ? ", ressenti " + r.ressenti + "° au plus froid" : "") +
+    (r.temps.includes("pluie") ? ", pluie probable (" + r.pluie + " %)" : "") +
+    (r.temps.includes("soleil") ? ", du soleil" : "");
+  const o = objetsMeteo(liste, depart, r.temps);
+  const restants = o.aPrendre.filter(x => !x.coche);
+  return h("div", { class: "carte bloc meteo" }, titre,
+    h("span", { class: "meteo-temps" }, temps),
+    restants.length ? h("span", { class: "meteo-objets" }, "À ne pas oublier : " + nomsGroupes(restants)) : null,
+    !restants.length && o.aPrendre.length ? h("span", { class: "meteo-objets" }, "Tout ce qui dépend du temps est coché.") : null,
+    o.retires.length ? h("span", { class: "second" }, "Retirés de ce départ : " + nomsGroupes(o.retires)) : null);
+}
+
+// Champ « destination » avec recherche de ville : choisir une ville dans la liste donne les coordonnées
+// pour la météo ; un texte libre reste accepté, sans météo.
+function champLieu(depuis, surChange) {
+  let lieu = lieuValide(depuis.lieu), minuteur = null, numero = 0;
+  const champ = h("input", { type: "text", class: "champ", "aria-label": "Destination", placeholder: "Ville de destination", autocomplete: "off", value: depuis.destination || "" });
+  const menu = h("div", { class: "carte creuse menu", role: "listbox", "aria-label": "Villes trouvées", hidden: true });
+  const note = h("p", { class: "second petit sans-marge" });
+  const valeur = () => ({ destination: champ.value, lieu });
+  const dire = () => {
+    note.textContent = lieu ? "Météo prévue pour " + lieu.nom + (lieu.region ? " (" + lieu.region + ")" : "") + "."
+      : champ.value.trim().length >= 3 ? "Choisis la ville dans la liste pour avoir la météo." : "";
+  };
+  const vide = texte => { menu.replaceChildren(h("p", { class: "second petit vide" }, texte)); menu.hidden = false; };
+  function choisir(x, region) {
+    lieu = lieuValide({ nom: x.name, lat: x.latitude, lon: x.longitude, region });
+    champ.value = x.name; menu.hidden = true; numero++;
+    dire(); surChange(valeur());
+  }
+  function chercher() {
+    const q = champ.value.trim(), n = ++numero;
+    if (q.length < 3) { menu.hidden = true; return; }
+    fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(q) + "&count=5&language=fr&format=json")
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status))))
+      .then(j => {
+        if (n !== numero) return;   // une frappe plus récente a relancé la recherche
+        const villes = ((j && j.results) || []).filter(x => x && x.name && Number.isFinite(x.latitude) && Number.isFinite(x.longitude));
+        if (!villes.length) { vide("Aucune ville trouvée."); return; }
+        menu.replaceChildren(...villes.map(x => {
+          const region = [x.admin1, x.country].filter(Boolean).join(", ");
+          return h("button", { type: "button", class: "ligne-choix", role: "option", onclick: () => choisir(x, region) },
+            h("span", { class: "ligne-texte" }, h("span", null, x.name), region ? h("span", { class: "ligne-sous" }, region) : null));
+        }));
+        menu.hidden = false;
+      })
+      .catch(() => { if (n === numero) vide("Recherche de ville indisponible : la destination est gardée, sans météo."); });
+  }
+  champ.addEventListener("input", () => {
+    lieu = null; dire(); surChange(valeur());
+    clearTimeout(minuteur); minuteur = setTimeout(chercher, 350);
+  });
+  dire();
+  return { el: h("div", { class: "deroulant-bloc" }, champ, menu, note), valeur };
+}
 
 /* ---------- Écritures dans la liste principale ---------- */
 const majListe = (champs, quoi) => ecrire(() => etat.F.updateDoc(refListe(), champs), quoi || "Changement");
@@ -521,7 +634,10 @@ function vueSac(id) {
 
   const lignes = objets.map((o, i) => {
     const pour = o.pour && liste.personnes[o.pour];
-    const contenu = [h("span", { class: "objet-nom" }, o.nom), pour ? h("span", { class: "ligne-sous" }, "Seulement si " + pour.nom + " part") : null];
+    const temps = TEMPS.filter(t => (o.meteo || []).includes(t));
+    const contenu = [h("span", { class: "objet-nom" }, o.nom),
+      pour ? h("span", { class: "ligne-sous" }, "Seulement si " + pour.nom + " part") : null,
+      temps.length ? h("span", { class: "ligne-sous" }, "Mis en avant : " + temps.map(t => NOMS_TEMPS[t].toLowerCase()).join(", ")) : null];
     if (ordre) {
       return h("div", { class: "ligne-objet rangee" }, h("span", { class: "ligne-texte" }, ...contenu),
         fleches(i, objets.length, sens => majListe(champsDe(deplacerObjet(etat.liste, o.id, sens), "objets.", ".ordre"), "Ordre")));
@@ -579,12 +695,20 @@ function feuilleObjetListe(o) {
     [["", "À chaque départ"], ...qui.map(p => [p.cle, "Seulement si " + p.nom + " part"])],
     o.pour && qui.some(p => p.cle === o.pour) ? o.pour : "") : null;
   const message = h("p", { class: "message", role: "alert" });
+  // Météo : l'objet sera signalé dans un départ quand la prévision annonce l'un de ces temps.
+  const choisis = new Set(o.meteo || []);
+  const puces = h("div", { class: "puces-temps", role: "group", "aria-label": "Mettre en avant si la météo annonce" });
+  const dessinerPuces = () => puces.replaceChildren(...TEMPS.map(t => h("button", {
+    type: "button", class: "puce-temps", "aria-pressed": String(choisis.has(t)),
+    onclick: () => { if (choisis.has(t)) choisis.delete(t); else choisis.add(t); dessinerPuces(); }
+  }, NOMS_TEMPS[t])));
+  dessinerPuces();
 
   function enregistrer(e) {
     e.preventDefault();
-    const r = modifierObjet(etat.liste, o.id, { nom: nom.value, pour: pour ? pour.valeur() : "" });
+    const r = modifierObjet(etat.liste, o.id, { nom: nom.value, pour: pour ? pour.valeur() : "", meteo: [...choisis] });
     if (!r.ok) { message.textContent = r.erreur; return; }
-    majListe(champsDe({ nom: r.champs.nom, pour: r.champs.pour }, "objets." + o.id + "."), "Objet");
+    majListe(champsDe(r.champs, "objets." + o.id + "."), "Objet");
     fermerFeuille();
   }
 
@@ -592,6 +716,7 @@ function feuilleObjetListe(o) {
     h("form", { class: "feuille-corps", onsubmit: enregistrer },
       nom,
       pour ? h("div", { class: "etiquette sans-marge" }, "À emporter", pour.el) : null,
+      h("div", { class: "etiquette sans-marge" }, "Mettre en avant si la météo annonce", puces),
       h("button", { type: "submit", class: "bouton" }, "Enregistrer"),
       message)
   ]);
@@ -666,8 +791,8 @@ function vueNouveau(idModele) {
   const personnes = personnesTriees(liste).filter(p => !p.commun);
   if (!etat.brouillon || etat.brouillon.modele !== (modele ? idModele : "")) {
     etat.brouillon = modele
-      ? { modele: idModele, nom: modele.nom, destination: "", debut: "", fin: "", personnes: new Set(partantsDuModele(liste, modele)), bascules: {}, ouvert: false }
-      : { modele: "", nom: "", destination: "", debut: "", fin: "", personnes: new Set(personnes.map(p => p.cle)), bascules: {}, ouvert: false };
+      ? { modele: idModele, nom: modele.nom, destination: modele.destination || "", lieu: lieuValide(modele.lieu), debut: "", fin: "", personnes: new Set(partantsDuModele(liste, modele)), bascules: {}, ouvert: !!modele.destination }
+      : { modele: "", nom: "", destination: "", lieu: null, debut: "", fin: "", personnes: new Set(personnes.map(p => p.cle)), bascules: {}, ouvert: false };
   }
   const b = etat.brouillon;
   const duModele = new Set(modele ? modele.sacs : []);
@@ -693,7 +818,7 @@ function vueNouveau(idModele) {
     ]);
 
   async function creer(e) {
-    const r = nouveauDepart(etat.liste, { nom: b.nom, destination: b.destination, debut: b.debut, fin: b.fin, personnes: [...b.personnes], sacs: retenus }, modele);
+    const r = nouveauDepart(etat.liste, { nom: b.nom, destination: b.destination, lieu: b.lieu, debut: b.debut, fin: b.fin, personnes: [...b.personnes], sacs: retenus }, modele);
     if (!r.ok) { erreur.textContent = r.erreur; erreur.scrollIntoView({ block: "center" }); return; }
     e.target.disabled = true;
     try {
@@ -716,7 +841,7 @@ function vueNouveau(idModele) {
     champ("nom", { type: "text", class: "champ grand", "aria-label": "Nom du départ", placeholder: "Nom du départ", autocomplete: "off", enterkeyhint: "done" }),
     h("details", { class: "optionnel", open: b.ouvert, ontoggle: e => { b.ouvert = e.target.open; } },
       h("summary", null, picto("plus", 20, 2.4), h("span", null, "Destination et dates")),
-      h("label", { class: "etiquette" }, "Destination", champ("destination", { type: "text", class: "champ", autocomplete: "off" })),
+      h("div", { class: "etiquette" }, "Destination", champLieu(b, v => { b.destination = v.destination; b.lieu = v.lieu; }).el),
       h("div", { class: "deux" },
         h("label", { class: "etiquette" }, "Du", champ("debut", { type: "date", class: "champ" })),
         h("label", { class: "etiquette" }, "Au", champ("fin", { type: "date", class: "champ" })))),
@@ -813,10 +938,12 @@ function vueDepart(id, depart) {
   }
 
   return [
-    h("div", { class: "barre" }, lienRetour("Départs", "#")),
+    h("div", { class: "barre" }, lienRetour("Départs", "#"),
+      h("button", { type: "button", class: "lien-barre", onclick: () => feuilleDepart(id, depart) }, "Modifier")),
     h("h1", null, depart.nom),
     sous ? h("p", { class: "second sous-titre" }, majuscule(sous)) : null,
     barre(av.fait, av.total),
+    blocMeteo(id, depart, liste),
     bascule,
     ...corps,
     props.length ? h("p", { class: "second petit astuce" }, "Appui long sur un sac pour tout cocher, balayage vers la gauche pour le retirer.") : null,
@@ -839,11 +966,15 @@ function vueValise(id, depart, idSac) {
   const base = "#depart/" + encodeURIComponent(id);
   const vers = s => base + "/" + encodeURIComponent(s);
 
+  const annonces = tempsAnnonces(depart);
   const lignes = objets.map(o => {
+    const raisons = ((liste.objets[o.id] && liste.objets[o.id].meteo) || []).filter(t => annonces.includes(t));
     const bouton = h("button", {
       type: "button", class: "ligne-coche", "aria-pressed": String(o.coche),
       onclick: () => cocher(id, o.id, !o.coche)
-    }, coche(o.coche), h("span", { class: "coche-nom" }, o.nom));
+    }, coche(o.coche), h("span", { class: "ligne-texte" },
+      h("span", { class: "coche-nom" }, o.nom),
+      raisons.length ? h("span", { class: "ligne-sous meteo-raison" }, raisons.map(t => ANNONCES[t]).join(", ")) : null));
     balayable(bouton, () => retirerObjet(id, o));
     return h("div", { class: "glissiere" }, h("span", { class: "glissiere-fond", "aria-hidden": "true" }, "Retirer"), bouton);
   });
@@ -990,6 +1121,36 @@ function feuilleSac(id, depart) {
       choixPicto,
       fois.el,
       h("button", { type: "submit", class: "bouton" }, "Créer le sac"),
+      message)
+  ]);
+}
+
+/* ---------- Modifier un départ : nom, destination, dates ---------- */
+function feuilleDepart(id, depart) {
+  const d = etat.departs[id] || depart;
+  const nom = h("input", { type: "text", class: "champ", "aria-label": "Nom du départ", placeholder: "Nom du départ", autocomplete: "off", enterkeyhint: "done", value: d.nom });
+  const lieu = champLieu(d, () => {});
+  const debut = h("input", { type: "date", class: "champ", value: d.debut || "" });
+  const fin = h("input", { type: "date", class: "champ", value: d.fin || "" });
+  const message = h("p", { class: "message", role: "alert" });
+
+  function enregistrer(e) {
+    e.preventDefault();
+    const v = lieu.valeur();
+    const r = modifierDepart({ nom: nom.value, destination: v.destination, lieu: v.lieu, debut: debut.value, fin: fin.value });
+    if (!r.ok) { message.textContent = r.erreur; return; }
+    majDepart(id, champsDe(r.champs, ""));
+    fermerFeuille();
+  }
+
+  ouvrirFeuille("Modifier le départ", [
+    h("form", { class: "feuille-corps", onsubmit: enregistrer },
+      nom,
+      h("div", { class: "etiquette sans-marge" }, "Destination", lieu.el),
+      h("div", { class: "deux" },
+        h("label", { class: "etiquette sans-marge" }, "Du", debut),
+        h("label", { class: "etiquette sans-marge" }, "Au", fin)),
+      h("button", { type: "submit", class: "bouton" }, "Enregistrer"),
       message)
   ]);
 }

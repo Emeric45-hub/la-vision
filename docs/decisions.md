@@ -362,3 +362,12 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 - Sur téléphone (moins de 901 px de large, comme les autres icônes de l'en-tête), une icône valise ouvre `valises/?de=vision`. Rien sur la tablette en paysage.
 - Avec `de=vision`, l'accueil de Valises affiche un lien de retour vers le tableau de bord : installée, l'app n'a pas de bouton retour, et Valises s'ouvre dans la même fenêtre (le manifeste du tableau de bord couvre le sous-dossier).
 - Limite : à 390 px de large, quatre icônes laissent moins de place à la date de l'en-tête, qui est alors abrégée.
+
+## 2026-11-19 — Valises : météo de la destination
+
+- Source : Open-Meteo, appelé depuis le téléphone, sans clé (comme le tableau de bord). Prévision quotidienne par `start_date` / `end_date`, limitée à aujourd'hui + 15 jours ; au-delà, ou sans date, pas de bloc météo.
+- Lieu : la destination reste un texte libre, mais une recherche de ville (API de géocodage d'Open-Meteo, à partir de trois lettres) propose cinq villes ; en choisir une enregistre `lieu = { nom, lat, lon, region }` dans le départ, coordonnées arrondies au centième. Modifier le texte ensuite efface le lieu. Un modèle garde la destination et le lieu, pas les dates.
+- « Modifier » en haut de l'écran du départ ouvre le nom, la destination et les dates (ils n'étaient pas modifiables après la création).
+- Rien n'est jamais ajouté à la liste d'après la météo. Chaque objet de la liste principale peut être relié par la famille à un ou plusieurs temps (`objets.<id>.meteo`, parmi `froid`, `pluie`, `soleil`, `chaleur`) ; le départ met en avant ceux dont le temps est annoncé : ligne « À ne pas oublier » dans le bloc météo, mention sous l'objet dans son sac, et rappel de ceux qui ont été retirés du départ.
+- Seuils (`SEUILS_METEO`), alignés sur le tableau de bord : froid = ressenti le plus bas sous 12° ; pluie = risque d'au moins 50 % un des jours ; soleil = au moins un jour dégagé à peu nuageux (code 0 à 2) ; chaleur = maximale d'au moins 25°.
+- La prévision est gardée une heure en mémoire (cinq minutes après un échec) ; un échec affiche « Prévision indisponible », jamais un faux temps.
