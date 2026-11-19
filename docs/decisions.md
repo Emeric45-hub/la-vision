@@ -293,3 +293,14 @@ Un toucher sur le bloc Météo ouvre une fenêtre centrale : les 48 prochaines h
 ## 2026-11-17 — Plan repas : page de la recette retrouvée par le nom du plat
 
 La mise en page du titre des recettes varie d'un PDF à l'autre (« Jour — Titre », ou « Repas n — Jour » puis le nom du plat en dessous). `pageRecette` cherche donc, à partir de la page 2 : d'abord le nom du plat au début d'une des six premières lignes, puis le jour comme segment de la première ligne, puis le jour dans une première ligne à séparateur ; sinon page 1. `LECTEUR` (numéro de version du lecteur, écrit dans `vision/plats.lecteur`) : l'augmenter fait relire le PDF déjà reçu au passage suivant, en gardant les plats cochés « faits ». Le journal compte les plats qui ont leur page de recette.
+
+## 2026-11-19 — Valises : seconde app dans le même dépôt
+
+Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, avec son propre manifeste (installable seule) ; le manifeste du tableau de bord ayant pour portée `./`, elle s'ouvre aussi depuis lui sans nouvelle connexion. Elle réutilise le compte famille, le projet Firebase, `version.json` et `sw.js` de la racine.
+
+- Données : un seul document `vision/valises` pour la liste principale (`personnes`, `sacs`, `objets`, des tables indexées par identifiant pour permettre plus tard des écritures champ par champ) ; les départs iront dans `vision/valises/departs/{id}`. Couvert par la règle existante sur `vision/**`.
+- Dépôt public : aucun nom de personne, de sac ou d'objet dans le code. La liste initiale est collée une fois dans l'app (écran « Importer la liste ») ; `valises/js/modele.js` la vérifie et nomme les erreurs.
+- Un sac peut être « occasionnel » (non proposé d'office à la création d'un départ), un objet peut être nominatif (masqué quand la personne ne part pas), et un propriétaire « commun » est présent à chaque départ.
+- Première lecture forcée sur le serveur, puis écoute en direct ; un cache vide n'affiche jamais « aucune liste ».
+- Navigation par l'ancre de l'adresse, pour que le geste retour du téléphone fonctionne.
+- Police Lexend chargée depuis Google Fonts (repli sur la police du système hors connexion) ; couleurs claires et sombres selon le réglage du téléphone.

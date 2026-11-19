@@ -1,12 +1,14 @@
 # Reprise
 
-*Mis à jour le 2026-11-10.*
+*Mis à jour le 2026-11-19.*
 
 ## Où on en est
 
 Lot 1 : étapes 0 à 8 faites, mise à jour automatique de l'app en place, nettoyage fait le 2026-11-08. Le module assistante maternelle se valide en usage quotidien ; la recette (étape 9) se fait sur le premier mois réel saisi dans l'app.
 
 Lot 2 (accueil) : étapes 1 à 6 faites (2026-11-10). Le Raccourci iOS (sur un iPhone, 5 passages par jour) applique les actions de `vision/raccourci/actions` puis envoie rappels, calendrier local et anniversaires dans `vision/raccourci`. Prochain : 6b, post-it.
+
+Valises (2026-11-19) : étape 1 faite (socle, import et lecture de la liste principale), à valider sur appareil. Prochain : étape 2, les départs.
 
 ## Contenu du dépôt
 
@@ -16,6 +18,8 @@ Lot 2 (accueil) : étapes 1 à 6 faites (2026-11-10). Le Raccourci iOS (sur un i
 | `docs/` | Décisions, plan, reprise |
 | `index.html`, `css/`, `js/`, `icons/`, `manifest.webmanifest` | L'app (publiée à la racine du site) |
 | `js/semainier.js` | Lecteur du semainier, paramétré par la configuration |
+| `valises/` | App Valises : `index.html`, `css/valises.css`, `js/app.js` (coquille), `js/modele.js` (liste, testé), `js/icones.js` |
+| `tests/valises.test.mjs` | Modèle de Valises sur une famille fictive |
 | `tache/` | Code des tâches planifiées (exécuté depuis le dépôt privé `la-vision-tache`) |
 | `tests/agendas.test.mjs` | Lecture des agendas sur données fictives |
 | `tache/moteur.js`, `tache/planning.mjs` | Moteur de règles (aussi chargé par l'app) et calcul du planning |
