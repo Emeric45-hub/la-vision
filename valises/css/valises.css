@@ -1,0 +1,97 @@
+/* Valises — une seule feuille. Clair et sombre suivent le réglage du téléphone. */
+:root {
+  color-scheme: light dark;
+  --fond: #F1F3FA; --carte: #FFFFFF; --encre: #18245E; --second: #4A5486;
+  --piste: #DCE0F1; --tuile: #E9ECF8; --filet: #E3E6F3;
+  --accent: #18245E; --sur-accent: #FFFFFF; --lien: #18245E;
+  --ok: #1F7A5C; --ko: #B3261E; --anneau: #6F78A6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #000000; --carte: #14151B; --encre: #F2F3F7; --second: #A9AFC6;
+    --piste: #23252F; --tuile: #22242E; --filet: #262833;
+    --accent: #AFC0FF; --sur-accent: #0B0C10; --lien: #C3CFFF;
+    --ok: #5CCBA3; --ko: #FFB4AB; --anneau: #7D84A3;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100dvh;
+  padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 20px) calc(env(safe-area-inset-bottom) + 28px) calc(env(safe-area-inset-left) + 20px);
+  background: var(--fond); color: var(--encre);
+  font-family: "Lexend", system-ui, -apple-system, sans-serif; font-size: 17px; line-height: 1.35;
+  -webkit-tap-highlight-color: transparent;
+}
+main { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+::selection { background: var(--piste); }
+
+h1 { margin: 6px 0 0; font-size: 32px; line-height: 38px; font-weight: 700; letter-spacing: -0.02em; }
+h2 { margin: 0; font-size: 24px; line-height: 30px; font-weight: 700; }
+p { margin: 0; }
+.second { color: var(--second); }
+.petit { font-size: 14px; }
+.sous-titre { margin-top: 4px; font-size: 16px; }
+.picto { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.etat { max-width: 520px; margin: 0 auto; min-height: 20px; font-size: 14px; color: var(--second); }
+.etat.ko { color: var(--ko); font-weight: 600; }
+
+/* Barre du haut d'un écran de détail */
+.barre { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.retour { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding-right: 8px; color: var(--lien); font-weight: 600; text-decoration: none; }
+.puce { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 4px; border-radius: 18px; background: var(--carte); font-size: 16px; font-weight: 600; }
+
+/* Pastilles des propriétaires */
+.personnes { display: flex; gap: 4px; margin-top: 16px; }
+.personne { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; border: 0; border-radius: 16px; background: transparent; color: var(--second); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.personne[aria-pressed="true"] { background: var(--carte); color: var(--encre); font-weight: 700; }
+.personne-nom { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.disque { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 17px; font-weight: 700; }
+.disque.petit { width: 28px; height: 28px; font-size: 14px; }
+
+.entete-section { display: flex; align-items: baseline; justify-content: space-between; margin-top: 20px; }
+
+/* Cartes et lignes */
+.carte { margin: 10px 0 0; padding: 0; border-radius: 22px; background: var(--carte); overflow: hidden; list-style: none; }
+.carte.bloc { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.ligne-sac { display: flex; align-items: center; gap: 14px; min-height: 68px; padding: 8px 12px 8px 14px; color: inherit; text-decoration: none; }
+.ligne-sac + .ligne-sac, .ligne-objet + .ligne-objet { border-top: 1px solid var(--filet); }
+.ligne-sac > .picto:last-child { color: var(--second); }
+.tuile { flex: none; width: 46px; height: 46px; border-radius: 14px; background: var(--tuile); display: flex; align-items: center; justify-content: center; }
+.ligne-texte { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ligne-nom { font-size: 19px; line-height: 23px; font-weight: 500; }
+.ligne-sous { font-size: 15px; line-height: 19px; color: var(--second); }
+.ligne-objet { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-height: 56px; padding: 8px 16px; }
+.objet-nom { font-size: 20px; line-height: 26px; }
+
+/* Boutons */
+.bouton { display: flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 20px; border: 0; border-radius: 18px; background: var(--accent); color: var(--sur-accent); font: inherit; font-size: 17px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.bouton.secondaire { background: transparent; color: var(--encre); border: 2px solid var(--anneau); }
+.bouton:disabled { opacity: 0.5; }
+
+/* Import */
+textarea { width: 100%; margin: 16px 0 12px; padding: 14px; border: 2px solid var(--anneau); border-radius: 16px; background: var(--carte); color: var(--encre); font: 14px/1.4 ui-monospace, Menlo, monospace; resize: vertical; }
+.resultat { margin: 12px 0; font-size: 16px; }
+.resultat .ok { color: var(--ok); font-weight: 600; }
+.resultat .ko, .message { color: var(--ko); font-weight: 600; }
+.erreurs { margin: 8px 0 0; padding-left: 20px; }
+
+/* Réglages */
+.reglages { margin-top: 32px; }
+.reglages summary { min-height: 44px; display: flex; align-items: center; color: var(--second); font-size: 16px; cursor: pointer; }
+.reglages[open] { display: flex; flex-direction: column; gap: 12px; }
+
+/* Connexion */
+.connexion { position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--fond); }
+.connexion form { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 14px; }
+.connexion label { display: flex; flex-direction: column; gap: 6px; font-size: 15px; color: var(--second); }
+.connexion input { min-height: 52px; padding: 0 14px; border: 2px solid var(--anneau); border-radius: 14px; background: var(--carte); color: var(--encre); font: inherit; }
+.message { min-height: 22px; font-size: 15px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .personne, .bouton { transition: background-color 0.15s ease-out; }
+}

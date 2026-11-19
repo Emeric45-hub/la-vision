@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Valises">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F1F3FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400..700&display=swap">
+<link rel="stylesheet" href="css/valises.css" id="feuille">
+<title>Valises</title>
+</head>
+<body>
+<p class="etat" id="etat" role="status">Démarrage…</p>
+<main id="ecran"></main>
+
+<div id="connexion" class="connexion" role="dialog" aria-modal="true" aria-labelledby="cx-titre" hidden>
+  <form id="cx-form" novalidate>
+    <h2 id="cx-titre">Connexion</h2>
+    <p class="second">Compte famille, une seule fois sur cet appareil.</p>
+    <label>E-mail<input type="email" id="cx-email" autocomplete="username" autocapitalize="off" required></label>
+    <label>Mot de passe<input type="password" id="cx-mdp" autocomplete="current-password" required></label>
+    <button type="submit" class="bouton" id="cx-ok">Se connecter</button>
+    <p class="message" id="cx-erreur" role="alert"></p>
+  </form>
+</div>
+
+<script>
+// Chargement par version, comme le tableau de bord : chaque fichier est demandé avec
+// « ?v=<version publiée> » (version.json à la racine du site). Tout nouveau module
+// doit être ajouté à cette liste.
+(function () {
+  var MODULES = ["js/app.js", "js/modele.js", "js/icones.js"];
+  function lancer(v) {
+    var q = "?v=" + encodeURIComponent(v), base = new URL(".", location.href), imports = {};
+    MODULES.forEach(function (m) { imports[new URL(m, base).href] = new URL(m + q, base).href; });
+    var carte = document.createElement("script");
+    carte.type = "importmap"; carte.textContent = JSON.stringify({ imports: imports });
+    document.head.appendChild(carte);
+    document.getElementById("feuille").href = "css/valises.css" + q;
+    var s = document.createElement("script");
+    s.type = "module"; s.src = "js/app.js" + q;
+    document.body.appendChild(s);
+  }
+  fetch("../version.json", { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { lancer(j.version); })
+    .catch(function () { lancer("hors-connexion"); });
+})();
+</script>
+</body>
+</html>

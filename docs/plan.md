@@ -42,6 +42,17 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 - Lot 3 — briefing.
 - Lot 4 — habillage (fonds météo, nuit, saison).
 
+## Valises (sous-dossier `valises/`)
+
+| # | Étape | État |
+|---|---|---|
+| 1 | Socle : page, manifeste, icône, connexion, thèmes, import et lecture de la liste principale | ✅ 2026-11-19 (à valider sur appareil) |
+| 2 | Départs : création, écran du départ, mode un sac à la fois, synchronisation entre deux appareils | ⬜ |
+| 3 | Gestes : retrait par balayage, ajout d'objet ou de sac, tout cocher, retour, modèles, fin de départ | ⬜ |
+| 4 | Liste principale : édition complète | ⬜ |
+| 5 | Entrée depuis l'en-tête du tableau de bord (téléphone) | ⬜ |
+| 6 | Météo de la destination | ⬜ |
+
 ## Nettoyage final
 
 2026-11-08 : tests de faisabilité, page de test et workflow retirés du dépôt ; secrets de ce dépôt, ancienne clé du compte de service, documents `vision_test/*` et règle associée supprimés à la main. Les Raccourcis iOS de test sont gardés comme modèle jusqu'au Raccourci définitif (lot 2).
