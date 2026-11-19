@@ -225,7 +225,7 @@ function tempsAnnonces(depart) {
   return p.resume ? p.resume.temps : [];
 }
 
-// « Parapluie, Lunettes de soleil (4) » : un nom par objet, avec le nombre quand plusieurs personnes ont le même.
+// « Objet A, Objet B (4) » : un nom par objet, avec le nombre quand plusieurs personnes ont le même.
 function nomsGroupes(objets) {
   const n = {};
   objets.forEach(o => { n[o.nom] = (n[o.nom] || 0) + 1; });
