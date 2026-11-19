@@ -199,13 +199,37 @@ export function nouveauDepart(listePrincipale, saisie, modele) {
     if (Object.keys(sacsPonctuels).length) depart.sacsPonctuels = sacsPonctuels;
     if (Object.keys(ponctuels).length) depart.ponctuels = ponctuels;
   }
-  const destination = texte(saisie.destination);
-  if (destination) depart.destination = destination;
+  Object.entries(ouEtQuand(saisie)).forEach(([cle, v]) => { if (v !== null) depart[cle] = v; });
+  return { ok: true, depart };
+}
+
+// Destination, lieu (pour la météo) et dates d'une saisie, nettoyés ; null pour ce qui est vide.
+function ouEtQuand(saisie) {
   let debut = JOUR.test(saisie.debut || "") ? saisie.debut : "", fin = JOUR.test(saisie.fin || "") ? saisie.fin : "";
   if (debut && fin && fin < debut) [debut, fin] = [fin, debut];
-  if (debut) depart.debut = debut;
-  if (fin && fin !== debut) depart.fin = fin;
-  return { ok: true, depart };
+  const destination = texte(saisie.destination);
+  return {
+    destination: destination || null,
+    lieu: destination ? lieuValide(saisie.lieu) : null,
+    debut: debut || null,
+    fin: fin && fin !== debut ? fin : null
+  };
+}
+
+// Un lieu vient de la recherche de ville : un nom et des coordonnées (arrondies, la météo n'a pas besoin de mieux).
+export function lieuValide(l) {
+  if (!l || !texte(l.nom) || !Number.isFinite(l.lat) || !Number.isFinite(l.lon)) return null;
+  if (Math.abs(l.lat) > 90 || Math.abs(l.lon) > 180) return null;
+  const lieu = { nom: texte(l.nom), lat: Math.round(l.lat * 100) / 100, lon: Math.round(l.lon * 100) / 100 };
+  if (texte(l.region)) lieu.region = texte(l.region);
+  return lieu;
+}
+
+// Modification d'un départ existant : champs à écrire, null pour ceux à supprimer.
+export function modifierDepart(saisie) {
+  const nom = texte(saisie.nom);
+  if (!nom) return { ok: false, erreur: "Donne un nom au départ." };
+  return { ok: true, champs: { nom, ...ouEtQuand(saisie) } };
 }
 
 // « 28 novembre », « 28 au 29 novembre », « 28 novembre au 2 décembre ».
@@ -292,6 +316,9 @@ export function modeleDe(depart, nom) {
   const propre = texte(nom);
   if (!propre) return { ok: false, erreur: "Donne un nom au modèle." };
   const modele = { modele: true, nom: propre, personnes: [...(depart.personnes || [])], sacs: [...(depart.sacs || [])], retires: { ...(depart.retires || {}) } };
+  // La destination fait partie du modèle (un déplacement qui revient) ; les dates, non.
+  if (texte(depart.destination)) modele.destination = texte(depart.destination);
+  if (lieuValide(depart.lieu)) modele.lieu = lieuValide(depart.lieu);
   if (depart.sacsPonctuels && Object.keys(depart.sacsPonctuels).length) modele.sacsPonctuels = { ...depart.sacsPonctuels };
   if (depart.ponctuels && Object.keys(depart.ponctuels).length) modele.ponctuels = { ...depart.ponctuels };
   return { ok: true, modele };
@@ -346,7 +373,8 @@ export function modifierObjet(liste, idObjet, saisie) {
   const nom = texte(saisie.nom);
   if (!nom) return { ok: false, erreur: "Donne un nom à l'objet." };
   const permis = personnesPour(liste, o.sac).some(p => p.cle === saisie.pour);
-  return { ok: true, champs: { nom, pour: permis ? saisie.pour : null } };
+  const meteo = TEMPS.filter(t => (saisie.meteo || []).includes(t));
+  return { ok: true, champs: { nom, pour: permis ? saisie.pour : null, meteo: meteo.length ? meteo : null } };
 }
 
 export function modifierSac(liste, idSac, saisie) {
@@ -372,4 +400,56 @@ export function contenuDuSac(liste, idSac) {
   const sac = liste.sacs[idSac];
   if (!sac) return null;
   return { sac, objets: Object.fromEntries(objetsDe(liste, idSac).map(({ id, ...o }) => [id, o])) };
+}
+
+/* ---------- Météo de la destination ---------- */
+// Rien n'est ajouté à la liste d'après la météo : on met seulement en avant les objets que la famille a
+// elle-même reliés à un temps (« froid », « pluie », « soleil », « chaleur »).
+
+export const TEMPS = ["froid", "pluie", "soleil", "chaleur"];
+// Mêmes repères que le tableau de bord : manteau sous 12° ressentis, pluie à partir de 50 % de risque.
+export const SEUILS_METEO = { froid: 12, pluie: 50, chaleur: 25, horizon: 15 };
+
+const plusJours = (iso, n) => new Date(Date.parse(iso + "T12:00:00Z") + n * 86400000).toISOString().slice(0, 10);
+
+// Jours du départ pour lesquels une prévision existe (d'aujourd'hui à aujourd'hui + 15), ou null.
+export function fenetreMeteo(depart, aujourdhui) {
+  if (!JOUR.test(depart.debut || "") || !JOUR.test(aujourdhui || "")) return null;
+  const fin = JOUR.test(depart.fin || "") && depart.fin > depart.debut ? depart.fin : depart.debut;
+  const limite = plusJours(aujourdhui, SEUILS_METEO.horizon);
+  if (fin < aujourdhui || depart.debut > limite) return null;
+  return { debut: depart.debut < aujourdhui ? aujourdhui : depart.debut, fin: fin > limite ? limite : fin, partiel: fin > limite };
+}
+
+// Prévision quotidienne (réponse « daily » d'Open-Meteo) → ce qu'il faut retenir pour les bagages.
+export function resumeMeteo(daily) {
+  const n = daily && Array.isArray(daily.time) ? daily.time.length : 0;
+  const nombres = cle => (daily[cle] || []).filter(v => typeof v === "number" && Number.isFinite(v));
+  if (!n) return null;
+  const maxi = nombres("temperature_2m_max"), mini = nombres("temperature_2m_min");
+  if (!maxi.length || !mini.length) return null;
+  const ressenti = nombres("apparent_temperature_min"), risque = nombres("precipitation_probability_max"), codes = nombres("weather_code");
+  const r = {
+    jours: n,
+    min: Math.round(Math.min(...mini)), max: Math.round(Math.max(...maxi)),
+    ressenti: Math.round(Math.min(...(ressenti.length ? ressenti : mini))),
+    pluie: risque.length ? Math.round(Math.max(...risque)) : 0,
+    soleil: codes.some(c => c <= 2)
+  };
+  r.temps = TEMPS.filter(t => ({
+    froid: r.ressenti < SEUILS_METEO.froid, pluie: r.pluie >= SEUILS_METEO.pluie, soleil: r.soleil, chaleur: r.max >= SEUILS_METEO.chaleur
+  })[t]);
+  return r;
+}
+
+// Objets du départ reliés à l'un des temps annoncés : ceux à prendre (avec leur état) et ceux qu'on a retirés.
+export function objetsMeteo(liste, depart, temps) {
+  const annonces = new Set(temps || []);
+  const raisons = id => ((liste.objets[id] && liste.objets[id].meteo) || []).filter(t => annonces.has(t));
+  const aPrendre = [], retires = [];
+  sacsDuDepart(liste, depart).forEach(s => {
+    objetsDuDepart(liste, depart, s.id).forEach(o => { const r = raisons(o.id); if (r.length) aPrendre.push({ ...o, sac: s.id, nomSac: s.nom, raisons: r }); });
+    retiresDuSac(liste, depart, s.id).forEach(o => { const r = raisons(o.id); if (r.length) retires.push({ id: o.id, nom: o.nom, sac: s.id, nomSac: s.nom, raisons: r }); });
+  });
+  return { aPrendre, retires };
 }

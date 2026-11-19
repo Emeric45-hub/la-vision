@@ -166,7 +166,7 @@ console.log('valises, gestes : tous les scénarios passent');
 const { modeleDe, modelesTries, modeleDeMemeNom, partantsDuModele, departsTries: tries, nouveauDepart: creerDepart } = await import('../valises/js/modele.js');
 assert.equal(modeleDe(ponctuel, '  ').ok, false);
 const m = modeleDe({ ...ponctuel, retires: { o2: true }, destination: 'Ailleurs', debut: '2031-01-02' }, ' Week-end type ').modele;
-assert.deepEqual(Object.keys(m).sort(), ['modele', 'nom', 'personnes', 'ponctuels', 'retires', 'sacs', 'sacsPonctuels']);
+assert.deepEqual(Object.keys(m).sort(), ['destination', 'modele', 'nom', 'personnes', 'ponctuels', 'retires', 'sacs', 'sacsPonctuels']);
 assert.equal(m.nom, 'Week-end type');
 assert.equal('coches' in m, false);
 
@@ -211,8 +211,8 @@ assert.deepEqual(deplacerSac(liste, 's1', 1), {});
 // « Seulement si untel part » : dans un sac commun uniquement.
 assert.deepEqual(personnesPour(liste, 's3').map(p => p.cle), ['enfant1', 'adulte1']);
 assert.deepEqual(personnesPour(liste, 's1'), []);
-assert.deepEqual(modifierObjet(liste, 'o5', { nom: ' Clefs ', pour: 'adulte1' }), { ok: true, champs: { nom: 'Clefs', pour: 'adulte1' } });
-assert.deepEqual(modifierObjet(liste, 'o1', { nom: 'Brosse', pour: 'adulte1' }).champs, { nom: 'Brosse', pour: null });
+assert.deepEqual(modifierObjet(liste, 'o5', { nom: ' Clefs ', pour: 'adulte1' }), { ok: true, champs: { nom: 'Clefs', pour: 'adulte1', meteo: null } });
+assert.deepEqual(modifierObjet(liste, 'o1', { nom: 'Brosse', pour: 'adulte1', meteo: ['pluie', 'grêle', 'froid'] }).champs, { nom: 'Brosse', pour: null, meteo: ['froid', 'pluie'] });
 assert.deepEqual(modifierObjet(liste, 'o5', { nom: 'Clés', pour: 'commun' }).champs.pour, null);
 assert.equal(modifierObjet(liste, 'o1', { nom: ' ' }).ok, false);
 assert.equal(modifierObjet(liste, 'inconnu', { nom: 'X' }).ok, false);
@@ -237,3 +237,55 @@ const apres = { ...liste, sacs: { ...liste.sacs }, objets: { ...liste.objets } }
 delete apres.sacs.s1; delete apres.objets.o1; delete apres.objets.o2;
 assert.deepEqual(sacsDuDepart(apres, { personnes: ['enfant1'], sacs: ['s1', 's3'], coches: { o1: true } }).map(s => s.id), ['s3']);
 console.log('valises, édition : tous les scénarios passent');
+
+// ---------- Météo ----------
+const { lieuValide, modifierDepart, fenetreMeteo, resumeMeteo, objetsMeteo, TEMPS } = await import('../valises/js/modele.js');
+// Lieu : nom et coordonnées plausibles, arrondies.
+assert.deepEqual(lieuValide({ nom: ' Villefictive ', lat: 47.123456, lon: -1.98765, region: 'Région, Pays' }), { nom: 'Villefictive', lat: 47.12, lon: -1.99, region: 'Région, Pays' });
+assert.equal(lieuValide({ nom: 'X', lat: 'a', lon: 2 }), null);
+assert.equal(lieuValide({ nom: 'X', lat: 95, lon: 2 }), null);
+assert.equal(lieuValide(null), null);
+// Création et modification : le lieu ne vit pas sans destination ; les dates se remettent dans l'ordre.
+const avecLieu = creerDepart(liste, { nom: 'Mai', personnes: ['enfant1'], sacs: ['s1'], destination: 'Villefictive', lieu: { nom: 'Villefictive', lat: 47, lon: -2 }, debut: '2031-05-03', fin: '2031-05-01' }).depart;
+assert.deepEqual([avecLieu.destination, avecLieu.lieu.lat, avecLieu.debut, avecLieu.fin], ['Villefictive', 47, '2031-05-01', '2031-05-03']);
+assert.equal('lieu' in creerDepart(liste, { nom: 'Mai', personnes: ['enfant1'], sacs: ['s1'], lieu: { nom: 'V', lat: 47, lon: -2 } }).depart, false);
+assert.deepEqual(modifierDepart({ nom: ' Juin ', destination: '', lieu: { nom: 'V', lat: 1, lon: 1 }, debut: '2031-06-01', fin: '2031-06-01' }),
+  { ok: true, champs: { nom: 'Juin', destination: null, lieu: null, debut: '2031-06-01', fin: null } });
+assert.equal(modifierDepart({ nom: ' ' }).ok, false);
+// Le modèle garde la destination et le lieu, pas les dates.
+const mLieu = modeleDe(avecLieu, 'Type').modele;
+assert.deepEqual([mLieu.destination, mLieu.lieu.nom, 'debut' in mLieu], ['Villefictive', 'Villefictive', false]);
+
+// Fenêtre de prévision : d'aujourd'hui à aujourd'hui + 15.
+assert.equal(fenetreMeteo({}, '2031-03-10'), null);
+assert.deepEqual(fenetreMeteo({ debut: '2031-03-12', fin: '2031-03-14' }, '2031-03-10'), { debut: '2031-03-12', fin: '2031-03-14', partiel: false });
+assert.deepEqual(fenetreMeteo({ debut: '2031-03-12' }, '2031-03-10'), { debut: '2031-03-12', fin: '2031-03-12', partiel: false });
+assert.deepEqual(fenetreMeteo({ debut: '2031-03-08', fin: '2031-03-11' }, '2031-03-10'), { debut: '2031-03-10', fin: '2031-03-11', partiel: false });
+assert.deepEqual(fenetreMeteo({ debut: '2031-03-24', fin: '2031-03-30' }, '2031-03-10'), { debut: '2031-03-24', fin: '2031-03-25', partiel: true });
+assert.equal(fenetreMeteo({ debut: '2031-03-26' }, '2031-03-10'), null);
+assert.equal(fenetreMeteo({ debut: '2031-03-01', fin: '2031-03-09' }, '2031-03-10'), null);
+// Changement de mois et d'année.
+assert.deepEqual(fenetreMeteo({ debut: '2032-01-01', fin: '2032-01-20' }, '2031-12-20'), { debut: '2032-01-01', fin: '2032-01-04', partiel: true });
+
+// Résumé : froid et pluie, puis soleil et chaleur.
+const hiver = resumeMeteo({ time: ['a', 'b'], temperature_2m_max: [11.4, 9], temperature_2m_min: [4.2, 3.6], apparent_temperature_min: [1.2, 0.4], precipitation_probability_max: [20, 70], weather_code: [3, 61] });
+assert.deepEqual(hiver, { jours: 2, min: 4, max: 11, ressenti: 0, pluie: 70, soleil: false, temps: ['froid', 'pluie'] });
+const ete = resumeMeteo({ time: ['a'], temperature_2m_max: [28.6], temperature_2m_min: [17], apparent_temperature_min: [16.5], precipitation_probability_max: [10], weather_code: [1] });
+assert.deepEqual(ete.temps, ['soleil', 'chaleur']);
+// Juste aux seuils : 12° ressentis ne sont pas « froid », 50 % est « pluie », 25° est « chaleur ».
+assert.deepEqual(resumeMeteo({ time: ['a'], temperature_2m_max: [25], temperature_2m_min: [13], apparent_temperature_min: [12], precipitation_probability_max: [50], weather_code: [3] }).temps, ['pluie', 'chaleur']);
+// Réponse vide ou incomplète : pas de résumé plutôt qu'un faux temps.
+assert.equal(resumeMeteo(null), null);
+assert.equal(resumeMeteo({ time: [] }), null);
+assert.equal(resumeMeteo({ time: ['a'], temperature_2m_max: [null], temperature_2m_min: [null] }), null);
+assert.deepEqual(resumeMeteo({ time: ['a'], temperature_2m_max: [8], temperature_2m_min: [2] }).temps, ['froid']);
+
+// Objets mis en avant : seulement ceux que la famille a reliés à un temps annoncé.
+const marque = { ...liste, objets: { ...liste.objets, o1: { ...liste.objets.o1, meteo: ['pluie'] }, o2: { ...liste.objets.o2, meteo: ['soleil', 'froid'] }, o5: { ...liste.objets.o5, meteo: ['pluie'] } } };
+const sortie = { personnes: ['enfant1'], sacs: ['s1', 's3'], coches: { o1: true }, retires: { o5: true } };
+const mis = objetsMeteo(marque, sortie, ['froid', 'pluie']);
+assert.deepEqual(mis.aPrendre.map(o => [o.nom, o.coche, o.nomSac, o.raisons]), [['Brosse', true, 'Trousse', ['pluie']], ['Savon', false, 'Trousse', ['froid']]]);
+assert.deepEqual(mis.retires.map(o => [o.nom, o.raisons]), [['Clés', ['pluie']]]);
+assert.deepEqual(objetsMeteo(marque, sortie, []), { aPrendre: [], retires: [] });
+assert.deepEqual(TEMPS, ['froid', 'pluie', 'soleil', 'chaleur']);
+console.log('valises, météo : tous les scénarios passent');

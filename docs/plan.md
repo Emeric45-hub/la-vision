@@ -52,7 +52,7 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 | 3b | Retour, fin de départ, modèles, suppression par tiroir à l'accueil | ✅ 2026-11-19 (tiroir à valider sur téléphone) |
 | 4 | Liste principale : sacs, objets, ordre, sac occasionnel ; choix de l'apparence | ✅ 2026-11-19 (personnes non modifiables dans l'app) |
 | 5 | Entrée depuis l'en-tête du tableau de bord (téléphone) | ✅ 2026-11-19 |
-| 6 | Météo de la destination | ⬜ |
+| 6 | Météo de la destination | ✅ 2026-11-19 (appels réels à Open-Meteo à valider sur téléphone) |
 
 ## Nettoyage final
 

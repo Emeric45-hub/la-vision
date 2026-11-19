@@ -292,3 +292,19 @@ button.ligne-objet { width: 100%; align-items: flex-start; border: 0; color: var
 .bascule.trois { margin: 6px 0 16px; }
 .reglages .bouton { width: 100%; }
 .bascule.trois button { font-size: 15px; padding: 0 4px; }
+
+/* Météo de la destination */
+.meteo { gap: 4px; margin-top: 16px; padding: 16px 20px; text-align: left; }
+button.meteo { width: 100%; border: 0; color: var(--encre); font: inherit; cursor: pointer; }
+.meteo-titre { font-size: 15px; line-height: 20px; font-weight: 600; color: var(--second); }
+.meteo-temps { font-size: 20px; line-height: 26px; font-weight: 600; }
+.meteo-objets { font-size: 17px; line-height: 23px; }
+.meteo-raison { font-weight: 600; color: var(--ok); }
+.ligne-coche[aria-pressed="true"] .meteo-raison { color: var(--second); font-weight: 400; }
+.lien-barre { min-height: 44px; padding: 0 0 0 12px; border: 0; background: transparent; color: var(--lien); font: inherit; font-weight: 600; cursor: pointer; }
+.puces-temps { display: flex; flex-wrap: wrap; gap: 8px; }
+.puce-temps { min-height: 44px; padding: 0 16px; border: 2px solid var(--anneau); border-radius: 22px; background: transparent; color: var(--encre); font: inherit; font-size: 16px; cursor: pointer; }
+.puce-temps[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--sur-accent); font-weight: 600; }
+.menu .vide { margin: 0; padding: 12px 14px; }
+.petit.sans-marge { margin: 0; }
+.ligne-choix .ligne-texte { display: flex; flex-direction: column; }
