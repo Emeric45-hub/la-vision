@@ -8,7 +8,7 @@ Lot 1 : étapes 0 à 8 faites, mise à jour automatique de l'app en place, netto
 
 Lot 2 (accueil) : étapes 1 à 6 faites (2026-11-10). Le Raccourci iOS (sur un iPhone, 5 passages par jour) applique les actions de `vision/raccourci/actions` puis envoie rappels, calendrier local et anniversaires dans `vision/raccourci`. Prochain : 6b, post-it.
 
-Valises (2026-11-19) : étapes 1 et 2 faites (socle, liste principale, départs et mode un sac à la fois) ; la synchronisation est à valider sur deux appareils. Prochain : étape 3, les gestes (balayage, ajouts, tout cocher, retour, modèles).
+Valises (2026-11-19) : étapes 1, 2 et 3a faites (socle, liste principale, départs, mode un sac à la fois, gestes dans un départ) ; synchronisation validée sur deux appareils. Les gestes tactiles et la fenêtre de saisie avec le clavier ne se testent que sur téléphone. Prochain : étape 3b (préparer le retour, terminer un départ, modèles), puis étape 4 (édition de la liste principale, dont renommer et supprimer un sac).
 
 ## Contenu du dépôt
 
@@ -18,7 +18,7 @@ Valises (2026-11-19) : étapes 1 et 2 faites (socle, liste principale, départs 
 | `docs/` | Décisions, plan, reprise |
 | `index.html`, `css/`, `js/`, `icons/`, `manifest.webmanifest` | L'app (publiée à la racine du site) |
 | `js/semainier.js` | Lecteur du semainier, paramétré par la configuration |
-| `valises/` | App Valises : `index.html`, `css/valises.css`, `js/app.js` (coquille), `js/modele.js` (liste, testé), `js/icones.js` |
+| `valises/` | App Valises : `index.html`, `css/valises.css`, `js/app.js` (coquille), `js/modele.js` (liste et départs, testé), `js/gestes.js` (balayage, appui long), `js/icones.js` |
 | `tests/valises.test.mjs` | Modèle de Valises sur une famille fictive |
 | `tache/` | Code des tâches planifiées (exécuté depuis le dépôt privé `la-vision-tache`) |
 | `tests/agendas.test.mjs` | Lecture des agendas sur données fictives |

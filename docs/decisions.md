@@ -314,3 +314,14 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 - Historique : chaque entrée porte son rang dans l'app. Le lien de retour remonte d'une entrée (comme le balayage depuis le bord) ; passer d'un sac à l'autre remplace l'entrée, si bien qu'un retour ramène toujours à l'écran du départ.
 - Les écrans de saisie (import, nouveau départ) ne sont pas redessinés à l'arrivée de données, pour ne pas perdre le texte tapé.
 - Suppression simple d'un départ, avec confirmation ; l'enregistrement en modèle viendra avec l'étape 3.
+
+## 2026-11-19 — Valises : gestes dans un départ
+
+- Retirer un objet d'un départ = balayage vers la gauche ; il passe dans `retires` et reste visible sous « Retirés de ce départ », d'où on peut le remettre. La liste principale n'est pas touchée.
+- Tout cocher d'un sac = appui long sur sa ligne dans l'écran du départ (une seule écriture pour tous les objets).
+- Chaque geste destructeur est annulable pendant quelques secondes par le bandeau du bas (« Annuler ») : pas de fenêtre de confirmation pour un retrait, seulement pour la suppression d'un départ.
+- Ajouts : un objet ou un sac rejoint par défaut la liste principale ; l'interrupteur « Seulement cette fois » le range dans le départ (`ponctuels`, `sacsPonctuels`). `listeDuDepart` fusionne les deux pour que le reste du code ne fasse pas la différence.
+- Un sac ajouté à la main reste affiché même vide, pour pouvoir y entrer et le remplir ; un sac dont tout le contenu concerne des absents reste omis.
+- Les saisies se font dans un `<dialog>` posé en haut de l'écran, pour rester au-dessus du clavier ; il n'est pas redessiné à l'arrivée de données.
+- `js/gestes.js` utilise les Pointer Events avec `touch-action: pan-y` : le défilement vertical reste au navigateur. Le toucher qui termine un geste est avalé une seule fois (drapeau remis à zéro au toucher suivant) ; une première version ignorait tous les touchers pendant un délai fixe et faisait rater un toucher légitime fait juste après.
+- Limite connue : le balayage part du contenu de la ligne, pas du bord gauche de l'écran, qui reste réservé au retour du système.
