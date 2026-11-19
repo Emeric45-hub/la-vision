@@ -304,3 +304,13 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 - Première lecture forcée sur le serveur, puis écoute en direct ; un cache vide n'affiche jamais « aucune liste ».
 - Navigation par l'ancre de l'adresse, pour que le geste retour du téléphone fonctionne.
 - Police Lexend chargée depuis Google Fonts (repli sur la police du système hors connexion) ; couleurs claires et sombres selon le réglage du téléphone.
+
+## 2026-11-19 — Valises : départs
+
+- Un départ est un document de `vision/valises/departs/{id}` : `nom`, `destination` et dates facultatives, `personnes` (clés), `sacs` (identifiants), `coches` et `retires` (tables indexées par identifiant d'objet), `creeLe`. Il ne copie rien de la liste principale : un objet ajouté ou renommé ensuite se retrouve dans les départs en cours.
+- Cocher écrit un seul champ (`coches.<id>`, supprimé pour décocher) : deux appareils qui cochent en même temps ne s'écrasent pas. L'écoute en direct de la collection redessine l'écran, y compris pour nos propres écritures avant le retour du serveur.
+- Un sac sans objet à préparer (tous nominatifs d'absents, par exemple) est omis du départ ; un propriétaire sans sac l'est aussi.
+- « Sac précédent / Sac suivant » parcourt tous les sacs du départ, propriétaire après propriétaire.
+- Historique : chaque entrée porte son rang dans l'app. Le lien de retour remonte d'une entrée (comme le balayage depuis le bord) ; passer d'un sac à l'autre remplace l'entrée, si bien qu'un retour ramène toujours à l'écran du départ.
+- Les écrans de saisie (import, nouveau départ) ne sont pas redessinés à l'arrivée de données, pour ne pas perdre le texte tapé.
+- Suppression simple d'un départ, avec confirmation ; l'enregistrement en modèle viendra avec l'étape 3.
