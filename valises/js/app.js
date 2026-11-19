@@ -190,7 +190,7 @@ function afficher(enHaut) {
   else if (depart && r.b) vue = vueValise(r.a, depart, r.b);
   else if (depart) vue = vueDepart(r.a, depart);
   else vue = vueAccueil();
-  $("ecran").replaceChildren(...vue);
+  $("ecran").replaceChildren(...vue.filter(e => e != null && e !== false));
   if (enHaut) window.scrollTo(0, 0);
 }
 
@@ -409,13 +409,17 @@ function vueDepart(id, depart) {
   const sous = [depart.destination, periode(depart.debut, depart.fin)].filter(Boolean).join(", ");
   const lien = s => "#depart/" + encodeURIComponent(id) + "/" + encodeURIComponent(s.id);
 
-  const ligne = (s, detail) => h("a", { class: "ligne-sac", href: lien(s) },
-    h("span", { class: "tuile" + (s.pret ? " pret" : "") }, s.pret ? picto("coche", 26, 2.6) : picto(s.icone)),
-    h("span", { class: "ligne-texte" },
-      h("span", { class: "ligne-nom" }, s.nom),
-      h("span", { class: "ligne-sous" + (s.pret ? " pret" : "") },
-        detail ? detail + ", " + (s.pret ? "prêt" : s.fait + " sur " + s.total) : (s.pret ? "Prêt" : s.fait + " sur " + s.total))),
-    picto("chevron", 22, 2));
+  // Un faux sac « hors sac » ne dit rien par son nom : tant qu'il n'est pas prêt, sa ligne liste ce qu'il contient.
+  const ligne = (s, detail) => {
+    const compte = s.pret ? (detail ? "prêt" : "Prêt") : s.fait + " sur " + s.total;
+    const contenu = s.apart && !s.pret ? " : " + objetsDuDepart(liste, depart, s.id).map(o => o.nom).join(", ") : "";
+    return h("a", { class: "ligne-sac", href: lien(s) },
+      h("span", { class: "tuile" + (s.pret ? " pret" : "") }, s.pret ? picto("coche", 26, 2.6) : picto(s.icone)),
+      h("span", { class: "ligne-texte" },
+        h("span", { class: "ligne-nom" }, s.nom),
+        h("span", { class: "ligne-sous" + (s.pret ? " pret" : "") + (contenu ? " apercu" : "") }, (detail ? detail + ", " : "") + compte + contenu)),
+      picto("chevron", 22, 2));
+  };
   const majuscule = t => t.charAt(0).toUpperCase() + t.slice(1);
 
   const bascule = h("div", { class: "bascule", role: "group", "aria-label": "Présentation" },
