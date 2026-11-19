@@ -5,10 +5,11 @@ import {
   preparerImport, personnesTriees, sacsDe, objetsDe, compter, pluriel,
   objetsDuDepart, sacsDuDepart, proprietairesDuDepart, avancement, voisins,
   sacsProposes, nouveauDepart, periode, departsTries,
-  listeDuDepart, retiresDuSac, sacsAbsents, creerObjet, creerSac, aBasculer
+  listeDuDepart, retiresDuSac, sacsAbsents, creerObjet, creerSac, aBasculer,
+  modelesTries, modeleDe, modeleDeMemeNom, partantsDuModele
 } from "./modele.js";
 import { picto, ICONES } from "./icones.js";
-import { balayable, appuiLong } from "./gestes.js";
+import { balayable, appuiLong, tiroir } from "./gestes.js";
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 // Même projet que le tableau de bord : tout vit sous le document protégé « vision/valises ».
@@ -28,6 +29,7 @@ const etat = {
   brouillon: null,     // saisie en cours d'un nouveau départ
   retiresOuverts: {},  // section « Retirés » dépliée, par sac
   saisie: null,        // ligne « nouvel objet » ouverte dans un sac d'un départ
+  tiroir: null,        // départ ou modèle dont le bouton « Supprimer » est découvert, à l'accueil
   essai: null, version: ""
 };
 
@@ -166,6 +168,15 @@ function remettreObjet(idDepart, idObjet, coche) {
   majDepart(idDepart, champs);
 }
 
+// Supprime un départ ou un modèle ; « Annuler » le réécrit tel qu'il était.
+function supprimerDepart(id, texte) {
+  const d = etat.departs[id];
+  if (!d) return;
+  ecrire(() => etat.F.deleteDoc(refDepart(id)), "Suppression");
+  delete etat.departs[id];
+  annonce(texte || "« " + d.nom + " » supprimé", () => ecrire(() => etat.F.setDoc(refDepart(id), d), "Rétablissement"));
+}
+
 /* ---------- Annonce brève avec « Annuler », et feuille de saisie ---------- */
 let finAnnonce = null;
 function annonce(texte, annuler) {
@@ -195,9 +206,9 @@ function fermerFeuille() {
 $("saisie").addEventListener("click", e => { if (e.target === $("saisie")) fermerFeuille(); });
 
 // Interrupteur « Seulement cette fois ».
-function interrupteur(texte, sous) {
+function interrupteur(texte, sous, coche = true) {
   const boite = h("input", { type: "checkbox", class: "inter-case" });
-  boite.checked = true;   // par défaut un ajout ne vaut que pour ce départ : la liste principale ne grossit pas par oubli
+  boite.checked = coche;   // par défaut un ajout ne vaut que pour ce départ : la liste principale ne grossit pas par oubli
   return { boite, el: h("label", { class: "inter" },
     h("span", { class: "ligne-texte" }, h("span", null, texte), h("span", { class: "ligne-sous" }, sous)), boite) };
 }
@@ -262,14 +273,16 @@ function afficher(enHaut) {
   // À faire avant de lire le départ : l'écriture peut le mettre à jour aussitôt.
   const sa = etat.saisie;
   if (sa && !(r.nom === "depart" && r.a === sa.depart && r.b === sa.sac)) { etat.saisie = null; sa.valider(); }
-  const depart = r.nom === "depart" ? etat.departs[r.a] : null;
+  const trouve = r.nom === "depart" ? etat.departs[r.a] : null;
+  const depart = trouve && !trouve.modele ? trouve : null;
+  if (enHaut) etat.tiroir = null;
   let vue;
   if (!etat.lue) vue = [h("h1", null, "Valises")];
   else if (r.nom === "import") vue = vueImport();
   else if (!etat.liste) vue = vueVide();
   else if (r.nom === "liste") vue = vueListe();
   else if (r.nom === "sac" && etat.liste.sacs[r.a]) vue = vueSac(r.a);
-  else if (r.nom === "nouveau") vue = vueNouveau();
+  else if (r.nom === "nouveau") vue = vueNouveau(r.a);
   else if (depart && r.b) vue = vueValise(r.a, depart, r.b);
   else if (depart) vue = vueDepart(r.a, depart);
   else vue = vueAccueil();
@@ -334,22 +347,43 @@ function vueVide() {
 function vueAccueil() {
   const liste = etat.liste;
   const departs = departsTries(etat.departs);
+  const modeles = modelesTries(etat.departs);
   const total = compter(liste);
+
+  // Balayer vers la gauche découvre « Supprimer » ; rien n'est supprimé avant un toucher sur ce bouton.
+  const avecTiroir = (id, el, quoi) => {
+    tiroir(el, 104, etat.tiroir === id, o => { etat.tiroir = o ? id : etat.tiroir === id ? null : etat.tiroir; });
+    return h("div", { class: "glissiere tiroir" + (quoi === "depart" ? " seule" : "") },
+      h("button", { type: "button", class: "glissiere-fond action", "aria-label": "Supprimer " + etat.departs[id].nom,
+        onclick: () => { etat.tiroir = null; supprimerDepart(id); afficher(false); } }, "Supprimer"),
+      el);
+  };
+
   return [
     h("h1", null, "Valises"),
     departs.length
       ? h("div", { class: "pile" }, ...departs.map(d => {
-        const av = avancement(liste, d);
+        const av = avancement(listeDuDepart(liste, d), d);
         const sous = [d.destination, periode(d.debut, d.fin)].filter(Boolean).join(", ");
-        return h("a", { class: "carte bloc carte-depart", href: "#depart/" + encodeURIComponent(d.id) },
+        return avecTiroir(d.id, h("a", { class: "carte bloc carte-depart", href: "#depart/" + encodeURIComponent(d.id), draggable: "false" },
           h("span", { class: "depart-nom" }, d.nom),
           sous ? h("span", { class: "ligne-sous" }, sous) : null,
-          barre(av.fait, av.total));
+          barre(av.fait, av.total)), "depart");
       }))
       : h("p", { class: "second sous-titre" }, "Aucun départ en préparation."),
     h("a", { class: "bouton espace", href: "#nouveau" }, "Nouveau départ"),
     h("a", { class: "bouton secondaire", href: "#liste" }, "Liste principale"),
     h("p", { class: "second petit centre" }, pluriel(total.sacs, "sac") + ", " + pluriel(total.objets, "objet")),
+    modeles.length ? h("h2", { class: "titre-section" }, "Modèles") : null,
+    modeles.length ? h("div", { class: "carte" }, ...modeles.map(m => avecTiroir(m.id,
+      h("a", { class: "ligne-sac", href: "#nouveau/" + encodeURIComponent(m.id), draggable: "false" },
+        h("span", { class: "tuile" }, picto("valise")),
+        h("span", { class: "ligne-texte" },
+          h("span", { class: "ligne-nom" }, m.nom),
+          h("span", { class: "ligne-sous" }, pluriel((m.personnes || []).length, "personne") + ", " + pluriel((m.sacs || []).length, "sac"))),
+        picto("chevron", 22, 2)), "modele"))) : null,
+    departs.length || modeles.length ? h("p", { class: "second petit astuce" },
+      "Balaye " + (modeles.length ? "un départ ou un modèle" : "un départ") + " vers la gauche pour le supprimer.") : null,
     reglages()
   ];
 }
@@ -412,14 +446,20 @@ function vueSac(id) {
 }
 
 /* ---------- Nouveau départ ---------- */
-function vueNouveau() {
-  const liste = etat.liste;
+function vueNouveau(idModele) {
+  const trouve = idModele ? etat.departs[idModele] : null;
+  const modele = trouve && trouve.modele ? trouve : null;
+  const liste = modele ? listeDuDepart(etat.liste, modele) : etat.liste;
   const personnes = personnesTriees(liste).filter(p => !p.commun);
-  if (!etat.brouillon) {
-    etat.brouillon = { nom: "", destination: "", debut: "", fin: "", personnes: new Set(personnes.map(p => p.cle)), bascules: {}, ouvert: false };
+  if (!etat.brouillon || etat.brouillon.modele !== (modele ? idModele : "")) {
+    etat.brouillon = modele
+      ? { modele: idModele, nom: modele.nom, destination: "", debut: "", fin: "", personnes: new Set(partantsDuModele(liste, modele)), bascules: {}, ouvert: false }
+      : { modele: "", nom: "", destination: "", debut: "", fin: "", personnes: new Set(personnes.map(p => p.cle)), bascules: {}, ouvert: false };
   }
   const b = etat.brouillon;
-  const proposes = sacsProposes(liste, [...b.personnes]).map(s => ({ ...s, coche: s.id in b.bascules ? b.bascules[s.id] : s.coche }));
+  const duModele = new Set(modele ? modele.sacs : []);
+  const proposes = sacsProposes(liste, [...b.personnes])
+    .map(s => ({ ...s, coche: s.id in b.bascules ? b.bascules[s.id] : modele ? duModele.has(s.id) : s.coche }));
   const retenus = proposes.filter(s => s.coche).map(s => s.id);
   const erreur = h("p", { class: "message", role: "alert" });
 
@@ -440,7 +480,7 @@ function vueNouveau() {
     ]);
 
   async function creer(e) {
-    const r = nouveauDepart(liste, { nom: b.nom, destination: b.destination, debut: b.debut, fin: b.fin, personnes: [...b.personnes], sacs: retenus });
+    const r = nouveauDepart(etat.liste, { nom: b.nom, destination: b.destination, debut: b.debut, fin: b.fin, personnes: [...b.personnes], sacs: retenus }, modele);
     if (!r.ok) { erreur.textContent = r.erreur; erreur.scrollIntoView({ block: "center" }); return; }
     e.target.disabled = true;
     try {
@@ -459,6 +499,7 @@ function vueNouveau() {
     h("div", { class: "barre" },
       h("a", { class: "retour", href: "#", "data-nav": "retour", onclick: () => { etat.brouillon = null; } }, "Annuler")),
     h("h1", null, "Nouveau départ"),
+    modele ? h("p", { class: "second sous-titre" }, "D'après le modèle « " + modele.nom + " ».") : null,
     champ("nom", { type: "text", class: "champ grand", "aria-label": "Nom du départ", placeholder: "Nom du départ", autocomplete: "off", enterkeyhint: "done" }),
     h("details", { class: "optionnel", open: b.ouvert, ontoggle: e => { b.ouvert = e.target.open; } },
       h("summary", null, picto("plus", 20, 2.4), h("span", null, "Destination et dates")),
@@ -551,11 +592,11 @@ function vueDepart(id, depart) {
     ];
   }
 
-  function supprimer() {
-    if (!confirm("Supprimer ce départ ? Les objets cochés seront oubliés, la liste principale ne change pas.")) return;
-    ecrire(() => etat.F.deleteDoc(refDepart(id)), "Suppression");
-    delete etat.departs[id];
-    quitter("#");
+  // Avant de repartir : tout décocher sur place, pour refaire le tour des sacs.
+  function preparerRetour() {
+    const avant = { ...(depart.coches || {}) };
+    majDepart(id, { coches: {} });
+    annonce("Tout est décoché pour le retour", () => majDepart(id, { coches: avant }));
   }
 
   return [
@@ -567,7 +608,9 @@ function vueDepart(id, depart) {
     ...corps,
     props.length ? h("p", { class: "second petit astuce" }, "Appui long sur un sac pour tout cocher, balayage vers la gauche pour le retirer.") : null,
     h("button", { type: "button", class: "bouton secondaire espace", onclick: () => feuilleSac(id, depart) }, picto("plus", 20, 2.4), h("span", null, "Ajouter un sac")),
-    h("button", { type: "button", class: "lien-discret", onclick: supprimer }, "Supprimer ce départ")
+    h("div", { class: "deux fin-depart" },
+      h("button", { type: "button", class: "bouton secondaire", disabled: av.fait === 0, onclick: preparerRetour }, "Préparer le retour"),
+      h("button", { type: "button", class: "bouton secondaire", onclick: () => feuilleFin(id, depart) }, "Terminer le départ"))
   ];
 }
 
@@ -743,6 +786,49 @@ function feuilleSac(id, depart) {
       choixPicto,
       fois.el,
       h("button", { type: "submit", class: "bouton" }, "Créer le sac"),
+      message)
+  ]);
+}
+
+/* ---------- Terminer un départ ---------- */
+function feuilleFin(id, depart) {
+  const garde = interrupteur("Garder comme modèle", "Pour refaire ce départ : mêmes personnes, mêmes sacs, mêmes objets retirés ou ajoutés.", false);
+  const nom = h("input", { type: "text", class: "champ", "aria-label": "Nom du modèle", placeholder: "Nom du modèle", autocomplete: "off", enterkeyhint: "done", value: depart.nom });
+  const remplace = h("p", { class: "second petit" });
+  const zone = h("div", { class: "feuille-corps", hidden: true }, nom, remplace);
+  const message = h("p", { class: "message", role: "alert" });
+  const dire = () => {
+    zone.hidden = !garde.boite.checked;
+    remplace.textContent = modeleDeMemeNom(etat.departs, nom.value) ? "Un modèle porte déjà ce nom : il sera remplacé." : "";
+  };
+  garde.boite.addEventListener("change", dire);
+  nom.addEventListener("input", dire);
+  dire();
+
+  function terminer(e) {
+    e.preventDefault();
+    const d = etat.departs[id] || depart;
+    let fin = "Départ terminé";
+    if (garde.boite.checked) {
+      const r = modeleDe(d, nom.value);
+      if (!r.ok) { message.textContent = r.erreur; return; }
+      const ancien = modeleDeMemeNom(etat.departs, r.modele.nom);
+      const { setDoc, addDoc, serverTimestamp } = etat.F;
+      const donnees = { ...r.modele, creeLe: serverTimestamp() };
+      ecrire(() => ancien ? setDoc(refDepart(ancien), donnees) : addDoc(refDeparts(), donnees), "Modèle");
+      fin += ", modèle « " + r.modele.nom + " » enregistré";
+    }
+    fermerFeuille();
+    supprimerDepart(id, fin);
+    quitter("#");
+  }
+
+  ouvrirFeuille("Terminer « " + depart.nom + " »", [
+    h("form", { class: "feuille-corps", onsubmit: terminer },
+      h("p", { class: "second" }, "Le départ sera supprimé. La liste principale ne change pas."),
+      garde.el,
+      zone,
+      h("button", { type: "submit", class: "bouton" }, "Terminer le départ"),
       message)
   ]);
 }

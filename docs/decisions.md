@@ -334,3 +334,13 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 - Retirer un sac d'un départ = balayage vers la gauche sur sa ligne dans l'écran du départ (le lien en bas du sac disparaît). Le sac retiré, même créé « seulement cette fois », reste proposé sous « Ajouter un sac ».
 - La fenêtre « Ajouter un sac » est un panneau détaché des bords, avec un contour en thème sombre : sur fond noir, ses limites ne se voyaient pas.
 - Le fond rouge du balayage n'est peint que pendant le glissement (il dépassait d'un pixel aux coins arrondis des cartes).
+
+## 2026-11-19 — Valises : retour, fin de départ, modèles
+
+- « Préparer le retour » remplace `coches` par une table vide (annulable par le bandeau) : on refait le tour des sacs avant de repartir. Les objets retirés et les ajouts restent.
+- « Terminer le départ » ouvre une fenêtre : le départ est supprimé, avec l'option « Garder comme modèle » (décochée par défaut). Le lien « Supprimer ce départ » disparaît de l'écran du départ.
+- Un modèle est un document de la même collection `vision/valises/departs`, marqué `modele: true` : `nom`, `personnes`, `sacs`, `retires`, `ponctuels`, `sacsPonctuels`, sans coches. Une seule écoute en direct sert aux départs et aux modèles. Un modèle enregistré sous un nom existant remplace l'ancien.
+- Un modèle garde les ajouts « seulement cette fois » du départ : c'est ce qui le distingue de la liste principale. Un sac créé plus tard dans la liste principale y apparaît décoché.
+- Créer un départ d'après un modèle passe par le même formulaire (`#nouveau/<id>`), pré-rempli et modifiable.
+- À l'accueil, balayer un départ ou un modèle vers la gauche découvre « Supprimer » ; rien n'est supprimé sans un toucher sur ce bouton (`tiroir` dans `js/gestes.js`), et la suppression reste annulable quelques secondes (le document est réécrit tel quel).
+- L'avancement affiché à l'accueil compte aussi les ajouts « seulement cette fois ».

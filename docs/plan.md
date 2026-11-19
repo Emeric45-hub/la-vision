@@ -49,7 +49,7 @@ Agendas iCal, météo, API Claude, Firestore depuis GitHub, cantine par navigate
 | 1 | Socle : page, manifeste, icône, connexion, thèmes, import et lecture de la liste principale | ✅ 2026-11-19 |
 | 2 | Départs : création, écran du départ, mode un sac à la fois, synchronisation entre deux appareils | ✅ 2026-11-19 (à valider sur deux appareils) |
 | 3a | Gestes dans un départ : retrait par balayage, ajout d'objet ou de sac, tout cocher par appui long | ✅ 2026-11-19, validé sur téléphone ; saisie d'un objet sur la ligne et balayage des sacs ajoutés ensuite |
-| 3b | Retour, fin de départ, modèles | ⬜ |
+| 3b | Retour, fin de départ, modèles, suppression par tiroir à l'accueil | ✅ 2026-11-19 (tiroir à valider sur téléphone) |
 | 4 | Liste principale : édition complète | ⬜ |
 | 5 | Entrée depuis l'en-tête du tableau de bord (téléphone) | ⬜ |
 | 6 | Météo de la destination | ⬜ |
