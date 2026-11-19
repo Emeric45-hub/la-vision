@@ -354,4 +354,5 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 - Ordre : un mode « Changer l'ordre » remplace les chevrons par deux flèches. Chaque déplacement renumérote toute la suite, car les ordres hérités ont des trous. Pas de glisser-déposer : non testable sans téléphone, et en conflit avec le défilement.
 - Toute suppression est annulable quelques secondes (le sac et ses objets sont réécrits à l'identique). Un départ qui citait un sac ou un objet supprimé continue de fonctionner sans lui.
 - Les personnes ne se modifient pas dans l'app (prénoms, couleurs, ordre) : besoin rare, l'import suffit.
+- « Seulement si untel part » se choisit dans une liste déroulante dessinée par l'app (`deroulant`) : le menu natif du téléphone, essayé d'abord, jurait avec le reste.
 - Apparence : « Automatique / Clair / Sombre » dans les réglages, gardé dans le stockage local de l'appareil (`valises-theme`) et posé sur `<html data-theme>` avant le premier affichage. Les variables du thème sombre existent en deux blocs identiques dans la feuille de style (réglage du téléphone, choix forcé).

@@ -276,7 +276,17 @@ button.ligne-objet { width: 100%; align-items: flex-start; border: 0; color: var
 .fleche:disabled { opacity: 0.3; }
 .bouton.fin-depart { width: 100%; }
 .etiquette.sans-marge, .lien-discret.sans-marge, .saisie-aide.sans-marge { margin: 0; }
-select.champ { -webkit-appearance: none; appearance: none; font-size: 17px; }
+/* Liste déroulante de l'app */
+.deroulant-bloc { display: flex; flex-direction: column; gap: 6px; }
+.champ.deroulant { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 17px; text-align: left; cursor: pointer; }
+.champ.deroulant .picto { flex: none; color: var(--second); }
+.champ.deroulant.ouvert { border-color: var(--accent); }
+.champ.deroulant.ouvert .picto { transform: rotate(180deg); }
+.menu[hidden] { display: none; }
+.ligne-choix { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 48px; padding: 8px 14px; border: 0; background: transparent; color: var(--encre); font: inherit; font-size: 17px; text-align: left; cursor: pointer; }
+.ligne-choix + .ligne-choix { border-top: 1px solid var(--filet); }
+.ligne-choix[aria-selected="true"] { font-weight: 600; }
+.ligne-choix .picto { flex: none; color: var(--ok); }
 
 /* Réglages : apparence */
 .bascule.trois { margin: 6px 0 16px; }

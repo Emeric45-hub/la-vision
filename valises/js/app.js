@@ -544,20 +544,41 @@ function vueSac(id) {
   ];
 }
 
+// Liste déroulante aux couleurs de l'app (celle du téléphone jure avec le reste) : un champ qui montre
+// le choix en cours, et la liste des choix qui se déplie dessous.
+function deroulant(libelle, options, depart) {
+  let valeur = depart, ouvert = false;
+  const texte = h("span");
+  const champ = h("button", { type: "button", class: "champ deroulant", "aria-label": libelle, "aria-haspopup": "listbox",
+    onclick: () => { ouvert = !ouvert; dessiner(); } }, texte, picto("bas", 20, 2.2));
+  const menu = h("div", { class: "carte creuse menu", role: "listbox", "aria-label": libelle });
+  function dessiner() {
+    texte.textContent = (options.find(([v]) => v === valeur) || options[0])[1];
+    champ.setAttribute("aria-expanded", String(ouvert));
+    champ.classList.toggle("ouvert", ouvert);
+    menu.hidden = !ouvert;
+    menu.replaceChildren(...options.map(([v, t]) => h("button", {
+      type: "button", class: "ligne-choix", role: "option", "aria-selected": String(v === valeur),
+      onclick: () => { valeur = v; ouvert = false; dessiner(); }
+    }, h("span", null, t), v === valeur ? picto("coche", 20, 2.6) : null)));
+  }
+  dessiner();
+  return { el: h("div", { class: "deroulant-bloc" }, champ, menu), valeur: () => valeur };
+}
+
 /* ---------- Liste principale : modifier un objet ---------- */
 function feuilleObjetListe(o) {
   const qui = personnesPour(etat.liste, o.sac);
   const nom = h("input", { type: "text", class: "champ", "aria-label": "Nom de l'objet", autocomplete: "off", enterkeyhint: "done", value: o.nom });
   // Dans un sac commun, un objet peut n'être à emporter que si une personne part (son passeport, son manteau).
-  const pour = qui.length ? h("select", { class: "champ", "aria-label": "À emporter" },
-    h("option", { value: "" }, "À chaque départ"),
-    ...qui.map(p => h("option", { value: p.cle }, "Seulement si " + p.nom + " part"))) : null;
-  if (pour) pour.value = o.pour && qui.some(p => p.cle === o.pour) ? o.pour : "";
+  const pour = qui.length ? deroulant("À emporter",
+    [["", "À chaque départ"], ...qui.map(p => [p.cle, "Seulement si " + p.nom + " part"])],
+    o.pour && qui.some(p => p.cle === o.pour) ? o.pour : "") : null;
   const message = h("p", { class: "message", role: "alert" });
 
   function enregistrer(e) {
     e.preventDefault();
-    const r = modifierObjet(etat.liste, o.id, { nom: nom.value, pour: pour ? pour.value : "" });
+    const r = modifierObjet(etat.liste, o.id, { nom: nom.value, pour: pour ? pour.valeur() : "" });
     if (!r.ok) { message.textContent = r.erreur; return; }
     majListe(champsDe({ nom: r.champs.nom, pour: r.champs.pour }, "objets." + o.id + "."), "Objet");
     fermerFeuille();
@@ -566,7 +587,7 @@ function feuilleObjetListe(o) {
   ouvrirFeuille("Modifier l'objet", [
     h("form", { class: "feuille-corps", onsubmit: enregistrer },
       nom,
-      pour ? h("label", { class: "etiquette sans-marge" }, "À emporter", pour) : null,
+      pour ? h("div", { class: "etiquette sans-marge" }, "À emporter", pour.el) : null,
       h("button", { type: "submit", class: "bouton" }, "Enregistrer"),
       message)
   ]);
