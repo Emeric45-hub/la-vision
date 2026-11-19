@@ -344,3 +344,14 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 - Créer un départ d'après un modèle passe par le même formulaire (`#nouveau/<id>`), pré-rempli et modifiable.
 - À l'accueil, balayer un départ ou un modèle vers la gauche découvre « Supprimer » ; rien n'est supprimé sans un toucher sur ce bouton (`tiroir` dans `js/gestes.js`), et la suppression reste annulable quelques secondes (le document est réécrit tel quel).
 - L'avancement affiché à l'accueil compte aussi les ajouts « seulement cette fois ».
+
+## 2026-11-19 — Valises : édition de la liste principale, apparence
+
+- La liste principale se modifie dans l'app ; « Remplacer la liste » (import) reste dans les réglages comme secours.
+- Écritures champ par champ dans `vision/valises` (`sacs.<id>.nom`, `objets.<id>.ordre`…) : deux appareils qui modifient des lignes différentes ne s'écrasent pas.
+- Sac : créer, renommer, changer de pictogramme ou de propriétaire, « Proposé à chaque départ » (décoché = sac occasionnel), supprimer avec ses objets. Changer de propriétaire range le sac en dernier chez l'autre et efface les « seulement si untel part » si le nouveau propriétaire n'est pas le commun.
+- Objet : ajout sur la ligne (même composant que dans un départ, sans interrupteur), modification dans une fenêtre (nom ; dans un sac commun, « seulement si untel part »), suppression par le tiroir.
+- Ordre : un mode « Changer l'ordre » remplace les chevrons par deux flèches. Chaque déplacement renumérote toute la suite, car les ordres hérités ont des trous. Pas de glisser-déposer : non testable sans téléphone, et en conflit avec le défilement.
+- Toute suppression est annulable quelques secondes (le sac et ses objets sont réécrits à l'identique). Un départ qui citait un sac ou un objet supprimé continue de fonctionner sans lui.
+- Les personnes ne se modifient pas dans l'app (prénoms, couleurs, ordre) : besoin rare, l'import suffit.
+- Apparence : « Automatique / Clair / Sombre » dans les réglages, gardé dans le stockage local de l'appareil (`valises-theme`) et posé sur `<html data-theme>` avant le premier affichage. Les variables du thème sombre existent en deux blocs identiques dans la feuille de style (réglage du téléphone, choix forcé).

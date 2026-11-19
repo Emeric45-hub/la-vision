@@ -1,4 +1,4 @@
-/* Valises — une seule feuille. Clair et sombre suivent le réglage du téléphone. */
+/* Valises — une seule feuille. Clair et sombre suivent le téléphone, sauf choix fait dans les réglages. */
 :root {
   color-scheme: light dark;
   --fond: #F1F3FA; --carte: #FFFFFF; --encre: #18245E; --second: #4A5486;
@@ -8,16 +8,30 @@
   --pret-fond: #1F7A5C; --sur-pret: #FFFFFF;
   --retrait: #B3261E; --sur-retrait: #FFFFFF; --voile: rgba(24, 36, 94, 0.5);
 }
+/* Thème sombre : celui du téléphone, sauf si « Clair » est choisi dans les réglages ; ou « Sombre » choisi.
+   Les deux blocs doivent rester identiques. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --fond: #000000; --carte: #14151B; --encre: #F2F3F7; --second: #A9AFC6;
     --piste: #23252F; --tuile: #22242E; --filet: #262833;
     --accent: #AFC0FF; --sur-accent: #0B0C10; --lien: #C3CFFF;
     --ok: #5CCBA3; --ko: #FFB4AB; --anneau: #7D84A3;
     --pret-fond: #3DB58B; --sur-pret: #04140E;
     --retrait: #93000A; --sur-retrait: #FFDAD6; --voile: rgba(0, 0, 0, 0.72);
+    --fond-feuille: #0D0E13; --bord-feuille: #3A3F55;
   }
 }
+:root[data-theme="dark"] {
+  --fond: #000000; --carte: #14151B; --encre: #F2F3F7; --second: #A9AFC6;
+  --piste: #23252F; --tuile: #22242E; --filet: #262833;
+  --accent: #AFC0FF; --sur-accent: #0B0C10; --lien: #C3CFFF;
+  --ok: #5CCBA3; --ko: #FFB4AB; --anneau: #7D84A3;
+  --pret-fond: #3DB58B; --sur-pret: #04140E;
+  --retrait: #93000A; --sur-retrait: #FFDAD6; --voile: rgba(0, 0, 0, 0.72);
+  --fond-feuille: #0D0E13; --bord-feuille: #3A3F55;
+  color-scheme: dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -180,10 +194,10 @@ button.ligne-sac { width: 100%; border: 0; background: transparent; font: inheri
 .glissiere + .glissiere, .glissiere + .ligne-coche { border-top: 1px solid var(--filet); }
 .glissiere-fond { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; background: var(--retrait); color: var(--sur-retrait); font-size: 16px; font-weight: 600; opacity: 0; transition: opacity 0s 0.2s; }
 .glissiere:has(> .glisse) .glissiere-fond { opacity: 1; transition: none; }   /* le fond rouge n'existe que pendant le glissement */
-.glissiere .ligne-coche, .glissiere .ligne-sac, .glissiere .carte-depart { position: relative; background: var(--carte); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.glissiere .ligne-coche, .glissiere .ligne-sac, .glissiere .carte-depart, .glissiere .ligne-objet { position: relative; background: var(--carte); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 @media (prefers-reduced-motion: no-preference) {
-  .glissiere .ligne-coche, .glissiere .ligne-sac, .glissiere .carte-depart { transition: transform 0.18s ease-out; }
-  .glissiere .ligne-coche.glisse, .glissiere .ligne-sac.glisse, .glissiere .carte-depart.glisse { transition: none; }
+  .glissiere .ligne-coche, .glissiere .ligne-sac, .glissiere .carte-depart, .glissiere .ligne-objet { transition: transform 0.18s ease-out; }
+  .glissiere .ligne-coche.glisse, .glissiere .ligne-sac.glisse, .glissiere .carte-depart.glisse, .glissiere .ligne-objet.glisse { transition: none; }
 }
 .ligne-coche.ajout { color: var(--lien); }
 .ligne-coche.ajout .coche-nom { font-size: 19px; font-weight: 600; }
@@ -224,9 +238,6 @@ button.ligne-sac { width: 100%; border: 0; background: transparent; font: inheri
 
 /* Fenêtre de saisie : un panneau détaché du fond, aux bords nets dans les deux thèmes */
 :root { --fond-feuille: var(--fond); --bord-feuille: transparent; }
-@media (prefers-color-scheme: dark) {
-  :root { --fond-feuille: #0D0E13; --bord-feuille: #3A3F55; }
-}
 
 /* Nouvel objet : une ligne de saisie au bout de la liste */
 .carte.suite { border-radius: 22px 22px 0 0; }
@@ -256,3 +267,18 @@ button.ligne-sac { width: 100%; border: 0; background: transparent; font: inheri
 .fin-depart { margin-top: 28px; }
 .fin-depart .bouton { margin: 0; padding: 0 8px; font-size: 15px; }
 .feuille-corps[hidden] { display: none; }
+
+/* Liste principale modifiable */
+button.ligne-objet { width: 100%; align-items: flex-start; border: 0; color: var(--encre); font: inherit; text-align: left; cursor: pointer; }
+.ligne-objet.rangee { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding-right: 10px; }
+.fleches { flex: none; display: flex; gap: 8px; }
+.fleche { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 12px; background: var(--tuile); color: var(--encre); cursor: pointer; }
+.fleche:disabled { opacity: 0.3; }
+.bouton.fin-depart { width: 100%; }
+.etiquette.sans-marge, .lien-discret.sans-marge, .saisie-aide.sans-marge { margin: 0; }
+select.champ { -webkit-appearance: none; appearance: none; font-size: 17px; }
+
+/* Réglages : apparence */
+.bascule.trois { margin: 6px 0 16px; }
+.reglages .bouton { width: 100%; }
+.bascule.trois button { font-size: 15px; padding: 0 4px; }

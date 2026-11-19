@@ -192,3 +192,48 @@ assert.deepEqual(Object.keys(sansSac.ponctuels), ['oP']);
 // Sans modèle, rien ne change.
 assert.deepEqual(Object.keys(creerDepart(liste, { nom: 'Avril', personnes: ['enfant1'], sacs: ['s1'] }).depart).sort(), ['coches', 'nom', 'personnes', 'retires', 'sacs']);
 console.log('valises, modèles : tous les scénarios passent');
+
+// ---------- Édition de la liste principale ----------
+const { deplacerObjet, deplacerSac, personnesPour, modifierObjet, modifierSac, contenuDuSac } = await import('../valises/js/modele.js');
+// Ordre : un cran vers le bas, puis les bords.
+assert.deepEqual(deplacerObjet(liste, 'o1', 1), { o1: 1, o2: 0 });
+assert.deepEqual(deplacerObjet(liste, 'o1', -1), {});
+assert.deepEqual(deplacerObjet(liste, 'o2', 1), {});
+assert.deepEqual(deplacerObjet(liste, 'inconnu', 1), {});
+// Ordres hérités avec trous et doublons : tout est renuméroté.
+const trous = { personnes: liste.personnes, sacs: { a: { proprio: 'enfant1', ordre: 0 } },
+  objets: { x: { sac: 'a', ordre: 5 }, y: { sac: 'a', ordre: 5 }, z: { sac: 'a', ordre: 40 } } };
+assert.deepEqual(deplacerObjet(trous, 'z', -1), { x: 0, z: 1, y: 2 });
+// Sacs : seulement parmi ceux du même propriétaire.
+assert.deepEqual(deplacerSac(liste, 's3', 1), { s3: 1, s4: 0 });
+assert.deepEqual(deplacerSac(liste, 's1', 1), {});
+
+// « Seulement si untel part » : dans un sac commun uniquement.
+assert.deepEqual(personnesPour(liste, 's3').map(p => p.cle), ['enfant1', 'adulte1']);
+assert.deepEqual(personnesPour(liste, 's1'), []);
+assert.deepEqual(modifierObjet(liste, 'o5', { nom: ' Clefs ', pour: 'adulte1' }), { ok: true, champs: { nom: 'Clefs', pour: 'adulte1' } });
+assert.deepEqual(modifierObjet(liste, 'o1', { nom: 'Brosse', pour: 'adulte1' }).champs, { nom: 'Brosse', pour: null });
+assert.deepEqual(modifierObjet(liste, 'o5', { nom: 'Clés', pour: 'commun' }).champs.pour, null);
+assert.equal(modifierObjet(liste, 'o1', { nom: ' ' }).ok, false);
+assert.equal(modifierObjet(liste, 'inconnu', { nom: 'X' }).ok, false);
+
+// Sac : nom, pictogramme, occasionnel ; changer de propriétaire le range à la fin chez l'autre.
+assert.deepEqual(modifierSac(liste, 's2', { nom: ' Sport ', icone: 'sacados', office: true }),
+  { ok: true, champs: { nom: 'Sport', icone: 'sacados', office: true }, sansPour: [] });
+assert.equal(modifierSac(liste, 's2', { nom: 'Sport', office: false }).champs.office, false);
+const donne = modifierSac(liste, 's3', { nom: 'Papiers', proprio: 'enfant1' });
+assert.deepEqual([donne.champs.proprio, donne.champs.ordre, donne.sansPour], ['enfant1', 1, ['o4']]);
+assert.equal(modifierSac(liste, 's1', { nom: '' }).ok, false);
+assert.equal(modifierSac(liste, 's1', { nom: 'T', proprio: 'personne' }).ok, false);
+
+// Suppression d'un sac : le sac et ses objets, de quoi tout rétablir.
+const contenu = contenuDuSac(liste, 's3');
+assert.deepEqual(Object.keys(contenu.objets), ['o4', 'o5']);
+assert.equal(contenu.sac.nom, 'Papiers');
+assert.equal('id' in contenu.objets.o4, false);
+assert.equal(contenuDuSac(liste, 'inconnu'), null);
+// Un départ qui citait un sac supprimé continue de fonctionner sans lui.
+const apres = { ...liste, sacs: { ...liste.sacs }, objets: { ...liste.objets } };
+delete apres.sacs.s1; delete apres.objets.o1; delete apres.objets.o2;
+assert.deepEqual(sacsDuDepart(apres, { personnes: ['enfant1'], sacs: ['s1', 's3'], coches: { o1: true } }).map(s => s.id), ['s3']);
+console.log('valises, édition : tous les scénarios passent');

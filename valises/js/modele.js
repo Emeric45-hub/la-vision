@@ -308,3 +308,68 @@ export function modeleDeMemeNom(departs, nom) {
 export function partantsDuModele(liste, modele) {
   return personnesTriees(liste).filter(p => !p.commun && (modele.personnes || []).includes(p.cle)).map(p => p.cle);
 }
+
+/* ---------- Édition de la liste principale ---------- */
+// Ces fonctions ne modifient rien : elles disent quels champs écrire. `null` veut dire « champ à supprimer ».
+
+// Déplace un élément d'un cran dans une suite triée et renvoie { id: nouvel ordre } pour ceux qui changent.
+// On renumérote toute la suite : les ordres hérités peuvent avoir des trous ou des doublons.
+function decaler(suite, id, sens) {
+  const ids = suite.map(x => x.id);
+  const i = ids.indexOf(id), j = i + sens;
+  if (i < 0 || j < 0 || j >= ids.length) return {};
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  const anciens = Object.fromEntries(suite.map(x => [x.id, x.ordre]));
+  return Object.fromEntries(ids.map((x, n) => [x, n]).filter(([x, n]) => anciens[x] !== n));
+}
+
+export function deplacerObjet(liste, idObjet, sens) {
+  const o = liste.objets[idObjet];
+  return o ? decaler(objetsDe(liste, o.sac), idObjet, sens) : {};
+}
+
+export function deplacerSac(liste, idSac, sens) {
+  const s = liste.sacs[idSac];
+  return s ? decaler(sacsDe(liste, s.proprio), idSac, sens) : {};
+}
+
+// Un objet ne peut être réservé à une personne (« seulement si elle part ») que dans un sac commun.
+export function personnesPour(liste, idSac) {
+  const sac = liste.sacs[idSac];
+  if (!sac || !liste.personnes[sac.proprio] || !liste.personnes[sac.proprio].commun) return [];
+  return personnesTriees(liste).filter(p => !p.commun);
+}
+
+export function modifierObjet(liste, idObjet, saisie) {
+  const o = liste.objets[idObjet];
+  if (!o) return { ok: false, erreur: "Cet objet n'existe plus." };
+  const nom = texte(saisie.nom);
+  if (!nom) return { ok: false, erreur: "Donne un nom à l'objet." };
+  const permis = personnesPour(liste, o.sac).some(p => p.cle === saisie.pour);
+  return { ok: true, champs: { nom, pour: permis ? saisie.pour : null } };
+}
+
+export function modifierSac(liste, idSac, saisie) {
+  const s = liste.sacs[idSac];
+  if (!s) return { ok: false, erreur: "Ce sac n'existe plus." };
+  const nom = texte(saisie.nom);
+  if (!nom) return { ok: false, erreur: "Donne un nom au sac." };
+  const proprio = saisie.proprio || s.proprio;
+  if (!liste.personnes[proprio]) return { ok: false, erreur: "Choisis à qui est ce sac." };
+  const champs = { nom, icone: texte(saisie.icone) || s.icone || "sac", office: saisie.office !== false };
+  let sansPour = [];
+  if (proprio !== s.proprio) {
+    champs.proprio = proprio;
+    champs.ordre = suivant(liste.sacs, x => x.proprio === proprio);
+    // Chez une personne, « seulement si untel part » n'a plus de sens.
+    if (!liste.personnes[proprio].commun) sansPour = objetsDe(liste, idSac).filter(o => o.pour).map(o => o.id);
+  }
+  return { ok: true, champs, sansPour };
+}
+
+// Ce qu'il faut retirer pour supprimer un sac, et de quoi le rétablir à l'identique.
+export function contenuDuSac(liste, idSac) {
+  const sac = liste.sacs[idSac];
+  if (!sac) return null;
+  return { sac, objets: Object.fromEntries(objetsDe(liste, idSac).map(({ id, ...o }) => [id, o])) };
+}
