@@ -420,7 +420,11 @@ function vueAccueil() {
   const avecTiroir = (id, el, quoi) =>
     avecSuppression(id, el, "Supprimer " + etat.departs[id].nom, () => supprimerDepart(id), quoi === "depart" ? "seule" : "");
 
+  // Arrivé depuis le tableau de bord : un lien pour y revenir (l'app installée n'a pas de bouton retour).
+  const deVision = new URLSearchParams(location.search).get("de") === "vision";
+
   return [
+    deVision ? h("div", { class: "barre" }, h("a", { class: "retour", href: "../" }, picto("retour", 22, 2.2), h("span", null, "La Vision"))) : null,
     h("h1", null, "Valises"),
     departs.length
       ? h("div", { class: "pile" }, ...departs.map(d => {

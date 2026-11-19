@@ -356,3 +356,9 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 - Les personnes ne se modifient pas dans l'app (prénoms, couleurs, ordre) : besoin rare, l'import suffit.
 - « Seulement si untel part » se choisit dans une liste déroulante dessinée par l'app (`deroulant`) : le menu natif du téléphone, essayé d'abord, jurait avec le reste.
 - Apparence : « Automatique / Clair / Sombre » dans les réglages, gardé dans le stockage local de l'appareil (`valises-theme`) et posé sur `<html data-theme>` avant le premier affichage. Les variables du thème sombre existent en deux blocs identiques dans la feuille de style (réglage du téléphone, choix forcé).
+
+## 2026-11-19 — Valises : entrée depuis le tableau de bord
+
+- Sur téléphone (moins de 901 px de large, comme les autres icônes de l'en-tête), une icône valise ouvre `valises/?de=vision`. Rien sur la tablette en paysage.
+- Avec `de=vision`, l'accueil de Valises affiche un lien de retour vers le tableau de bord : installée, l'app n'a pas de bouton retour, et Valises s'ouvre dans la même fenêtre (le manifeste du tableau de bord couvre le sous-dossier).
+- Limite : à 390 px de large, quatre icônes laissent moins de place à la date de l'en-tête, qui est alors abrégée.
