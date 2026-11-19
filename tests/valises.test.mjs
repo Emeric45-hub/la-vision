@@ -161,3 +161,34 @@ assert.deepEqual(avancement(L, ponctuel), { fait: 1, total: 4 });
 assert.deepEqual(aBasculer(L, ponctuel, 's1', true), ['o1', 'o2']);
 assert.deepEqual(aBasculer(L, ponctuel, 's1', false), ['oP']);
 console.log('valises, gestes : tous les scénarios passent');
+
+// ---------- Modèles ----------
+const { modeleDe, modelesTries, modeleDeMemeNom, partantsDuModele, departsTries: tries, nouveauDepart: creerDepart } = await import('../valises/js/modele.js');
+assert.equal(modeleDe(ponctuel, '  ').ok, false);
+const m = modeleDe({ ...ponctuel, retires: { o2: true }, destination: 'Ailleurs', debut: '2031-01-02' }, ' Week-end type ').modele;
+assert.deepEqual(Object.keys(m).sort(), ['modele', 'nom', 'personnes', 'ponctuels', 'retires', 'sacs', 'sacsPonctuels']);
+assert.equal(m.nom, 'Week-end type');
+assert.equal('coches' in m, false);
+
+// Un modèle n'est pas un départ en cours.
+const rangement = { d1: { nom: 'Vrai départ', personnes: ['enfant1'], sacs: ['s1'] }, m1: m };
+assert.deepEqual(tries(rangement).map(d => d.id), ['d1']);
+assert.deepEqual(modelesTries(rangement).map(d => d.id), ['m1']);
+assert.equal(modeleDeMemeNom(rangement, 'week-end TYPE'), 'm1');
+assert.equal(modeleDeMemeNom(rangement, 'Autre'), null);
+assert.deepEqual(partantsDuModele(liste, { personnes: ['inconnu', 'enfant1'] }), ['enfant1']);
+
+// Départ créé d'après le modèle : mêmes retraits, mêmes ajouts, aucune coche.
+const refait = creerDepart(liste, { nom: 'Février', personnes: ['enfant1'], sacs: ['s1', 'sP'] }, m).depart;
+assert.deepEqual(refait.sacs, ['s1', 'sP']);
+assert.deepEqual(refait.coches, {});
+assert.deepEqual(refait.retires, { o2: true });
+assert.deepEqual(Object.keys(refait.ponctuels).sort(), ['oP', 'oQ']);
+assert.deepEqual(objetsDuDepart(listeDuDepart(liste, refait), refait, 's1').map(o => o.nom), ['Brosse', 'Lampe']);
+// Un sac ponctuel décoché à la création n'emporte ni le sac ni ses objets.
+const sansSac = creerDepart(liste, { nom: 'Mars', personnes: ['enfant1'], sacs: ['s1'] }, m).depart;
+assert.equal('sacsPonctuels' in sansSac, false);
+assert.deepEqual(Object.keys(sansSac.ponctuels), ['oP']);
+// Sans modèle, rien ne change.
+assert.deepEqual(Object.keys(creerDepart(liste, { nom: 'Avril', personnes: ['enfant1'], sacs: ['s1'] }).depart).sort(), ['coches', 'nom', 'personnes', 'retires', 'sacs']);
+console.log('valises, modèles : tous les scénarios passent');

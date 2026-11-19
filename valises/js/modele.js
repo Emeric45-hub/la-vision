@@ -180,7 +180,9 @@ export function sacsProposes(liste, clesPersonnes) {
 const JOUR = /^\d{4}-\d{2}-\d{2}$/;
 
 // Saisie du formulaire → document du départ, ou message d'erreur.
-export function nouveauDepart(liste, saisie) {
+// Avec un modèle, le départ reprend aussi ce que le modèle avait retiré ou ajouté « seulement cette fois ».
+export function nouveauDepart(listePrincipale, saisie, modele) {
+  const liste = modele ? listeDuDepart(listePrincipale, modele) : listePrincipale;
   const nom = texte(saisie.nom);
   if (!nom) return { ok: false, erreur: "Donne un nom au départ." };
   const personnes = personnesTriees(liste).filter(p => !p.commun && (saisie.personnes || []).includes(p.cle)).map(p => p.cle);
@@ -189,6 +191,14 @@ export function nouveauDepart(liste, saisie) {
   const sacs = (saisie.sacs || []).filter(id => permis.has(id));
   if (!sacs.length) return { ok: false, erreur: "Garde au moins un sac." };
   const depart = { nom, personnes, sacs, coches: {}, retires: {} };
+  if (modele) {
+    const garde = new Set(sacs);
+    depart.retires = garder(modele.retires, id => liste.objets[id]);
+    const sacsPonctuels = garder(modele.sacsPonctuels, id => garde.has(id));
+    const ponctuels = garder(modele.ponctuels, (id, o) => garde.has(o.sac));
+    if (Object.keys(sacsPonctuels).length) depart.sacsPonctuels = sacsPonctuels;
+    if (Object.keys(ponctuels).length) depart.ponctuels = ponctuels;
+  }
   const destination = texte(saisie.destination);
   if (destination) depart.destination = destination;
   let debut = JOUR.test(saisie.debut || "") ? saisie.debut : "", fin = JOUR.test(saisie.fin || "") ? saisie.fin : "";
@@ -211,7 +221,7 @@ export function periode(debut, fin) {
 
 // Départs triés : ceux qui ont une date d'abord (la plus proche en tête), puis par nom.
 export function departsTries(departs) {
-  return Object.entries(departs || {}).map(([id, d]) => ({ id, ...d }))
+  return Object.entries(departs || {}).filter(([, d]) => !d.modele).map(([id, d]) => ({ id, ...d }))
     .sort((a, b) => (a.debut || "9999").localeCompare(b.debut || "9999") || a.nom.localeCompare(b.nom, "fr"));
 }
 
@@ -265,4 +275,36 @@ export function creerSac(liste, saisie, id) {
 // Tout cocher (ou tout décocher) un sac : liste des objets dont l'état doit changer.
 export function aBasculer(liste, depart, idSac, cocher) {
   return objetsDuDepart(liste, depart, idSac).filter(o => o.coche !== cocher).map(o => o.id);
+}
+
+/* ---------- Modèles ---------- */
+// Un modèle est rangé avec les départs, marqué `modele: true` : qui part, quels sacs, ce qui a été retiré
+// ou ajouté. Il ne retient aucune coche, et un objet ajouté plus tard à la liste principale y apparaît.
+
+const garder = (table, test) => Object.fromEntries(Object.entries(table || {}).filter(([id, v]) => test(id, v)));
+
+export function modelesTries(departs) {
+  return Object.entries(departs || {}).filter(([, d]) => d.modele).map(([id, d]) => ({ id, ...d }))
+    .sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+}
+
+export function modeleDe(depart, nom) {
+  const propre = texte(nom);
+  if (!propre) return { ok: false, erreur: "Donne un nom au modèle." };
+  const modele = { modele: true, nom: propre, personnes: [...(depart.personnes || [])], sacs: [...(depart.sacs || [])], retires: { ...(depart.retires || {}) } };
+  if (depart.sacsPonctuels && Object.keys(depart.sacsPonctuels).length) modele.sacsPonctuels = { ...depart.sacsPonctuels };
+  if (depart.ponctuels && Object.keys(depart.ponctuels).length) modele.ponctuels = { ...depart.ponctuels };
+  return { ok: true, modele };
+}
+
+// Identifiant du modèle qui porte déjà ce nom (sans tenir compte des majuscules), pour le remplacer.
+export function modeleDeMemeNom(departs, nom) {
+  const cherche = texte(nom).toLocaleLowerCase("fr");
+  const trouve = modelesTries(departs).find(m => m.nom.toLocaleLowerCase("fr") === cherche);
+  return trouve ? trouve.id : null;
+}
+
+// Point de départ du formulaire « Nouveau départ » d'après un modèle : les partants qui existent encore.
+export function partantsDuModele(liste, modele) {
+  return personnesTriees(liste).filter(p => !p.commun && (modele.personnes || []).includes(p.cle)).map(p => p.cle);
 }

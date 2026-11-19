@@ -180,10 +180,10 @@ button.ligne-sac { width: 100%; border: 0; background: transparent; font: inheri
 .glissiere + .glissiere, .glissiere + .ligne-coche { border-top: 1px solid var(--filet); }
 .glissiere-fond { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; background: var(--retrait); color: var(--sur-retrait); font-size: 16px; font-weight: 600; opacity: 0; transition: opacity 0s 0.2s; }
 .glissiere:has(> .glisse) .glissiere-fond { opacity: 1; transition: none; }   /* le fond rouge n'existe que pendant le glissement */
-.glissiere .ligne-coche, .glissiere .ligne-sac { position: relative; background: var(--carte); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.glissiere .ligne-coche, .glissiere .ligne-sac, .glissiere .carte-depart { position: relative; background: var(--carte); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 @media (prefers-reduced-motion: no-preference) {
-  .glissiere .ligne-coche, .glissiere .ligne-sac { transition: transform 0.18s ease-out; }
-  .glissiere .ligne-coche.glisse, .glissiere .ligne-sac.glisse { transition: none; }
+  .glissiere .ligne-coche, .glissiere .ligne-sac, .glissiere .carte-depart { transition: transform 0.18s ease-out; }
+  .glissiere .ligne-coche.glisse, .glissiere .ligne-sac.glisse, .glissiere .carte-depart.glisse { transition: none; }
 }
 .ligne-coche.ajout { color: var(--lien); }
 .ligne-coche.ajout .coche-nom { font-size: 19px; font-weight: 600; }
@@ -245,3 +245,14 @@ button.ligne-sac { width: 100%; border: 0; background: transparent; font: inheri
 .inter-case.petite:checked::before { left: 19px; }
 .saisie-objet .message { margin: 6px 16px 0; }
 .saisie-objet .message:empty { display: none; }
+
+/* Tiroir : le balayage découvre un bouton, qu'il faut ensuite toucher */
+.tiroir.seule { margin-top: 14px; border-radius: 22px; }
+.tiroir .carte-depart { margin-top: 0; }
+.glissiere-fond.action { inset: 0; width: 100%; padding: 0 13px 0 0; justify-content: flex-end; border: 0; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; pointer-events: none; }
+.glissiere:has(> .ouvert) .glissiere-fond { opacity: 1; transition: none; pointer-events: auto; }
+
+/* Fin d'un départ */
+.fin-depart { margin-top: 28px; }
+.fin-depart .bouton { margin: 0; padding: 0 8px; font-size: 15px; }
+.feuille-corps[hidden] { display: none; }
