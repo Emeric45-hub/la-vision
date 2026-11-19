@@ -5,6 +5,7 @@
   --piste: #DCE0F1; --tuile: #E9ECF8; --filet: #E3E6F3;
   --accent: #18245E; --sur-accent: #FFFFFF; --lien: #18245E;
   --ok: #1F7A5C; --ko: #B3261E; --anneau: #6F78A6;
+  --pret-fond: #1F7A5C; --sur-pret: #FFFFFF;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -12,6 +13,7 @@
     --piste: #23252F; --tuile: #22242E; --filet: #262833;
     --accent: #AFC0FF; --sur-accent: #0B0C10; --lien: #C3CFFF;
     --ok: #5CCBA3; --ko: #FFB4AB; --anneau: #7D84A3;
+    --pret-fond: #3DB58B; --sur-pret: #04140E;
   }
 }
 
@@ -95,3 +97,70 @@ textarea { width: 100%; margin: 16px 0 12px; padding: 14px; border: 2px solid va
 @media (prefers-reduced-motion: no-preference) {
   .personne, .bouton { transition: background-color 0.15s ease-out; }
 }
+
+/* ---------- Départs ---------- */
+.pile { display: flex; flex-direction: column; }
+.espace { margin-top: 20px; }
+.centre { text-align: center; margin-top: 8px; }
+.bouton + .bouton { margin-top: 12px; }
+.carte-depart { gap: 6px; color: inherit; text-decoration: none; margin-top: 14px; }
+.depart-nom { font-size: 22px; line-height: 28px; font-weight: 600; }
+.pret { color: var(--ok); font-weight: 600; }
+
+/* Barre d'avancement */
+.progres { display: flex; align-items: center; gap: 12px; min-height: 22px; margin-top: 12px; }
+.carte-depart .progres { margin-top: 6px; }
+.progres-piste { flex: 1; height: 10px; border-radius: 5px; background: var(--piste); overflow: hidden; }
+.progres-fait { height: 10px; border-radius: 5px; background: var(--accent); }
+.progres-fait.pret { background: var(--pret-fond); }
+.progres-texte { font-size: 16px; font-weight: 600; white-space: nowrap; }
+
+/* Bascule « Par personne / Par sac » */
+.bascule { display: flex; gap: 4px; margin-top: 18px; padding: 4px; border-radius: 16px; background: var(--piste); }
+.bascule button { flex: 1; min-height: 40px; border: 0; border-radius: 12px; background: transparent; color: var(--second); font: inherit; font-size: 16px; font-weight: 500; cursor: pointer; }
+.bascule button[aria-pressed="true"] { background: var(--carte); color: var(--encre); font-weight: 600; }
+
+/* Pastille avec anneau d'avancement */
+.disque-anneau { position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
+.anneau { position: absolute; inset: 0; width: 48px; height: 48px; transform: rotate(-90deg); }
+.anneau circle { fill: none; stroke-width: 4; }
+.anneau-piste { stroke: var(--piste); }
+.disque.moyen { width: 34px; height: 34px; font-size: 16px; }
+.disque.mini { width: 24px; height: 24px; font-size: 13px; }
+.personne.absent .disque { background: var(--piste) !important; color: var(--second); }
+.personne.choix[aria-pressed="true"] { background: var(--carte); }
+.personne.choix.absent { text-decoration: line-through; }
+
+/* Tuile d'un sac prêt */
+.tuile.pret { background: var(--pret-fond); color: var(--sur-pret); }
+
+/* Lignes à cocher */
+.ligne-coche { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 56px; padding: 8px 16px; border: 0; background: transparent; color: var(--encre); font: inherit; text-align: left; cursor: pointer; }
+.ligne-coche + .ligne-coche { border-top: 1px solid var(--filet); }
+.coche-nom { font-size: 20px; line-height: 26px; }
+.ligne-coche.compacte .coche-nom { font-size: 19px; line-height: 24px; }
+.cercle { flex: none; width: 30px; height: 30px; border: 2px solid var(--anneau); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: transparent; }
+.cercle.actif { border-color: var(--pret-fond); background: var(--pret-fond); color: var(--sur-pret); }
+.ligne-coche[aria-pressed="true"]:not(.compacte) .coche-nom { color: var(--second); text-decoration: line-through; }
+.ligne-coche.compacte[aria-pressed="false"] .coche-nom { color: var(--second); }
+
+/* Barre du bas, toujours visible */
+.reserve { height: 104px; }
+.pied { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; gap: 10px; padding: 14px calc(env(safe-area-inset-right) + 20px) calc(env(safe-area-inset-bottom) + 16px) calc(env(safe-area-inset-left) + 20px); background: var(--fond); border-top: 1px solid var(--filet); }
+.pied > * { flex: 1; min-width: 0; }
+.pied .bouton { gap: 4px; padding: 0 8px; margin: 0; font-size: 15px; white-space: nowrap; }
+
+/* Formulaire du nouveau départ */
+.champ { width: 100%; min-height: 52px; padding: 0 14px; border: 2px solid var(--anneau); border-radius: 14px; background: var(--carte); color: var(--encre); font: inherit; }
+.champ.grand { min-height: 56px; margin-top: 14px; border-color: var(--accent); border-radius: 16px; font-size: 19px; font-weight: 600; }
+.champ::placeholder { color: var(--second); font-weight: 400; }
+.etiquette { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; font-size: 15px; color: var(--second); }
+.deux { display: flex; gap: 10px; }
+.deux > * { flex: 1; min-width: 0; }
+.optionnel { margin-top: 2px; }
+.optionnel summary { display: flex; align-items: center; gap: 8px; min-height: 44px; color: var(--lien); font-size: 16px; font-weight: 600; cursor: pointer; list-style: none; }
+.optionnel summary::-webkit-details-marker { display: none; }
+.titre-section { margin-top: 18px; font-size: 20px; line-height: 26px; }
+.titre-section.sans-marge { margin-top: 0; }
+.groupe { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 17px; font-weight: 600; }
+.lien-discret { align-self: center; min-height: 44px; margin-top: 28px; padding: 0 12px; border: 0; background: transparent; color: var(--second); font: inherit; font-size: 15px; text-decoration: underline; cursor: pointer; }

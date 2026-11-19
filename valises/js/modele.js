@@ -103,3 +103,111 @@ export function compter(liste) {
 export function pluriel(n, mot) {
   return n + " " + mot + (n > 1 ? "s" : "");
 }
+
+/* ---------- Départs ----------
+   Un départ (document à part) : { nom, destination?, debut?, fin?, personnes: [clé], sacs: [id],
+   coches: { idObjet: true }, retires: { idObjet: true }, creeLe }.
+   Il ne copie rien de la liste principale : il dit seulement qui part, quels sacs, et l'état des objets. */
+
+const partants = depart => new Set(depart.personnes || []);
+
+function objetVisible(o, id, depart, qui) {
+  if (depart.retires && depart.retires[id]) return false;
+  return !o.pour || qui.has(o.pour);
+}
+
+// Objets à préparer dans un sac pour ce départ (retirés et nominatifs absents exclus).
+export function objetsDuDepart(liste, depart, idSac) {
+  const qui = partants(depart);
+  return objetsDe(liste, idSac)
+    .filter(o => objetVisible(o, o.id, depart, qui))
+    .map(o => ({ id: o.id, nom: o.nom, coche: !!(depart.coches && depart.coches[o.id]) }));
+}
+
+// Sacs du départ, dans l'ordre des propriétaires puis des sacs ; un sac sans objet à préparer est omis.
+export function sacsDuDepart(liste, depart, clePersonne) {
+  const rang = {};
+  personnesTriees(liste).forEach((p, i) => { rang[p.cle] = i; });
+  return (depart.sacs || [])
+    .filter(id => liste.sacs[id] && (!clePersonne || liste.sacs[id].proprio === clePersonne))
+    .map(id => {
+      const objets = objetsDuDepart(liste, depart, id);
+      const fait = objets.filter(o => o.coche).length;
+      return { id, ...liste.sacs[id], fait, total: objets.length, pret: objets.length > 0 && fait === objets.length };
+    })
+    .filter(s => s.total > 0)
+    .sort((a, b) => (rang[a.proprio] - rang[b.proprio]) || (a.ordre - b.ordre));
+}
+
+// Propriétaires à afficher : ceux qui partent et le propriétaire commun, s'ils ont au moins un sac.
+export function proprietairesDuDepart(liste, depart) {
+  const qui = partants(depart);
+  return personnesTriees(liste)
+    .filter(p => p.commun || qui.has(p.cle))
+    .map(p => {
+      const sacs = sacsDuDepart(liste, depart, p.cle);
+      return { ...p, fait: sacs.reduce((n, s) => n + s.fait, 0), total: sacs.reduce((n, s) => n + s.total, 0) };
+    })
+    .filter(p => p.total > 0);
+}
+
+export function avancement(liste, depart) {
+  const sacs = sacsDuDepart(liste, depart);
+  return { fait: sacs.reduce((n, s) => n + s.fait, 0), total: sacs.reduce((n, s) => n + s.total, 0) };
+}
+
+// Sac précédent et sac suivant, dans l'ordre d'affichage du départ.
+export function voisins(liste, depart, idSac) {
+  const ids = sacsDuDepart(liste, depart).map(s => s.id);
+  const i = ids.indexOf(idSac);
+  return { precedent: i > 0 ? ids[i - 1] : null, suivant: i >= 0 && i < ids.length - 1 ? ids[i + 1] : null };
+}
+
+// Sacs proposés à la création d'un départ ; « coche » vaut le réglage « proposé d'office ».
+export function sacsProposes(liste, clesPersonnes) {
+  const qui = new Set(clesPersonnes);
+  const rang = {};
+  personnesTriees(liste).forEach((p, i) => { rang[p.cle] = i; });
+  return Object.entries(liste.sacs || {})
+    .filter(([, s]) => liste.personnes[s.proprio] && (liste.personnes[s.proprio].commun || qui.has(s.proprio)))
+    .map(([id, s]) => ({ id, ...s, coche: s.office !== false }))
+    .sort((a, b) => (rang[a.proprio] - rang[b.proprio]) || (a.ordre - b.ordre));
+}
+
+const JOUR = /^\d{4}-\d{2}-\d{2}$/;
+
+// Saisie du formulaire → document du départ, ou message d'erreur.
+export function nouveauDepart(liste, saisie) {
+  const nom = texte(saisie.nom);
+  if (!nom) return { ok: false, erreur: "Donne un nom au départ." };
+  const personnes = personnesTriees(liste).filter(p => !p.commun && (saisie.personnes || []).includes(p.cle)).map(p => p.cle);
+  if (!personnes.length) return { ok: false, erreur: "Choisis au moins une personne." };
+  const permis = new Set(sacsProposes(liste, personnes).map(s => s.id));
+  const sacs = (saisie.sacs || []).filter(id => permis.has(id));
+  if (!sacs.length) return { ok: false, erreur: "Garde au moins un sac." };
+  const depart = { nom, personnes, sacs, coches: {}, retires: {} };
+  const destination = texte(saisie.destination);
+  if (destination) depart.destination = destination;
+  let debut = JOUR.test(saisie.debut || "") ? saisie.debut : "", fin = JOUR.test(saisie.fin || "") ? saisie.fin : "";
+  if (debut && fin && fin < debut) [debut, fin] = [fin, debut];
+  if (debut) depart.debut = debut;
+  if (fin && fin !== debut) depart.fin = fin;
+  return { ok: true, depart };
+}
+
+// « 28 novembre », « 28 au 29 novembre », « 28 novembre au 2 décembre ».
+export function periode(debut, fin) {
+  if (!JOUR.test(debut || "")) return "";
+  const jour = iso => Number(iso.slice(8));
+  const mois = iso => new Date(iso + "T12:00:00Z").toLocaleDateString("fr-FR", { month: "long", timeZone: "UTC" });
+  const un = iso => (jour(iso) === 1 ? "1er" : jour(iso)) + " " + mois(iso);
+  if (!JOUR.test(fin || "") || fin === debut) return un(debut);
+  if (debut.slice(0, 7) === fin.slice(0, 7)) return (jour(debut) === 1 ? "1er" : jour(debut)) + " au " + un(fin);
+  return un(debut) + " au " + un(fin);
+}
+
+// Départs triés : ceux qui ont une date d'abord (la plus proche en tête), puis par nom.
+export function departsTries(departs) {
+  return Object.entries(departs || {}).map(([id, d]) => ({ id, ...d }))
+    .sort((a, b) => (a.debut || "9999").localeCompare(b.debut || "9999") || a.nom.localeCompare(b.nom, "fr"));
+}
