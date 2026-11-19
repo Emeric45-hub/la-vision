@@ -27,6 +27,7 @@ const etat = {
   mode: "personne",    // écran du départ : par personne ou par sac
   brouillon: null,     // saisie en cours d'un nouveau départ
   retiresOuverts: {},  // section « Retirés » dépliée, par sac
+  saisie: null,        // ligne « nouvel objet » ouverte dans un sac d'un départ
   essai: null, version: ""
 };
 
@@ -196,6 +197,7 @@ $("saisie").addEventListener("click", e => { if (e.target === $("saisie")) ferme
 // Interrupteur « Seulement cette fois ».
 function interrupteur(texte, sous) {
   const boite = h("input", { type: "checkbox", class: "inter-case" });
+  boite.checked = true;   // par défaut un ajout ne vaut que pour ce départ : la liste principale ne grossit pas par oubli
   return { boite, el: h("label", { class: "inter" },
     h("span", { class: "ligne-texte" }, h("span", null, texte), h("span", { class: "ligne-sous" }, sous)), boite) };
 }
@@ -234,8 +236,32 @@ function rafraichir() {
   afficher(false);
 }
 
+// Pose les éléments d'un écran. Si l'un d'eux est déjà à l'écran et contient le champ en cours de frappe,
+// il ne bouge pas (le clavier resterait sinon fermé) : on remplace seulement ce qui l'entoure.
+function poser(ecran, noeuds) {
+  const fixe = noeuds.find(n => n.parentNode === ecran && n.contains(document.activeElement));
+  if (!fixe) { ecran.replaceChildren(...noeuds); return; }
+  [...ecran.childNodes].forEach(n => { if (n !== fixe) n.remove(); });
+  const i = noeuds.indexOf(fixe);
+  fixe.before(...noeuds.slice(0, i));
+  fixe.after(...noeuds.slice(i + 1));
+  garderVisible(fixe);
+}
+
+// Fait défiler juste ce qu'il faut pour que l'élément reste au-dessus du clavier.
+function garderVisible(el) {
+  const vv = window.visualViewport, r = el.getBoundingClientRect();
+  const haut = vv ? vv.offsetTop : 0, bas = haut + (vv ? vv.height : window.innerHeight);
+  if (r.bottom > bas - 12) window.scrollBy(0, r.bottom - bas + 12);
+  else if (r.top < haut + 12) window.scrollBy(0, r.top - haut - 12);
+}
+
 function afficher(enHaut) {
   const r = route();
+  // Quitter le sac où l'on saisissait un objet enregistre ce qui était tapé, comme un appui sur « Terminé ».
+  // À faire avant de lire le départ : l'écriture peut le mettre à jour aussitôt.
+  const sa = etat.saisie;
+  if (sa && !(r.nom === "depart" && r.a === sa.depart && r.b === sa.sac)) { etat.saisie = null; sa.valider(); }
   const depart = r.nom === "depart" ? etat.departs[r.a] : null;
   let vue;
   if (!etat.lue) vue = [h("h1", null, "Valises")];
@@ -247,7 +273,7 @@ function afficher(enHaut) {
   else if (depart && r.b) vue = vueValise(r.a, depart, r.b);
   else if (depart) vue = vueDepart(r.a, depart);
   else vue = vueAccueil();
-  $("ecran").replaceChildren(...vue.filter(e => e != null && e !== false));
+  poser($("ecran"), vue.filter(e => e != null && e !== false));
   if (enHaut) window.scrollTo(0, 0);
 }
 
@@ -480,15 +506,22 @@ function vueDepart(id, depart) {
   const ligne = (s, detail) => {
     const compte = s.total === 0 ? (detail ? "vide" : "Vide") : s.pret ? (detail ? "prêt" : "Prêt") : s.fait + " sur " + s.total;
     const contenu = s.apart && !s.pret && s.total ? " : " + objetsDuDepart(liste, depart, s.id).map(o => o.nom).join(", ") : "";
-    const el = h("a", { class: "ligne-sac", href: lien(s) },
+    const el = h("a", { class: "ligne-sac", href: lien(s), draggable: "false" },
       h("span", { class: "tuile" + (s.pret ? " pret" : "") }, s.pret ? picto("coche", 26, 2.6) : picto(s.icone)),
       h("span", { class: "ligne-texte" },
         h("span", { class: "ligne-nom" }, s.nom),
         h("span", { class: "ligne-sous" + (s.pret ? " pret" : "") + (contenu ? " apercu" : "") }, (detail ? detail + ", " : "") + compte + contenu)),
       picto("chevron", 22, 2));
     appuiLong(el, () => toutCocher(s));
-    return el;
+    balayable(el, () => retirerSac(s));
+    return h("div", { class: "glissiere" }, h("span", { class: "glissiere-fond", "aria-hidden": "true" }, "Retirer"), el);
   };
+
+  // Balayage vers la gauche : le sac sort de ce départ ; on le retrouve sous « Ajouter un sac ».
+  function retirerSac(s) {
+    majDepart(id, { sacs: etat.F.arrayRemove(s.id) });
+    annonce("« " + s.nom + " » retiré de ce départ", () => majDepart(id, { sacs: etat.F.arrayUnion(s.id) }));
+  }
 
   const bascule = h("div", { class: "bascule", role: "group", "aria-label": "Présentation" },
     ...[["personne", "Par personne"], ["sac", "Par sac"]].map(([m, texte]) => h("button", {
@@ -532,7 +565,7 @@ function vueDepart(id, depart) {
     barre(av.fait, av.total),
     bascule,
     ...corps,
-    props.length ? h("p", { class: "second petit astuce" }, "Appui long sur un sac pour tout cocher.") : null,
+    props.length ? h("p", { class: "second petit astuce" }, "Appui long sur un sac pour tout cocher, balayage vers la gauche pour le retirer.") : null,
     h("button", { type: "button", class: "bouton secondaire espace", onclick: () => feuilleSac(id, depart) }, picto("plus", 20, 2.4), h("span", null, "Ajouter un sac")),
     h("button", { type: "button", class: "lien-discret", onclick: supprimer }, "Supprimer ce départ")
   ];
@@ -559,10 +592,11 @@ function vueValise(id, depart, idSac) {
     return h("div", { class: "glissiere" }, h("span", { class: "glissiere-fond", "aria-hidden": "true" }, "Retirer"), bouton);
   });
 
-  function retirerSac() {
-    majDepart(id, { sacs: etat.F.arrayRemove(idSac) });
-    annonce("« " + sac.nom + " » retiré de ce départ", () => majDepart(id, { sacs: etat.F.arrayUnion(idSac) }));
-    quitter(base);
+  const sa = etat.saisie && etat.saisie.depart === id && etat.saisie.sac === idSac ? etat.saisie : null;
+  function ouvrirSaisie() {
+    etat.saisie = saisieObjet(id, idSac);
+    afficher(false);
+    etat.saisie.champ.focus();   // dans le geste même, sinon l'iPhone n'ouvre pas le clavier
   }
 
   return [
@@ -571,17 +605,17 @@ function vueValise(id, depart, idSac) {
       h("span", { class: "puce" }, disque(proprio, "petit"), h("span", null, proprio.nom))),
     h("h1", null, sac.nom),
     sac.total ? barre(sac.fait, sac.total) : h("p", { class: "second sous-titre" }, "Aucun objet à préparer dans ce sac."),
-    h("div", { class: "carte espace" },
+    lignes.length || !sa ? h("div", { class: "carte espace" + (sa ? " suite" : "") },
       ...lignes,
-      h("button", { type: "button", class: "ligne-coche ajout", onclick: () => feuilleObjet(id, depart, idSac) },
-        h("span", { class: "cercle plus" }, picto("plus", 18, 2.6)), h("span", { class: "coche-nom" }, "Ajouter un objet"))),
+      sa ? null : h("button", { type: "button", class: "ligne-coche ajout", onclick: ouvrirSaisie },
+        h("span", { class: "cercle plus" }, picto("plus", 18, 2.6)), h("span", { class: "coche-nom" }, "Ajouter un objet"))) : null,
+    sa ? sa.noeud : null,
     objets.length ? h("p", { class: "second petit astuce" }, "Balaye un objet vers la gauche pour le retirer de ce départ.") : null,
     retires.length ? h("details", { class: "retires", open: !!etat.retiresOuverts[idSac], ontoggle: e => { etat.retiresOuverts[idSac] = e.target.open; } },
       h("summary", null, "Retirés de ce départ (" + retires.length + ")"),
       h("div", { class: "carte" }, ...retires.map(o => h("div", { class: "ligne-retire" },
         h("span", { class: "coche-nom" }, o.nom),
         h("button", { type: "button", class: "petit-bouton", onclick: () => remettreObjet(id, o.id, false) }, "Remettre"))))) : null,
-    h("button", { type: "button", class: "lien-discret", onclick: retirerSac }, "Retirer ce sac du départ"),
     h("div", { class: "reserve" }),
     h("div", { class: "pied deux" },
       v.precedent
@@ -593,46 +627,65 @@ function vueValise(id, depart, idSac) {
   ];
 }
 
-/* ---------- Ajouter un objet ---------- */
-function feuilleObjet(id, depart, idSac) {
+/* ---------- Ajouter un objet : une ligne de saisie au bout de la liste ---------- */
+// La ligne reste ouverte pour saisir plusieurs objets à la suite : « retour » ajoute, une ligne vide ou « Terminé » referme.
+function saisieObjet(id, idSac) {
   // Un sac ajouté « seulement cette fois » n'existe pas dans la liste principale : ses objets non plus.
+  const depart = etat.departs[id] || {};
   const sacPonctuel = !!(depart.sacsPonctuels && depart.sacsPonctuels[idSac]);
-  const nom = h("input", { type: "text", class: "champ", "aria-label": "Nom de l'objet", placeholder: "Nom de l'objet", autocomplete: "off", enterkeyhint: "done" });
-  const fois = interrupteur("Seulement cette fois", "Sinon l'objet rejoint la liste principale.");
-  const message = h("p", { class: "message", role: "status" });
+  const champ = h("input", { type: "text", class: "saisie-champ", "aria-label": "Nom de l'objet", placeholder: "Nouvel objet", autocomplete: "off", enterkeyhint: "done" });
+  const boite = h("input", { type: "checkbox", class: "inter-case petite", "aria-label": "Seulement cette fois" });
+  boite.checked = true;
+  const aide = h("p", { class: "saisie-aide" }, "Décoché : l'objet rejoint la liste principale, pour tous les départs.");
+  const message = h("p", { class: "message", role: "alert" });
+  const dire = () => { aide.hidden = boite.checked; };
+  dire();
+  boite.addEventListener("change", () => { dire(); champ.focus(); });
 
-  function ajouter(e) {
-    e.preventDefault();
+  // Ajoute ce qui est tapé. Renvoie false si le nom est refusé (le message dit pourquoi).
+  function valider() {
+    if (!champ.value.trim()) return true;
+    const d = etat.departs[id];
+    if (!d) return true;
     const idObjet = identifiant("o");
-    const ponctuel = sacPonctuel || fois.boite.checked;
-    const r = creerObjet(listeDuDepart(etat.liste, etat.departs[id] || depart), idSac, nom.value, idObjet);
-    if (!r.ok) { message.textContent = r.erreur; return; }
-    if (ponctuel) majDepart(id, { ["ponctuels." + idObjet]: { ...r.objet, ordre: Date.now() } });
+    const r = creerObjet(listeDuDepart(etat.liste, d), idSac, champ.value, idObjet);
+    if (!r.ok) { message.textContent = r.erreur; return false; }
+    message.textContent = "";
+    champ.value = "";
+    if (sacPonctuel || boite.checked) majDepart(id, { ["ponctuels." + idObjet]: { ...r.objet, ordre: Date.now() } });
     else ecrire(() => etat.F.updateDoc(refListe(), { ["objets." + idObjet]: r.objet }), "Objet");
-    message.textContent = "« " + r.objet.nom + " » ajouté.";
-    nom.value = ""; nom.focus();
+    return true;
   }
-
-  ouvrirFeuille("Ajouter un objet", [
-    h("form", { class: "feuille-corps", onsubmit: ajouter },
-      nom,
-      sacPonctuel ? null : fois.el,
-      h("button", { type: "submit", class: "bouton" }, "Ajouter"),
-      message)
-  ]);
-  nom.focus();
+  function fermer() {
+    if (etat.saisie !== moi) return;
+    etat.saisie = null;
+    afficher(false);
+  }
+  const noeud = h("form", {
+    class: "saisie-objet",
+    onsubmit: e => { e.preventDefault(); if (!champ.value.trim()) fermer(); else if (valider()) champ.focus(); }
+  },
+    h("div", { class: "saisie-ligne" }, h("span", { class: "cercle pointille", "aria-hidden": "true" }), champ),
+    h("div", { class: "saisie-options" },
+      sacPonctuel ? h("span", { class: "saisie-texte" }, "Pour ce départ uniquement") : h("label", { class: "saisie-fois" }, boite,
+        h("span", { class: "saisie-texte" }, "Seulement cette fois")),
+      h("button", { type: "button", class: "petit-bouton", onclick: () => { if (valider()) fermer(); } }, "Terminé")),
+    sacPonctuel ? null : aide,
+    message);
+  const moi = { depart: id, sac: idSac, noeud, champ, valider };
+  return moi;
 }
 
 /* ---------- Ajouter un sac ---------- */
 const PICTOS_SAC = ["sac", "valise", "sacados", "trousse", "bandouliere", "nuit", "repas", "piscine", "papiers", "chaussures", "masque", "apart"];
 
 function feuilleSac(id, depart) {
-  const liste = etat.liste;
+  const liste = listeDuDepart(etat.liste, depart);
   const absents = sacsAbsents(liste, depart);
   const qui = personnesTriees(liste).filter(p => p.commun || (depart.personnes || []).includes(p.cle));
   const saisie = { proprio: etat.mode === "personne" && qui.some(p => p.cle === etat.choix[id]) ? etat.choix[id] : qui[0].cle, icone: "sac" };
   const nom = h("input", { type: "text", class: "champ", "aria-label": "Nom du sac", placeholder: "Nom du nouveau sac", autocomplete: "off", enterkeyhint: "done" });
-  const fois = interrupteur("Seulement cette fois", "Sinon le sac rejoint la liste principale.");
+  const fois = interrupteur("Seulement cette fois", "Décoché, le sac rejoint la liste principale.");
   const message = h("p", { class: "message", role: "alert" });
 
   const choixProprio = h("div", { class: "personnes" });
