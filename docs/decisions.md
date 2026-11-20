@@ -372,3 +372,9 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 - Rien n'est jamais ajouté à la liste d'après la météo. Chaque objet de la liste principale peut être relié par la famille à un ou plusieurs temps (`objets.<id>.meteo`, parmi `froid`, `pluie`, `soleil`, `chaleur`) ; le départ met en avant ceux dont le temps est annoncé : ligne « À ne pas oublier » dans le bloc météo, mention sous l'objet dans son sac, et rappel de ceux qui ont été retirés du départ.
 - Seuils (`SEUILS_METEO`), alignés sur le tableau de bord : froid = ressenti le plus bas sous 12° ; pluie = risque d'au moins 50 % un des jours ; soleil = au moins un jour dégagé à peu nuageux (code 0 à 2) ; chaleur = maximale d'au moins 25°.
 - La prévision est gardée une heure en mémoire (cinq minutes après un échec) ; un échec affiche « Prévision indisponible », jamais un faux temps.
+
+## 2026-11-20 — Valises : écran large
+
+- Sur tablette en paysage, le contenu tenait dans la colonne de 520 px mais la barre du bas et les fenêtres de saisie s'étiraient sur toute la largeur. Elles sont ramenées à la largeur de la colonne par `max()` et `min()` dans les règles existantes, sans requête de média : sur téléphone, les valeurs calculées sont les mêmes qu'avant (vérifié : fenêtre à 10 px du bord, 370 px de large à 390 px).
+- La fenêtre prend elle-même le curseur à l'ouverture, pour que le navigateur n'encadre plus « Fermer » sur tablette.
+- Une mise en page à deux volets (sacs à gauche, objets à droite) est envisagée pour le paysage ; elle touche l'affichage (`afficher`, `poser`) et fera l'objet d'une PR séparée.

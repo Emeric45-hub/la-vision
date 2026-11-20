@@ -372,6 +372,9 @@ function ouvrirFeuille(titre, contenu) {
     ...contenu.filter(e => e != null && e !== false));
   $("annonce").hidden = true;
   if (f.showModal) { if (!f.open) f.showModal(); } else f.setAttribute("open", "");
+  // Le curseur va sur la fenêtre elle-même : sinon le navigateur encadre « Fermer », premier bouton venu.
+  f.setAttribute("tabindex", "-1");
+  if (!f.contains(document.activeElement) || document.activeElement.classList.contains("feuille-fermer")) f.focus();
 }
 function fermerFeuille() {
   const f = $("saisie");
