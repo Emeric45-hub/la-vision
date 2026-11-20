@@ -313,3 +313,20 @@ button.meteo { width: 100%; border: 0; color: var(--encre); font: inherit; curso
    (réglé plus haut par max() et min(), sans changer l'affichage du téléphone). La fenêtre prend le curseur
    à l'ouverture : pas de cadre autour d'elle ni autour de « Fermer ». */
 .feuille:focus { outline: none; }
+
+/* Deux volets (écran large et couché) : les sacs à gauche, le sac ouvert à droite, chacun avec son défilement.
+   La classe n'est posée par l'app que dans ce cas : en portrait, rien de ce bloc ne s'applique. */
+main.volets { position: fixed; top: calc(env(safe-area-inset-top) + 40px); bottom: 0; left: calc(env(safe-area-inset-left) + 20px); right: calc(env(safe-area-inset-right) + 20px); max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: minmax(300px, 2fr) minmax(0, 3fr); gap: 0 28px; }
+.volet { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(env(safe-area-inset-bottom) + 28px); }
+.volet > * { flex: none; }
+.volet:has(.saisie-objet) { padding-bottom: 60vh; }   /* de quoi remonter la ligne de saisie au-dessus du clavier */
+.volet.droit .retour { visibility: hidden; }          /* la liste de gauche fait office de retour */
+.volet .reserve { display: none; }
+.volet .pied { position: static; margin-top: 22px; padding: 0; border: 0; background: transparent; }
+.volet-vide { margin: 96px 0 0; text-align: center; }
+.volet .ligne-sac[aria-current="true"] { background: var(--tuile); }
+.volet .ligne-sac[aria-current="true"] .tuile { background: var(--carte); }
+.volet .ligne-sac[aria-current="true"] .ligne-nom { font-weight: 600; }
+.large .etat { max-width: 1080px; }                    /* la ligne « À jour » s'aligne sur le volet de gauche */
+.large .annonce { bottom: calc(env(safe-area-inset-bottom) + 24px); }   /* plus de barre collée en bas à éviter */
+@media (max-width: 960px) { .volet .personne-nom { font-size: 13px; } }   /* téléphone couché : cinq prénoms sur 300 px */

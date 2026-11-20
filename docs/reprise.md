@@ -8,7 +8,7 @@ Lot 1 : étapes 0 à 8 faites, mise à jour automatique de l'app en place, netto
 
 Lot 2 (accueil) : étapes 1 à 6 faites (2026-11-10). Le Raccourci iOS (sur un iPhone, 5 passages par jour) applique les actions de `vision/raccourci/actions` puis envoie rappels, calendrier local et anniversaires dans `vision/raccourci`. Prochain : 6b, post-it.
 
-Valises (2026-11-19) : toutes les étapes prévues sont faites, météo de la destination comprise. Les étapes 1 à 5 sont validées sur téléphone ; la météo (recherche de ville et prévision réelles) reste à essayer, la session n'atteignant pas Open-Meteo. Rien d'autre n'est planifié.
+Valises (2026-11-20) : toutes les étapes prévues sont faites et validées sur téléphone (jusqu'à la météo). Ajouts du 20/11 : icône d'entrée sur la tablette, fenêtres et barre du bas à la largeur de la colonne, puis affichage en deux volets en paysage (à valider sur tablette et téléphone couché).
 
 ## Contenu du dépôt
 
