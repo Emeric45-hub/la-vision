@@ -1,7 +1,7 @@
 // Accueil (iPad en paysage). Barre du haut : date, heure, état des sources, accès au planning,
 // réglages. Puis briefing, météo et compte à rebours ; quatre colonnes (Aujourd'hui ; Nounou +
 // Ce soir ; Rappels du jour + post-it, avec « À faire, plus tard » dessous) ; bande « Cette semaine ».
-import { el, boutonsRaccourcis, boutonIcone, ICONES, maintenant, aujourdhui, decaler, lirePlage, jourAffiche, surveillerDebord } from "./outils.js";
+import { el, boutonsRaccourcis, boutonIcone, lienIcone, ICONES, maintenant, aujourdhui, decaler, lirePlage, jourAffiche, surveillerDebord } from "./outils.js";
 import { niveau, depuis } from "./fraicheur.js";
 import { etiquettes, lignesCase, personnes, filDuJour, ligneE2 } from "./texte-jour.js";
 import { monterNounou, rechargerNounou } from "./nounou.js";
@@ -207,7 +207,7 @@ function barre(src) {
   b.append(etat);
 
   const boutons = el("div", "ac-boutons");
-  // Planning du mois suivant à gauche, puis les icônes : Raccourcis de l'appareil, recettes, réglages.
+  // Planning du mois suivant à gauche, puis les icônes : Raccourcis de l'appareil, recettes, valises, réglages.
   const ms = S.moisSuivant;
   if (ms) {
     const nom = MOIS[Number(ms.cle.slice(5)) - 1];
@@ -222,6 +222,7 @@ function barre(src) {
   }
   boutons.append(...boutonsRaccourcis(C && C.fam));
   boutons.append(boutonIcone(ICONES.menu, "Recettes", () => ouvrirRecette(C, null)));
+  boutons.append(lienIcone(ICONES.valise, "Valises", "valises/?de=vision"));
   boutons.append(boutonIcone(ICONES.roue, "Réglages", () => C.ouvrir("reglages")));
   const marque = el("span", "ac-marque", "LΛ VISION");   // Λ : un A sans barre
   marque.setAttribute("aria-label", "La Vision");

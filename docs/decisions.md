@@ -360,6 +360,7 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 ## 2026-11-19 — Valises : entrée depuis le tableau de bord
 
 - Sur téléphone (moins de 901 px de large, comme les autres icônes de l'en-tête), une icône valise ouvre `valises/?de=vision`. Rien sur la tablette en paysage.
+- 2026-11-20 : l'icône valise est ajoutée aussi à la barre de l'accueil sur tablette en paysage, entre les recettes et les réglages (demande de la famille). Mesuré à 1024 px de large avec la date la plus longue : la barre tient sur une ligne.
 - Avec `de=vision`, l'accueil de Valises affiche un lien de retour vers le tableau de bord : installée, l'app n'a pas de bouton retour, et Valises s'ouvre dans la même fenêtre (le manifeste du tableau de bord couvre le sous-dossier).
 - Limite : à 390 px de large, quatre icônes laissent moins de place à la date de l'en-tête, qui est alors abrégée.
 
