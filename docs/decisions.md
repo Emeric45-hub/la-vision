@@ -377,4 +377,11 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 
 - Sur tablette en paysage, le contenu tenait dans la colonne de 520 px mais la barre du bas et les fenêtres de saisie s'étiraient sur toute la largeur. Elles sont ramenées à la largeur de la colonne par `max()` et `min()` dans les règles existantes, sans requête de média : sur téléphone, les valeurs calculées sont les mêmes qu'avant (vérifié : fenêtre à 10 px du bord, 370 px de large à 390 px).
 - La fenêtre prend elle-même le curseur à l'ouverture, pour que le navigateur n'encadre plus « Fermer » sur tablette.
-- Une mise en page à deux volets (sacs à gauche, objets à droite) est envisagée pour le paysage ; elle touche l'affichage (`afficher`, `poser`) et fera l'objet d'une PR séparée.
+
+## 2026-11-20 — Valises : deux volets en paysage
+
+- Sur un écran d'au moins 700 px de large et couché (tablette en paysage, téléphone couché), un départ et la liste principale s'affichent en deux volets : la liste des sacs à gauche, le sac ouvert à droite, chacun avec son défilement. En portrait et sur les autres écrans (accueil, nouveau départ), rien ne change.
+- Ce sont les deux écrans existants posés côte à côte (`afficher` appelle les mêmes vues) ; deux conteneurs permanents (`VOLETS`) reçoivent leur contenu par `poser`, ce qui garde le curseur dans la ligne de saisie quand le volet est redessiné.
+- Navigation : en deux volets, passer d'un sac à l'autre remplace la page d'historique au lieu d'en empiler une ; `quitter` recule du nombre de niveaux qui sépare l'écran courant de la cible (deux quand on quitte la liste de gauche avec un sac ouvert, un sur téléphone comme avant).
+- À l'ouverture d'un sac, la liste de gauche se place sur son propriétaire et marque la ligne (`aria-current`). La barre « Sac précédent / Sac suivant » passe au bas du volet de droite, le lien de retour du volet de droite est masqué.
+- Non vérifiable sans l'appareil : le comportement du clavier de la tablette et du téléphone couché pendant la saisie.

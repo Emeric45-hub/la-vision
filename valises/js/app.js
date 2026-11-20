@@ -391,8 +391,8 @@ function interrupteur(texte, sous, coche = true) {
 }
 
 /* ---------- Navigation (par l'adresse, pour que le geste retour de l'iPhone fonctionne) ---------- */
-function route() {
-  const [nom, a, b] = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
+function route(adresse) {
+  const [nom, a, b] = (adresse == null ? location.hash : adresse).replace(/^#\/?/, "").split("/").map(decodeURIComponent);
   return { nom: nom || "accueil", a: a || "", b: b || "" };
 }
 
@@ -404,9 +404,16 @@ function aller(cible, remplacer) {
   else history.pushState({ rang: ++rang }, "", cible);
   afficher(true);
 }
+// Accueil : 0 ; liste, départ, formulaire : 1 ; un sac ouvert : 2.
+const profondeur = r => (r.nom === "accueil" ? 0 : r.nom === "sac" || (r.nom === "depart" && r.b) ? 2 : 1);
+// Revenir vers `cible` : d'un cran sur téléphone ; de deux quand, en deux volets, on quitte la liste de gauche
+// alors qu'un sac est ouvert à droite.
 function quitter(cible) {
-  if (rang > 0) history.back(); else aller(cible || "#", true);
+  const n = Math.max(1, profondeur(route()) - profondeur(route(cible || "#")));
+  if (rang >= n) history.go(-n); else aller(cible || "#", true);
 }
+// En deux volets, passer d'un sac à l'autre remplace la page au lieu d'en empiler une.
+const freres = (x, y) => (x.nom === "sac" && y.nom === "sac") || (x.nom === "depart" && y.nom === "depart" && x.a === y.a && !!x.b && !!y.b);
 window.addEventListener("popstate", e => { rang = (e.state && e.state.rang) || 0; afficher(true); });
 document.addEventListener("click", e => {
   const a = e.target.closest && e.target.closest("a[href^='#']");
@@ -414,7 +421,7 @@ document.addEventListener("click", e => {
   e.preventDefault();
   const cible = a.getAttribute("href");
   if (a.dataset.nav === "retour") quitter(cible);
-  else aller(cible, a.dataset.nav === "remplacer");
+  else aller(cible, a.dataset.nav === "remplacer" || (LARGE.matches && freres(route(), route(cible))));
 });
 
 // Les écrans de saisie ne sont pas redessinés quand des données arrivent : on y perdrait le texte tapé.
@@ -423,6 +430,14 @@ function rafraichir() {
   if (r === "import" || r === "nouveau") return;
   afficher(false);
 }
+
+/* ---------- Deux volets : sur un écran large et couché, les sacs à gauche, le sac ouvert à droite ---------- */
+// Tablette en paysage, téléphone couché. En portrait, rien ne change : un écran à la fois.
+const LARGE = window.matchMedia("(min-width: 700px) and (orientation: landscape)");
+const VOLETS = { gauche: h("div", { class: "volet gauche" }), droite: h("div", { class: "volet droit" }), cles: ["", ""] };
+if (LARGE.addEventListener) LARGE.addEventListener("change", () => afficher(false));
+else if (LARGE.addListener) LARGE.addListener(() => afficher(false));
+const voletVide = texte => h("p", { class: "second volet-vide" }, texte);
 
 // Pose les éléments d'un écran. Si l'un d'eux est déjà à l'écran et contient le champ en cours de frappe,
 // il ne bouge pas (le clavier resterait sinon fermé) : on remplace seulement ce qui l'entoure.
@@ -440,8 +455,9 @@ function poser(ecran, noeuds) {
 function garderVisible(el) {
   const vv = window.visualViewport, r = el.getBoundingClientRect();
   const haut = vv ? vv.offsetTop : 0, bas = haut + (vv ? vv.height : window.innerHeight);
-  if (r.bottom > bas - 12) window.scrollBy(0, r.bottom - bas + 12);
-  else if (r.top < haut + 12) window.scrollBy(0, r.top - haut - 12);
+  const zone = el.closest(".volet") || window;   // en deux volets, c'est le volet qui défile
+  if (r.bottom > bas - 12) zone.scrollBy(0, r.bottom - bas + 12);
+  else if (r.top < haut + 12) zone.scrollBy(0, r.top - haut - 12);
 }
 
 function afficher(enHaut) {
@@ -454,6 +470,39 @@ function afficher(enHaut) {
   const trouve = r.nom === "depart" ? etat.departs[r.a] : null;
   const depart = trouve && !trouve.modele ? trouve : null;
   if (enHaut) { etat.tiroir = null; etat.ordre = false; }
+  const ecran = $("ecran");
+  const propre = v => v.filter(e => e != null && e !== false);
+  if (LARGE.matches && etat.lue && etat.liste && (depart || r.nom === "liste" || (r.nom === "sac" && etat.liste.sacs[r.a]))) {
+    let gauche, droite, cles;
+    if (depart) {
+      const complet = listeDuDepart(etat.liste, depart);
+      const sac = r.b ? sacsDuDepart(complet, depart).find(s => s.id === r.b) : null;
+      // À l'ouverture d'un sac, la liste de gauche se place sur son propriétaire.
+      if (sac && VOLETS.cles[1] !== sac.id) etat.choix[r.a] = sac.proprio;
+      gauche = vueDepart(r.a, depart, sac ? sac.id : "");
+      droite = sac ? vueValise(r.a, depart, sac.id) : [voletVide("Touche un sac pour voir ses objets.")];
+      cles = ["depart/" + r.a, sac ? sac.id : ""];
+    } else {
+      const idSac = r.nom === "sac" ? r.a : "";
+      if (idSac && VOLETS.cles[1] !== idSac) etat.personne = etat.liste.sacs[idSac].proprio;
+      gauche = vueListe(idSac);
+      droite = idSac ? vueSac(idSac) : [voletVide("Touche un sac pour voir ses objets.")];
+      cles = ["liste", idSac];
+    }
+    ecran.classList.add("volets");
+    document.body.classList.add("large");
+    if (VOLETS.gauche.parentNode !== ecran) ecran.replaceChildren(VOLETS.gauche, VOLETS.droite);
+    poser(VOLETS.gauche, propre(gauche));
+    poser(VOLETS.droite, propre(droite));
+    // Changer de départ remet les deux volets en haut ; changer de sac, seulement celui de droite.
+    if (cles[0] !== VOLETS.cles[0]) VOLETS.gauche.scrollTop = 0;
+    if (cles[0] !== VOLETS.cles[0] || cles[1] !== VOLETS.cles[1]) VOLETS.droite.scrollTop = 0;
+    VOLETS.cles = cles;
+    return;
+  }
+  ecran.classList.remove("volets");
+  document.body.classList.remove("large");
+  VOLETS.cles = ["", ""];
   let vue;
   if (!etat.lue) vue = [h("h1", null, "Valises")];
   else if (r.nom === "import") vue = vueImport();
@@ -464,7 +513,7 @@ function afficher(enHaut) {
   else if (depart && r.b) vue = vueValise(r.a, depart, r.b);
   else if (depart) vue = vueDepart(r.a, depart);
   else vue = vueAccueil();
-  poser($("ecran"), vue.filter(e => e != null && e !== false));
+  poser(ecran, propre(vue));
   if (enHaut) window.scrollTo(0, 0);
 }
 
@@ -570,7 +619,7 @@ function vueAccueil() {
 }
 
 /* ---------- Liste principale (lecture) ---------- */
-function vueListe() {
+function vueListe(idOuvert) {
   const liste = etat.liste;
   const personnes = personnesTriees(liste);
   if (!personnes.some(p => p.cle === etat.personne)) etat.personne = personnes[0] && personnes[0].cle;
@@ -591,11 +640,11 @@ function vueListe() {
       h("span", { class: "ligne-nom" }, s.nom),
       h("span", { class: "ligne-sous" }, pluriel(n, "objet") + (s.office ? "" : ", occasionnel")));
     if (ordre) {
-      return h("div", { class: "ligne-sac" }, tuile, texte,
+      return h("div", { class: "ligne-sac", "aria-current": s.id === idOuvert ? "true" : null }, tuile, texte,
         fleches(i, sacs.length, sens => majListe(champsDe(deplacerSac(etat.liste, s.id, sens), "sacs.", ".ordre"), "Ordre")));
     }
     return avecSuppression("sac:" + s.id,
-      h("a", { class: "ligne-sac", href: "#sac/" + encodeURIComponent(s.id), draggable: "false" }, tuile, texte, picto("chevron", 22, 2)),
+      h("a", { class: "ligne-sac", href: "#sac/" + encodeURIComponent(s.id), draggable: "false", "aria-current": s.id === idOuvert ? "true" : null }, tuile, texte, picto("chevron", 22, 2)),
       "Supprimer " + s.nom, () => supprimerSacListe(s.id));
   };
 
@@ -867,7 +916,7 @@ function vueNouveau(idModele) {
 }
 
 /* ---------- Écran du départ ---------- */
-function vueDepart(id, depart) {
+function vueDepart(id, depart, idOuvert) {
   const liste = listeDuDepart(etat.liste, depart);
   const props = proprietairesDuDepart(liste, depart);
   const av = avancement(liste, depart);
@@ -888,7 +937,7 @@ function vueDepart(id, depart) {
   const ligne = (s, detail) => {
     const compte = s.total === 0 ? (detail ? "vide" : "Vide") : s.pret ? (detail ? "prêt" : "Prêt") : s.fait + " sur " + s.total;
     const contenu = s.apart && !s.pret && s.total ? " : " + objetsDuDepart(liste, depart, s.id).map(o => o.nom).join(", ") : "";
-    const el = h("a", { class: "ligne-sac", href: lien(s), draggable: "false" },
+    const el = h("a", { class: "ligne-sac", href: lien(s), draggable: "false", "aria-current": s.id === idOuvert ? "true" : null },
       h("span", { class: "tuile" + (s.pret ? " pret" : "") }, s.pret ? picto("coche", 26, 2.6) : picto(s.icone)),
       h("span", { class: "ligne-texte" },
         h("span", { class: "ligne-nom" }, s.nom),
