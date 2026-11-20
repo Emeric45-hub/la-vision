@@ -162,7 +162,7 @@ textarea { width: 100%; margin: 16px 0 12px; padding: 14px; border: 2px solid va
 
 /* Barre du bas, toujours visible */
 .reserve { height: 104px; }
-.pied { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; gap: 10px; padding: 14px calc(env(safe-area-inset-right) + 20px) calc(env(safe-area-inset-bottom) + 16px) calc(env(safe-area-inset-left) + 20px); background: var(--fond); border-top: 1px solid var(--filet); }
+.pied { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; gap: 10px; padding: 14px max(calc(env(safe-area-inset-right) + 20px), calc((100% - 520px) / 2)) calc(env(safe-area-inset-bottom) + 16px) max(calc(env(safe-area-inset-left) + 20px), calc((100% - 520px) / 2)); background: var(--fond); border-top: 1px solid var(--filet); }
 .pied > * { flex: 1; min-width: 0; }
 .pied .bouton { gap: 4px; padding: 0 8px; margin: 0; font-size: 15px; white-space: nowrap; }
 
@@ -215,7 +215,7 @@ button.ligne-sac { width: 100%; border: 0; background: transparent; font: inheri
 .annonce button { flex: none; min-height: 32px; padding: 0 4px; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 
 /* Feuille de saisie : en haut de l'écran, pour que le clavier ne la recouvre jamais */
-.feuille { inset: calc(env(safe-area-inset-top) + 10px) 10px auto 10px; width: auto; max-width: none; max-height: calc(100dvh - env(safe-area-inset-top) - 40px); margin: 0; padding: 14px 16px 18px; border: 1px solid var(--bord-feuille); border-radius: 24px; background: var(--fond-feuille); color: var(--encre); box-shadow: 0 18px 48px rgba(10, 16, 48, 0.35); overflow-y: auto; }
+.feuille { inset: calc(env(safe-area-inset-top) + 10px) 0 auto 0; width: min(560px, calc(100% - 20px)); max-width: none; max-height: calc(100dvh - env(safe-area-inset-top) - 40px); margin: 0 auto; padding: 14px 16px 18px; border: 1px solid var(--bord-feuille); border-radius: 24px; background: var(--fond-feuille); color: var(--encre); box-shadow: 0 18px 48px rgba(10, 16, 48, 0.35); overflow-y: auto; }
 .feuille::backdrop { background: var(--voile); }
 .feuille-tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .feuille-fermer { min-height: 44px; padding: 0 0 0 12px; border: 0; background: transparent; color: var(--lien); font: inherit; font-weight: 600; cursor: pointer; }
@@ -308,3 +308,8 @@ button.meteo { width: 100%; border: 0; color: var(--encre); font: inherit; curso
 .menu .vide { margin: 0; padding: 12px 14px; }
 .petit.sans-marge { margin: 0; }
 .ligne-choix .ligne-texte { display: flex; flex-direction: column; }
+
+/* Écran large (tablette, téléphone couché) : la barre du bas et les fenêtres gardent la largeur de la colonne
+   (réglé plus haut par max() et min(), sans changer l'affichage du téléphone). La fenêtre prend le curseur
+   à l'ouverture : pas de cadre autour d'elle ni autour de « Fermer ». */
+.feuille:focus { outline: none; }
