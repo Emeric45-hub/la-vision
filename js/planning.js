@@ -3,7 +3,7 @@
 // s'affiche immédiatement (la tâche planifiée recalcule de son côté pour les autres usages).
 import { couchesAffichage, partieValidee, affiche, jourSemaine } from "../tache/moteur.js";
 import { pad, decaler, aujourdhui, propre, canon, el, lirePlage as lire, jourAffiche, heureInput } from "./outils.js";
-import { lignesJour, dessiner } from "./grille.js";
+import { lignesJour, dessiner, semaines, joursHorsMois } from "./grille.js";
 import { etiquettes as etiq, ligneE2 as ligne2, lignesCase } from "./texte-jour.js";
 
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -22,10 +22,15 @@ async function chargerMois() {
   const [a, m] = S.mois.split("-").map(Number);
   const nb = new Date(Date.UTC(a, m, 0)).getUTCDate();
   const du = isoJour(a, m, 1), au = isoJour(a, m, nb);
+  // Lecture élargie aux semaines entières : la grille envoyée reprend les jours des mois voisins
+  // qui complètent la première et la dernière semaine.
+  const sems = semaines(S.mois).flat();
+  const debut = sems.length && sems[0].d < du ? sems[0].d : du;
+  const fin = sems.length && sems[sems.length - 1].d > au ? sems[sems.length - 1].d : au;
   const [agenda, sem, plan, moisDoc] = await Promise.all([
-    lirePlage(["vision", "agenda", "jours"], decaler(du, -1), au),
-    lirePlage(["vision", "semainier", "jours"], du, au),
-    lirePlage(["vision", "planning", "jours"], du, au),
+    lirePlage(["vision", "agenda", "jours"], decaler(debut, -1), fin),
+    lirePlage(["vision", "semainier", "jours"], debut, fin),
+    lirePlage(["vision", "planning", "jours"], debut, fin),
     C.F.getDocFromServer(C.F.doc(C.db, "vision", "planning", "mois", S.mois))
   ]);
   S.source = { agenda, sem, plan };
@@ -335,7 +340,9 @@ function joursModifiesDepuisEnvoi() {
 
 function ouvrirGrille(nbPoints) {
   const [, m] = S.mois.split("-").map(Number);
-  const canvas = dessiner(document.createElement("canvas"), S.mois, S.jours, C.fam);
+  let bords = {};
+  try { bords = joursHorsMois(S.mois, calculer); } catch (e) { bords = {}; }   // au pire : cases vides, comme avant
+  const canvas = dessiner(document.createElement("canvas"), S.mois, { ...bords, ...S.jours }, C.fam);
   const nom = `Planning nounou ${MOIS[m - 1]} ${S.mois.slice(0, 4)}.png`;
   const fond = el("div", "gr-fond");
   const boite = el("div", "gr-boite");
