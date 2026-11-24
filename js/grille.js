@@ -26,7 +26,7 @@ export function lignesJour(j, fam) {
   return { l1: l1 === "-" && l2 ? "" : l1, l2, note: a.note || "" };
 }
 
-// Semaines (lundi → vendredi) couvrant le mois ; les jours hors du mois sont marqués.
+// Semaines entières (lundi → vendredi) couvrant le mois ; les jours hors du mois sont marqués.
 export function semaines(mois) {
   const [a, m] = mois.split("-").map(Number);
   const premier = new Date(Date.UTC(a, m - 1, 1));
@@ -44,10 +44,29 @@ export function semaines(mois) {
   return res;
 }
 
+// Jours hors du mois qui complètent la première et la dernière semaine de la grille (la nounou
+// travaille en semaines entières). lire(date) renvoie le jour affiché. Les jours du mois précédent
+// sont toujours repris ; ceux du mois suivant seulement s'ils sont fériés ou déjà validés (sinon
+// le planning de ce mois-là n'est pas encore préparé : la case reste vide, et la grille du mois
+// suivant montrera la semaine entière). Renvoie { 'AAAA-MM-JJ': jour }.
+export function joursHorsMois(mois, lire) {
+  const res = {};
+  for (const j of semaines(mois).flat()) {
+    if (j.dansMois) continue;
+    const x = lire(j.d);
+    if (!x || !x.calc) continue;
+    const suivant = j.d.slice(0, 7) > mois;
+    if (suivant && !x.calc.ferie && !(x.p && x.p.valide)) continue;
+    res[j.d] = x;
+  }
+  return res;
+}
+
 const ROUGE = "#E3261F", ENCRE = "#1E2A5A", GRIS = "#D6D6D6", GRIS_TEXTE = "#9A9A9A";
 const POLICE = '-apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif';
 
-// Dessine la grille ; jours = { 'YYYY-MM-DD': jour affiché } ; renvoie le canvas.
+// Dessine la grille ; jours = { 'YYYY-MM-DD': jour affiché }, jours hors du mois compris s'ils
+// doivent apparaître ; renvoie le canvas.
 export function dessiner(canvas, mois, jours, fam) {
   const L = 2400, H = Math.round(L / Math.SQRT2);       // A4 paysage
   canvas.width = L; canvas.height = H;
@@ -72,7 +91,7 @@ export function dessiner(canvas, mois, jours, fam) {
   // Une seule taille de texte pour toute la grille : la plus grande qui fait tenir chaque ligne.
   const max = larg - 30;
   let taille = 42;
-  const textes = sems.flat().filter(j => j.dansMois).flatMap(j => { const t = lignesJour(jours[j.d], fam); return [t.l1, t.l2]; }).filter(Boolean);
+  const textes = sems.flat().flatMap(j => { const t = lignesJour(jours[j.d], fam); return [t.l1, t.l2]; }).filter(Boolean);
   const tient = t => { g.font = `600 ${t}px ${POLICE}`; return textes.every(x => g.measureText(x).width <= max); };
   while (taille > 20 && !tient(taille)) taille -= 1;
   const ajuster = (txt, t, poids) => {
@@ -85,7 +104,7 @@ export function dessiner(canvas, mois, jours, fam) {
       g.textAlign = "center"; g.textBaseline = "middle";
       g.fillStyle = jr.dansMois ? "#111" : GRIS_TEXTE; g.font = `bold 38px ${POLICE}`;
       g.fillText(String(jr.num), cx, y + hNum / 2 + 2);
-      if (!jr.dansMois) return;
+      // Jour hors du mois : numéro en gris, contenu dessiné s'il a été fourni (voir joursHorsMois).
       const t = lignesJour(jours[jr.d], fam);
       const c1 = fam.enfants.e1.couleur || ENCRE, c2 = fam.enfants.e2.couleur || ENCRE;
       const lignes = [[t.l1, taille, "600", t.l1 === "-" ? ENCRE : c1], [t.l2, taille, "600", c2], [t.note, Math.round(taille * 0.78), "italic 400", "#555"]].filter(l => l[0]);

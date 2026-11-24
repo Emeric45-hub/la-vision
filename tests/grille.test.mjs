@@ -1,7 +1,7 @@
 // Tests du texte de la grille mensuelle, sur une famille fictive.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { lignesJour, semaines } from '../js/grille.js';
+import { lignesJour, semaines, joursHorsMois } from '../js/grille.js';
 import { calculerJour, fusionner } from '../tache/moteur.js';
 
 const cfg = JSON.parse(fs.readFileSync(new URL('./config-fictive.json', import.meta.url))).famille;
@@ -42,6 +42,24 @@ assert.deepEqual(s[4].map(x => x.num), [28, 29, 30, 1, 2]);
 assert.equal(semaines('2026-11').length, 5);          // commence un dimanche : première semaine = 2 nov.
 assert.equal(semaines('2026-11')[0][0].d, '2026-11-02');
 assert.equal(semaines('2027-02')[0][0].d, '2027-02-01');
+
+// Jours hors du mois repris dans la grille (semaines entières)
+{
+  const lus = [];
+  const jour = (d, plus = {}) => ({ d, p: plus.p || {}, calc: { ferie: plus.ferie || null }, aff: {} });
+  // Décembre 2026 : lundi 30 novembre avant, vendredi 1er janvier après
+  const lire = base => d => { lus.push(d); return base[d] || null; };
+  let r = joursHorsMois('2026-12', lire({ '2026-11-30': jour('2026-11-30'), '2027-01-01': jour('2027-01-01') }));
+  assert.deepEqual(lus, ['2026-11-30', '2027-01-01']);
+  assert.deepEqual(Object.keys(r), ['2026-11-30']);                       // mois suivant non préparé : case vide
+  r = joursHorsMois('2026-12', lire({ '2026-11-30': jour('2026-11-30'), '2027-01-01': jour('2027-01-01', { ferie: 'Jour de l\'an' }) }));
+  assert.deepEqual(Object.keys(r), ['2026-11-30', '2027-01-01']);         // férié : repris
+  // Septembre 2026 : lundi 31 août avant ; mercredi 30 septembre, puis 1er et 2 octobre après
+  r = joursHorsMois('2026-09', lire({ '2026-08-31': jour('2026-08-31'), '2026-10-01': jour('2026-10-01', { p: { valide: { affiche: {} } } }), '2026-10-02': jour('2026-10-02') }));
+  assert.deepEqual(Object.keys(r), ['2026-08-31', '2026-10-01']);         // mois suivant : seulement les jours validés
+  assert.deepEqual(joursHorsMois('2027-02', lire({})), {});               // février 2027 : du lundi 1er au vendredi 26… aucun jour lu
+  assert.deepEqual(joursHorsMois('2026-12', () => ({ d: 'x', p: {}, calc: null, aff: null })), {});   // jour sans calcul : ignoré
+}
 
 console.log('grille : tous les scénarios passent');
 
