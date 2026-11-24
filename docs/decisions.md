@@ -385,3 +385,7 @@ Une petite app de préparation des bagages vit dans le sous-dossier `valises/`, 
 - Navigation : en deux volets, passer d'un sac à l'autre remplace la page d'historique au lieu d'en empiler une ; `quitter` recule du nombre de niveaux qui sépare l'écran courant de la cible (deux quand on quitte la liste de gauche avec un sac ouvert, un sur téléphone comme avant).
 - À l'ouverture d'un sac, la liste de gauche se place sur son propriétaire et marque la ligne (`aria-current`). La barre « Sac précédent / Sac suivant » passe au bas du volet de droite, le lien de retour du volet de droite est masqué.
 - Non vérifiable sans l'appareil : le comportement du clavier de la tablette et du téléphone couché pendant la saisie.
+
+## 2026-11-24 — Plan repas : lecteur du tableau tolérant
+
+La page 1 du PDF change de forme d'une semaine à l'autre (colonnes présentes, nom du plat en plusieurs morceaux). Le lecteur ne suppose plus que ceci : une ligne d'en-têtes contenant « Repas » (ou un synonyme) et au moins une autre colonne connue (Jour, Protéine, Temps, Pour) ; les colonnes inconnues sont ignorées. Avec une colonne « Jour », chaque jour ouvre une ligne (comportement d'origine). Sans elle, chaque durée de la colonne « Temps » (à défaut chaque protéine) ouvre une ligne, le plat est nommé « Repas n », et seul le texte proche d'une ligne est gardé (rien d'autre ne borne le tableau vers le bas). `LECTEUR` passe à 3 : le PDF déjà reçu est relu au passage suivant. `vision/plats.erreur` distingue « tableau introuvable » de « PDF illisible ».

@@ -45,4 +45,33 @@ assert.equal(pageRecette(pagesB, 'Vendredi', 'Plat absent'), 1);          // int
 assert.equal(pageRecette(pagesB, 'Mardi', ''), 4);                        // sans nom de plat : le jour
 assert.equal(pageRecette(pages, 'jeudi', 'Plat D'), 5);                   // jour au milieu d'une première ligne
 
+
+// Troisième mise en page : pas de colonne « Jour » ni « Pour », une colonne « Source » en plus, le nom
+// du plat en plusieurs morceaux, un autre tableau plus bas, des titres de recette « REPAS n · … »
+const p1c = [
+  m(54, 734, 'PLAN REPAS FICTIF'), m(215, 702, 'Semaine 03'), m(137, 685, 'Semaine du 16 mars 2030 · 3 dîners'), m(54, 626, 'Les trois repas'),
+  m(55, 604, 'Repas'), m(275, 604, 'Protéine'), m(355, 604, 'Temps'), m(414, 604, 'Source'),
+  m(55, 579, 'Pâtes aux boulettes de'), m(55, 567, 'viande'), m(92, 567, ', salade verte'), m(275, 573, 'Porc'), m(355, 573, '15 min'), m(414, 579, 'Livre fictif, « 5'), m(414, 567, 'ingrédients »'),
+  m(55, 542, 'Papillotes de poisson et'), m(55, 529, 'légumes'), m(275, 536, 'Poisson gras'), m(355, 536, '30 min'), m(414, 536, 'Site fictif r123'),
+  m(55, 505, 'Mijoté de lentilles'), m(275, 498, 'Végétarien'), m(355, 504, '1 h 30'), m(355, 492, '(20 actives)'), m(414, 498, 'Site fictif r456'),
+  m(54, 462, 'Tableau nutritionnel'), m(55, 441, 'Par portion adulte'), m(295, 441, 'kcal'), m(360, 441, 'Protéines'),
+  m(55, 419, 'Pâtes (plat seul)'), m(295, 419, '633'), m(360, 419, '34 g')
+];
+const pagesC = [p1c, [m(54, 760, 'AVANT DE CUISINER'), m(54, 740, 'Liste des courses')],
+  [m(54, 760, 'REPAS 1 · PORC · LE SOIR CHARGÉ'), m(54, 735, 'Pâtes aux boulettes de'), m(54, 712, 'viande, salade verte')],
+  [m(54, 760, 'REPAS 2 · POISSON GRAS'), m(54, 735, 'Papillotes de poisson et'), m(54, 712, 'légumes')],
+  [m(54, 760, 'REPAS 3 · VÉGÉTARIEN'), m(54, 735, 'Un nom différent du tableau')]];
+const rc = lirePlan(pagesC);
+assert.equal(rc.titre, 'Semaine du 16 mars 2030 · 3 dîners');
+assert.deepEqual(rc.plats.map(p => [p.jour, p.repas, p.proteine, p.temps, p.page]), [
+  ['Repas 1', 'Pâtes aux boulettes de viande, salade verte', 'Porc', '15 min', 3],
+  ['Repas 2', 'Papillotes de poisson et légumes', 'Poisson gras', '30 min', 4],
+  ['Repas 3', 'Mijoté de lentilles', 'Végétarien', '1 h 30 (20 actives)', 5]]);   // page trouvée par « Repas 3 »
+// Sans durée lisible : les protéines ouvrent les lignes
+const sansDuree = [p1c.filter(x => x.x !== 355 || x.y === 604), ...pagesC.slice(1)];
+assert.deepEqual(lirePlan(sansDuree).plats.map(p => p.repas), rc.plats.map(p => p.repas));
+// Pas de tableau de repas : seulement le tableau nutritionnel
+assert.equal(lirePlan([[m(55, 441, 'Par portion adulte'), m(295, 441, 'kcal'), m(360, 441, 'Protéines'), m(55, 419, 'Pâtes'), m(360, 419, '34 g')]]), null);
+assert.equal(lirePlan([[m(55, 441, 'Repas'), m(55, 419, 'Un mot seul ne fait pas un tableau')]]), null);
+
 console.log('plan repas : tous les scénarios passent');

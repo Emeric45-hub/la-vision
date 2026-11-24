@@ -34,13 +34,14 @@ export async function executer() {
   const octets = new Uint8Array(Buffer.from(repas.pdf, 'base64'));
   const taille = octets.length;   // PDF.js vide le tableau après lecture
   let plan = null;
-  try { plan = lirePlan(await pagesDuPdf(octets)); } catch (e) { plan = null; }
+  let illisible = null;   // le PDF lui-même ne s'ouvre pas (à distinguer d'un tableau non reconnu)
+  try { plan = lirePlan(await pagesDuPdf(octets)); } catch (e) { plan = null; illisible = e.name || 'erreur'; }
   const donnees = plan && plan.plats.length
     ? { empreinte: emp, lecteur: LECTEUR, nom: repas.nom || '', titre: plan.titre, plats: plan.plats, faits, lu: new Date().toISOString(), erreur: null }
-    : { empreinte: emp, lecteur: LECTEUR, nom: repas.nom || '', titre: '', plats: [], faits: [], lu: new Date().toISOString(), erreur: 'tableau introuvable' };
+    : { empreinte: emp, lecteur: LECTEUR, nom: repas.nom || '', titre: '', plats: [], faits: [], lu: new Date().toISOString(), erreur: illisible ? 'PDF illisible' : 'tableau introuvable' };
   await fs.ecrire([{ chemin: 'vision/plats', donnees }]);
   const avecPage = donnees.plats.filter(p => p.page > 1).length;
-  console.log(`plan repas : ${memePdf ? 'PDF relu' : 'nouveau PDF'} (${Math.round(taille / 1024)} Ko), ${donnees.plats.length} plats dont ${avecPage} avec leur page de recette${donnees.erreur ? ', tableau introuvable' : ''} ; ${Date.now() - t0} ms`);
+  console.log(`plan repas : ${memePdf ? 'PDF relu' : 'nouveau PDF'} (${Math.round(taille / 1024)} Ko), ${donnees.plats.length} plats dont ${avecPage} avec leur page de recette${donnees.erreur ? ', ' + donnees.erreur + (illisible ? ' (' + illisible + ')' : '') : ''} ; ${Date.now() - t0} ms`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
